@@ -10,5 +10,3 @@
     		If you like my system please consider buying me a coffee: <a href="https://ko-fi.com/paulwatson">https://ko-fi.com/paulwatson</a>
     		Should you wish to populate the system with game content for your own use please purchase the rule book from
     		<a href="https://www.effektpublishing.com/home/">Effekt Publishing </a> or the Foundry Core Rules module.
-
-Trigger
