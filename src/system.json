@@ -38,7 +38,7 @@
       "paths": ["./css/talesoftheoldwest.css", "css", "lang", "templates"]
     }
   },
-  "url": "Replace this with a link to your public repository",
+  "url": "https://github.com/chrisesharp/talesoftheoldwest",
   "license": "LICENSE.txt",
   "readme": "README.md",
   "bugs": "https://github.com/pwatson100/talesoftheoldwest/issues",

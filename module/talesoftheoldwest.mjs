@@ -154,48 +154,6 @@ Hooks.once("init", function () {
   // }
   // CONFIG.statusEffects.push(...TALESOFTHEOLDWEST.conditions);
 
-<<<<<<< HEAD
-			// Do not display "Blind" chat cards to non-gm
-			if (html.querySelector('blind') && !game.user.isGM) {
-				// since the header has timestamp content we'll remove the content instead.
-				// this avoids an NPE when foundry tries to update the timestamps.
-				html.querySelector('.message-content').remove();
-			}
-			// remove push option from non-authors
-			if (!game.user.isGM && msg.message.author !== game.user.id) {
-				html.querySelector('.dice-push').remove();
-				html.querySelector('.buy-off').remove();
-				html.querySelector('.roll-trouble').remove();
-			}
-		});
-	} else {
-		Hooks.on('renderChatMessage', (app, [html], msg) => {
-			totowDiceButtons(html);
-			// Do not display "Blind" chat cards to non-gm
-			if (html.querySelector('blind') && !game.user.isGM) {
-				// since the header has timestamp content we'll remove the content instead.
-				// this avoids an NPE when foundry tries to update the timestamps.
-				html.querySelector('.message-content').remove();
-			}
-			// remove push option from non-authors
-			if (!game.user.isGM && msg.message.author !== game.user.id) {
-				html.querySelector('.dice-push').remove();
-				html.querySelector('.buy-off').remove();
-				html.querySelector('.roll-trouble').remove();
-			}
-		});
-	}
-	if (foundry.utils.isNewerVersion(game.version, '12.343')) {
-		// V13 spinner
-		Hooks.on('renderGamePause', (_app, html, options) => {
-			document.getElementById('pause').innerHTML = `<img src=\"systems/talesoftheoldwest/assets/icons/snake.webp\" class=\"fa-spin\"><figcaption>"SIT A SPELL"</figcaption>`;
-		});
-	} else {
-		Hooks.on('renderPause', (_app, html, options) => {
-			document.getElementById('pause').innerHTML = `<img src=\"systems/talesoftheoldwest/assets/icons/snake.webp\" class=\"fa-spin\"><figcaption>"SIT A SPELL"</figcaption>`;
-		});
-	}
-=======
   initializeHandlebars();
 
   registerSettings();
@@ -219,7 +177,6 @@ Hooks.once("init", function () {
       html.querySelector(".roll-trouble").remove();
     }
   });
->>>>>>> upstream/v14
 });
 
 /* -------------------------------------------- */
@@ -233,22 +190,6 @@ Hooks.once("ready", async () => {
 
   game.talesoftheoldwest = { TOTOWMacros };
 
-<<<<<<< HEAD
-	setTimeout(() => {
-		$('.notification.error').each((index, item) => {
-			if ($(item).text().includes('requires a minimum screen resolution')) {
-				$(item).remove();
-			}
-		});
-	}, 250);
-
-	if (foundry.utils.isNewerVersion(game.version, '12.343')) {
-		// Set turnmarker to the Snake symbol
-		if (game.settings.get('core', 'combatTrackerConfig').turnMarker.src.length === 0) {
-			game.settings.set('core', 'combatTrackerConfig', { turnMarker: { src: 'systems/talesoftheoldwest/assets/icons/snake.webp' } });
-		}
-	}
-=======
   setTimeout(() => {
     $(".notification.error").each((index, item) => {
       if ($(item).text().includes("requires a minimum screen resolution")) {
@@ -261,7 +202,6 @@ Hooks.once("ready", async () => {
   if (game.settings.get("core", "combatTrackerConfig").turnMarker.src.length === 0) {
     game.settings.set("core", "combatTrackerConfig", { turnMarker: { src: "systems/talesoftheoldwest/assets/icons/snake.webp" } });
   }
->>>>>>> upstream/v14
 });
 
 // V13 spinner
@@ -270,13 +210,10 @@ Hooks.on("renderGamePause", (_app, html, options) => {
     `<img src=\"systems/talesoftheoldwest/assets/icons/snake.webp\" class=\"fa-spin\"><figcaption>"SIT A SPELL"</figcaption>`;
 });
 
-<<<<<<< HEAD
-=======
 Hooks.on("renderChatLog", (log, html, data) => {
   totowDiceListeners();
 });
 
->>>>>>> upstream/v14
 // ***************************
 // DsN V3 Hooks
 // ***************************

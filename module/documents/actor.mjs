@@ -468,30 +468,6 @@ export class totowActor extends Actor {
 
     // Apply the Active Effect
 
-<<<<<<< HEAD
-	async diceRoll(actor, event, target) {
-		let config = CONFIG.TALESOFTHEOLDWEST;
-		event.preventDefault(); // Don't open context menu
-		event.stopPropagation(); // Don't trigger other events
-		if (event.detail > 1) return; // Ignore repeated clicks
-		const rollData = this.getRollData();
-		const dataset = target.dataset;
-		let item = '';
-		dataset.conditional = '';
-		dataset.talent = '';
-		dataset.myHorse = 'false';
-		// dataset.speaker = actor.name;
-		// const targetActor = actor.getRollData();
-		if (actor.type === 'pc' && target.dataset.speakerType != 'horse') {
-			dataset.faithpoints = actor.system.general.faithpoints.value;
-			dataset.canPush = actor.system.general.canPush;
-			dataset.speaker = actor.name;
-			dataset.speakerId = actor.id;
-		} else {
-			dataset.faithpoints = -1;
-			dataset.canPush = false;
-		}
-=======
     switch (type) {
       case "pc":
         // case 'npc':
@@ -505,73 +481,11 @@ export class totowActor extends Actor {
       default:
         break;
     }
->>>>>>> upstream/v14
 
     ChatMessage.applyMode(chatData, game.settings.get("core", "rollMode"));
     return ChatMessage.create(chatData);
   }
 
-<<<<<<< HEAD
-		// Handle item rolls.
-		if (dataset.rollType) {
-			if (dataset.rollType === 'attribute' || dataset.rollType === 'ability') {
-				switch (dataset.rollType) {
-					case 'attribute':
-						result = await processConditionals('Attributes', dataset, rollData);
-						break;
-					case 'ability':
-						if (dataset.label === game.i18n.localize('TALESOFTHEOLDWEST.Ability.Animalhandlin.long') && actor.type === 'pc') {
-							if (actor.system.remuda.remudaMounted !== 'false') {
-								let horse = await this.getRemuda(actor.system.remuda.remudaMounted);
-								let content = '';
-								if (game.version && foundry.utils.isNewerVersion(game.version, '12.343')) {
-									content = await foundry.applications.handlebars.renderTemplate('systems/talesoftheoldwest/templates/dialog/riding-my-horse.hbs', horse);
-								} else {
-									// For Foundry versions before 11, use the old renderTemplate method
-
-									content = await renderTemplate('systems/talesoftheoldwest/templates/dialog/riding-my-horse.hbs', horse);
-								}
-								const response = await foundry.applications.api.DialogV2.confirm({
-									window: { title: 'TALESOFTHEOLDWEST.dialog.Ride-My-Horse-Dialog' },
-									content,
-									modal: true,
-								});
-								if (response === true) {
-									dataset.myHorse = 'true';
-									dataset.mod = Number(dataset.mod) + Number(horse.actor.system.general.ridingmodifier.value);
-								}
-							}
-						}
-						result = await processConditionals('Abilities', dataset, rollData);
-						break;
-					default:
-						break;
-				}
-			} else {
-				const itemId = target.dataset.itemId;
-
-				if (!dataset.speakerId) {
-					item = actor.items.get(itemId);
-				} else {
-					const compadres = game.actors.get(dataset.speakerId);
-					item = compadres.items.get(itemId);
-				}
-				switch (dataset.rollType) {
-					case 'item':
-						// case 'talent':
-						return item.roll(dataset);
-					case 'weapon':
-						result = await item.roll(dataset, item);
-					default:
-						break;
-				}
-			}
-			if (result === 'cancelled') {
-				return;
-			} else {
-				sendToChat(actor, event, target, result, dataset.speaker, dataset.speakerId);
-			}
-=======
   async rollCritMan(actor, type, dataset) {
     let content = "";
     let response = "";
@@ -626,7 +540,6 @@ export class totowActor extends Actor {
 
   async diceRoll(actor, event, target) {
     let config = CONFIG.TALESOFTHEOLDWEST;
->>>>>>> upstream/v14
 
     event.preventDefault(); // Don't open context menu
     event.stopPropagation(); // Don't trigger other events
@@ -755,40 +668,6 @@ export class totowActor extends Actor {
             });
           }
 
-<<<<<<< HEAD
-			async function sendToChat(actor, event, target, result, speaker, speakerId) {
-				let html = '';
-				{
-					if (game.version && foundry.utils.isNewerVersion(game.version, '12.343')) {
-						html = await foundry.applications.handlebars.renderTemplate('systems/talesoftheoldwest/templates/chat/roll.hbs', result[1]);
-					} else {
-						// For Foundry versions before 11, use the old renderTemplate method
-
-						html = await renderTemplate('systems/talesoftheoldwest/templates/chat/roll.hbs', result[1]);
-					}
-					let chatData = {
-						user: game.user.id,
-						speaker: ChatMessage.getSpeaker({
-							alias: speaker,
-							actor: speakerId,
-						}),
-						rolls: [result[0]],
-						rollMode: game.settings.get('core', 'rollMode'),
-						content: html,
-						sound: CONFIG.sounds.dice,
-						// flags: {talesoftheoldwest:	[{'isType': actor.type}]}
-					};
-					if (['gmroll', 'blindroll'].includes(chatData.rollMode)) {
-						chatData.whisper = ChatMessage.getWhisperRecipients('GM');
-					} else if (chatData.rollMode === 'selfroll') {
-						chatData.whisper = [game.user];
-					}
-					const msg = await ChatMessage.create(chatData);
-					result[1].messageNo = msg.id;
-
-					await msg.setFlag('talesoftheoldwest', 'results', result);
-					await msg.setFlag('talesoftheoldwest', 'isType', actor.type);
-=======
           if (!response || response === "cancel") return "cancelled";
 
           Object.keys(response).forEach((key) => {
@@ -796,7 +675,6 @@ export class totowActor extends Actor {
               response.modifier = parseInt(response.modifier || 0) + parseInt(response[key] || 0);
             }
           });
->>>>>>> upstream/v14
 
           dataset.mod = parseInt(dataset.mod || 0) + parseInt(response.modifier || 0);
         }

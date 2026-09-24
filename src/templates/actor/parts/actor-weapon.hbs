@@ -40,32 +40,6 @@
 			{{#each weapon as |item id|}}
 			{{#if (eq item.system.stored false)}}
 
-<<<<<<< HEAD
-					<li class='item grid-weapon-items' data-item-id='{{item._id}}' data-drag='true' data-document-class='Weapon'>
-						<div class='item-image lColB1'>
-							<a><img src='{{item.img}}' data-tooltip='{{item.name}}' width='24' height='24' /></a>
-						</div>
-						<div
-							class='lColB2 rollable'
-							data-roll-type='weapon'
-							data-label='{{item.name}} '
-							data-subtype='{{item.system.subtype}}'
-							data-drag='true'
-							data-document-class='Weapon'
-							data-action='roll'
-							data-item-id='{{item._id}}'
-							data-item-ammo='{{item.system.ammo}}'
-							data-speaker='{{actor.name}}'
-							data-speaker-id='{{actor.id}}'
-						>
-							{{item.name}}
-						</div>
-						<div class='lColB3'>{{item.system.conditionNames}}</div>
-						<div class='lColB6'>{{item.system.attackbonus}}</div>
-						<div class='lColB7'>{{item.system.damage}}</div>
-						<div class='lColB8'>{{item.system.crit}}</div>
-						<div class='lColB9'>{{localize (totowConcat (totowConcat 'TALESOFTHEOLDWEST.Ranges.' item.system.range) '.long')}}</div>
-=======
 			<li class='item grid-weapon-items' data-item-id='{{item._id}}' data-drag='true' data-document-class='Weapon'>
 				<div class='item-image lColB1'>
 					<a><img src='{{item.img}}' data-tooltip='{{item.name}}' width='24' height='24' /></a>
@@ -78,7 +52,6 @@
 				<div class='lColB7'>{{item.system.damage}}</div>
 				<div class='lColB8'>{{item.system.crit}}</div>
 				<div class='lColB9'>{{localize (totowConcat (totowConcat 'TALESOFTHEOLDWEST.Ranges.' item.system.range) '.long')}}</div>
->>>>>>> upstream/v14
 
 				{{#if (ne item.system.subtype 'fightin')}}
 				<div class='lColB5'>{{item.system.bonusdraw}}</div>

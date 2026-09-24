@@ -4,3 +4,4 @@ foundry.js
 .eslintrc.js
 /packs
 talesoftheoldwest.lock
+dist/
