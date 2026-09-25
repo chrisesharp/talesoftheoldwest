@@ -38,7 +38,7 @@ jobs:
         id: sub_release_manifest_version
         uses: microsoft/variable-substitution@v1
         with:
-          files: 'system.json'
+          files: 'src/system.json'
         env:
           flags.hotReload: false
           version: ${{github.event.release.tag_name}}
@@ -47,7 +47,7 @@ jobs:
           download: https://github.com/${{github.repository}}/releases/download/${{github.event.release.tag_name}}/master.zip
 
       # create a zip file with all files required by the module to add to the release
-      - run: zip -r ./master.zip system.json LICENSE.txt README.md Realease_Notes.txt ui/ templates/ packs/ module/ lang/ assets/ css/
+      - run: zip -r ./master.zip src/system.json LICENSE.txt README.md Realease_Notes.txt src/ui/ src/templates/ src/packs/ module/ src/lang/ src/assets/ css/
 
       # Create a release for this specific version
       - name: Update Release with Files
@@ -59,7 +59,7 @@ jobs:
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: './system.json, ./master.zip'
+          artifacts: './src/system.json, ./master.zip'
           tag: ${{ github.event.release.tag_name }}
           body: ${{ github.event.release.body }}
 
@@ -74,6 +74,6 @@ jobs:
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: './system.json,./master.zip'
+          artifacts: './src/system.json,./master.zip'
           tag: latest
           body: ${{ github.event.release.body }}
