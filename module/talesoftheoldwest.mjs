@@ -125,8 +125,8 @@ Hooks.once("init", function () {
 
   // // Preload Handlebars templates.
   // return preloadHandlebarsTemplates();
-  Hooks.on("renderChatMessageHTML", (app, html, msg) => {
-    totowDiceButtons(html);
+  Hooks.on("renderChatMessageHTML", (msg, html, msgContent) => {
+    totowDiceButtons(msg, html, msgContent);
 
     // Do not display "Blind" chat cards to non-gm
     if (html.querySelector("blind") && !game.user.isGM) {

@@ -53,7 +53,7 @@ export class TOTWBuyOffDialog extends FormApplication {
 	}
 
 	async _updateObject(event, formData) {
-		buyOff(this.chatMessage, this.origRollData, this.origRoll, event);
+		await buyOff(this.chatMessage, this.origRollData, this.origRoll, event);
 	}
 }
 
@@ -122,8 +122,7 @@ async function buyOff(chatMessage, origRollData, origRoll, event) {
 	origRollData[1].troubleBlank += troubleMod;
 	origRollData[1].faithpoints = myActor.system.general.faithpoints.value;
 	origRollData[1].buyoff -= troubleMod > 0 ? 1 : 0;
-	await chatMessage.setFlag('talesoftheoldwest', 'results', origRollData);
-
+	// await chatMessage.setFlag('talesoftheoldwest', 'results', origRollData.results);
 	await updateChatMessage(chatMessage, origRoll, origRollData);
 }
 
@@ -226,6 +225,17 @@ async function checkTables(type, trouble) {
 	} else {
 		ui.notifications.error(game.i18n.localize('TALESOFTHEOLDWEST.General.ErrorTroubleTable'));
 	}
+}
+
+export async function updateChatMessage(chatMessage, result, newRoleData) {
+	return foundry.applications.handlebars.renderTemplate('systems/talesoftheoldwest/templates/chat/roll.hbs', newRoleData[1]).then((html) => {
+		chatMessage['content'] = html;
+		return chatMessage
+			.update({
+				content: html,
+				['flags.data']: { results: newRoleData.results },
+			});
+	});
 }
 
 window.TOTWBuyOffDialog = TOTWBuyOffDialog;

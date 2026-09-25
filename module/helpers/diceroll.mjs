@@ -1,9 +1,10 @@
-import { TOTWWhichTroubleDialog, TOTWBuyOffDialog, TOTWManualTroubleDialog } from './chatmodifier.mjs';
+import { TOTWWhichTroubleDialog, TOTWBuyOffDialog, TOTWManualTroubleDialog, updateChatMessage } from './chatmodifier.mjs';
 // import { prepModOutput } from './utils.mjs';
 
-export async function totowDiceButtons(html) {
-	let messageId = html.dataset.messageId;
-	let message = game.messages.get(messageId);
+export async function totowDiceButtons(message, html, msgContent) {
+	// let messageId = html.dataset.messageId;
+	// let message = game.messages.get(messageId);
+	const messageId = message.id;
 
 	let buttonArea = html.querySelector('#buttonlist');
 	let pcType = message.getFlag('talesoftheoldwest', 'isType');
@@ -379,7 +380,7 @@ export async function evaluateTOTWRoll(dataset, roll, formula, itemData) {
 		failure: totalRolled ? totalSuccess < 2 : totalSuccess === 0,
 		totalRolled: totalRolled,
 		oldRoll: roll,
-		modifiers: dataset,
+		modifiers: { ...dataset},
 		messageNo: 0,
 		faithAdded: false,
 		ability: ability,
@@ -390,31 +391,31 @@ export async function evaluateTOTWRoll(dataset, roll, formula, itemData) {
 	return evalResult;
 }
 
-async function updateChatMessage(chatMessage, result, newRoleData) {
-	if (game.version && foundry.utils.isNewerVersion(game.version, '12.343')) {
-		return foundry.applications.handlebars.renderTemplate('systems/talesoftheoldwest/templates/chat/roll.hbs', newRoleData[1]).then((html) => {
-			chatMessage['content'] = html;
-			return chatMessage
-				.update({
-					content: html,
-					['flags.data']: { results: newRoleData.results },
-				})
-				.then((newMsg) => {
-					ui.chat.updateMessage(newMsg);
-				});
-		});
-	} else {
-		// For Foundry versions before 11, use the old renderTemplate method
-		return renderTemplate('systems/talesoftheoldwest/templates/chat/roll.hbs', newRoleData[1]).then((html) => {
-			chatMessage['content'] = html;
-			return chatMessage
-				.update({
-					content: html,
-					['flags.data']: { results: newRoleData.results },
-				})
-				.then((newMsg) => {
-					ui.chat.updateMessage(newMsg);
-				});
-		});
-	}
-}
+// async function updateChatMessage(chatMessage, result, newRoleData) {
+// 	if (game.version && foundry.utils.isNewerVersion(game.version, '12.343')) {
+// 		return foundry.applications.handlebars.renderTemplate('systems/talesoftheoldwest/templates/chat/roll.hbs', newRoleData[1]).then((html) => {
+// 			chatMessage['content'] = html;
+// 			return chatMessage
+// 				.update({
+// 					content: html,
+// 					['flags.data']: { results: newRoleData.results },
+// 				})
+// 				.then((newMsg) => {
+// 					ui.chat.updateMessage(newMsg);
+// 				});
+// 		});
+// 	} else {
+// 		// For Foundry versions before 11, use the old renderTemplate method
+// 		return renderTemplate('systems/talesoftheoldwest/templates/chat/roll.hbs', newRoleData[1]).then((html) => {
+// 			chatMessage['content'] = html;
+// 			return chatMessage
+// 				.update({
+// 					content: html,
+// 					['flags.data']: { results: newRoleData.results },
+// 				})
+// 				.then((newMsg) => {
+// 					ui.chat.updateMessage(newMsg);
+// 				});
+// 		});
+// 	}
+// }
