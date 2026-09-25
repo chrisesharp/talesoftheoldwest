@@ -54,7 +54,7 @@ export async function prepModOutput(rollType, rollData, dataset) {
 						case 'shootin':
 							rollData.expertFanning = rollData.actor.itemMods[akey].find((a) => a.itemname === 'Expert Fanning')?.basicisActive;
 							console.log('shootin', rollData.actor.itemMods[akey], rollData.actor.itemMods[akey][0].itemname);
-							await this.modifiers(rollData.actor.itemMods, dataset, akey);
+							await modifiers(rollData.actor.itemMods, dataset, akey);
 
 							break;
 						case 'quick':
@@ -93,7 +93,7 @@ export async function prepModOutput(rollType, rollData, dataset) {
 		// let spanner = [];
 		for (const akey in rollData.itemMods) {
 			if (akey === dataset.key) {
-				await this.modifiers(rollData.itemMods, dataset, akey);
+				await modifiers(rollData.itemMods, dataset, akey);
 			}
 		}
 	}
@@ -103,12 +103,12 @@ export async function prepModOutput(rollType, rollData, dataset) {
 export async function modifiers(itemModspath, dataset, akey) {
 	let floop = 1;
 	let iloop = 1;
-	let spanner = itemModspath[akey].reduce((acc, akey) => {
+	itemModspath[akey].reduce((acc, akey) => {
 		if (akey.state !== 'Active') {
 			if (akey.basicisActive) {
 				switch (akey.state) {
 					case 'Conditional':
-						{
+						
 							dataset.conditional += `<div class="grid-conGrid" >
 					<input class="con1"  type="checkbox" 
 					id="floop${floop} - ${akey.name}" 
@@ -118,21 +118,21 @@ export async function modifiers(itemModspath, dataset, akey) {
 								akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)
 							}</span> - ${akey.basicAction}</span></div>`;
 							floop++;
-						}
+						
 						break;
 
 					case 'Chat':
-						{
+						
 							dataset.talent += `<strong style="color:black">${akey.itemname}</strong> - <span style="color:rgba(5, 40, 116, 1);font-weight:bold">${
 								akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)
 							}</span> - ${akey.basicAction}<br /><br />`;
-						}
+						
 						break;
 				}
 			} else if (akey.advisActive) {
 				switch (akey.state) {
 					case 'Conditional':
-						{
+						
 							dataset.conditional += `<div class="grid-conGrid" >
 					<input class="con1" type="checkbox" ;
 					id="floop${floop} - ${akey.name}" 
@@ -142,21 +142,21 @@ export async function modifiers(itemModspath, dataset, akey) {
 								akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)
 							}</span> - ${akey.advAction}</span></div>`;
 							floop++;
-						}
+						
 						break;
 
 					case 'Chat':
-						{
+						
 							dataset.talent += `<strong style="color:black">${akey.itemname}</strong> - <span style="color:rgba(5, 40, 116, 1);font-weight:bold">${
 								akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)
 							}</span> - ${akey.advAction}<br /><br />`;
-						}
+						
 						break;
 				}
 			} else if ((akey.itemtype === 'item' || akey.itemtype === 'animalquality') && !akey.stored) {
 				switch (akey.state) {
 					case 'Conditional':
-						{
+						
 							dataset.conditional += `<div class="grid-conGrid" >
 					<input class="con1" type="checkbox" 
 					id="iloop${iloop} - ${akey.name}" 
@@ -166,10 +166,10 @@ export async function modifiers(itemModspath, dataset, akey) {
 								akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)
 							}</span> - ${akey.itemDescription}</span></div>`;
 							iloop++;
-						}
+						
 						break;
 					case 'onPC':
-						{
+						
 							if (dataset.myHorse === 'true') {
 								dataset.conditional += `<div class="grid-conGrid" >
 					<input class="con1" type="checkbox" 
@@ -181,15 +181,13 @@ export async function modifiers(itemModspath, dataset, akey) {
 								}</span> - ${akey.itemDescription}</span></div>`;
 								iloop++;
 							}
-						}
+						
 						break;
 
 					case 'Chat':
-						{
 							dataset.talent += `<strong style="color:black">${akey.itemname}</strong> - <span style="color:rgba(5, 40, 116, 1);font-weight:bold">${
 								akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)
 							}</span> - ${akey.itemDescription}<br /><br />`;
-						}
 						break;
 				}
 			}

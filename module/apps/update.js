@@ -1,6 +1,4 @@
-import { moduleKey, adventurePackName, adventurePack, moduleTitle } from "./init.js";
-
-export default async function updateModule() {
+export default async function updateModule(moduleKey, moduleTitle, adventurePackName, adventurePack) {
   /**
    * updateAssets
    * Param for number of dice to roll for each die type/rolls
@@ -47,7 +45,7 @@ export default async function updateModule() {
   await getUpdateIDs(aPack, updateAssets);
   await ModuleUpdate(aPack, updateAssets);
 
-  await allDone(moduleTitle, updateNotes);
+  await allDone(moduleKey, moduleTitle, updateNotes);
 }
 
 async function getUpdateIDs(aPack, updateAssets) {
@@ -102,11 +100,11 @@ async function ModuleUpdate(aPack, updateAssets) {
 
             break;
           case "update":
-            const [u] = aPack[field].partition((d) => d._id != assetID);
+            { const [u] = aPack[field].partition((d) => d._id != assetID);
             if (u.length) {
               newUpdate.push(u[0]);
             }
-            break;
+            break; }
           default:
             break;
         }
@@ -127,7 +125,7 @@ async function ModuleUpdate(aPack, updateAssets) {
   if (toUpdate) {
     for (const [documentName, updateData] of Object.entries(toUpdate)) {
       const cls = getDocumentClass(documentName);
-      const u = await cls.updateDocuments(updateData, { diff: false, recursive: false, noHook: true });
+      await cls.updateDocuments(updateData, { diff: false, recursive: false, noHook: true });
       updated++;
     }
   }
@@ -139,14 +137,14 @@ async function ModuleUpdate(aPack, updateAssets) {
   if (toCreate) {
     for (const [documentName, createData] of Object.entries(toCreate)) {
       const cls = getDocumentClass(documentName);
-      const c = await cls.createDocuments(createData, { keepId: true, keepEmbeddedId: true, renderSheet: false });
+      await cls.createDocuments(createData, { keepId: true, keepEmbeddedId: true, renderSheet: false });
       created++;
     }
   }
   logger.info(`${moduleKey} Updated ${updated} Asset, Created ${created} Asset`);
 }
 
-async function allDone(moduleTitle, updateNotes) {
+async function allDone(moduleKey, moduleTitle, updateNotes) {
   await game.settings.set(moduleKey, "migrationVersion", game.system.version);
   Dialog.prompt({
     title: `${moduleTitle} Update`,

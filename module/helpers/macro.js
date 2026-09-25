@@ -27,11 +27,11 @@ export class TOTOWMacros {
 					callback: async (html) => {
 						const tableId = html.find('#tableSelect')[0].value;
 						const table = game.tables.get(tableId);
-						const drawNumber = parseInt(html.find('#inputNbr')[0].value || 0);
+						const drawNumber = Number.parseInt(html.find('#inputNbr')[0].value || 0);
 						const formula = table.formula;
-						const modifier = parseInt(html.find('#inputMod')[0].value || '0');
+						const modifier = Number.parseInt(html.find('#inputMod')[0].value || '0');
 						for (let i = 0; i < drawNumber; i++) {
-							const roll = new Roll(formula + ' + ' + modifier).evaluate();
+							const roll = await new Roll(formula + ' + ' + modifier).evaluate();
 							await table.draw({ roll: roll });
 						}
 					},

@@ -5,20 +5,12 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"type": "msedge",
-			"request": "launch",
-			"name": "Launch Edge against localhost",
-			"url": "http://localhost:30000",
-			"webRoot": "${workspaceFolder}",
-			"resolveSourceMapLocations": ["${workspaceFolder}/", "!/node_modules/**"]
-		},
-		{
 			"name": "Launch Chrome",
 			"request": "launch",
 			"type": "chrome",
 			"url": "http://localhost:30000",
-			"webRoot": "${workspaceFolder}",
-			"resolveSourceMapLocations": ["${workspaceFolder}/", "!/node_modules/**"]
+			"webRoot": "${workspaceFolder}/dist",
+			"resolveSourceMapLocations": ["${workspaceFolder}/**/*.mjs", "!/node_modules/**"]
 		}
 	]
 }

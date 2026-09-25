@@ -10,8 +10,7 @@ import { totowItemSheet } from "./sheets/item-sheet.mjs";
 import { TALESOFTHEOLDWEST } from "./helpers/config.mjs";
 // Import DataModel classes
 import * as models from "./data/_module.mjs";
-import { totowTroubleDie } from "./helpers/totowTroubleDice.js";
-import { totowNormalDie } from "./helpers/totowTroubleDice.js";
+import { totowTroubleDie, totowNormalDie } from "./helpers/totowTroubleDice.js";
 import { ModuleImport, TOTOWSystemImportFormWrapper } from "./apps/init.js";
 import { COMMON } from "./helpers/common.mjs";
 import { logger } from "./helpers/logger.mjs";
@@ -107,42 +106,7 @@ Hooks.once("init", function () {
     label: "TALESOFTHEOLDWEST.SheetLabels.Item",
   });
 
-  const toRemove = [
-    "bless",
-    "corrode",
-    "curse",
-    "degen",
-    "disease",
-    "upgrade",
-    "fireShield",
-    "fear",
-    "holyShield",
-    "hover",
-    "coldShield",
-    "magicShield",
-    "paralysis",
-    "poison",
-    "regen",
-    "restrain",
-    "shock",
-    "silence",
-    "downgrade",
-    "fly",
-    "invisible",
-    "eye",
-    "deaf",
-    "burrow",
-    "sleep",
-    "frozen",
-    "blind",
-    "bleeding",
-    // "burning",
-    "keepingcool",
-    // "spooked",
-    // "twitchy",
-    // "loseitem",
-    // "noisy",
-  ];
+
   // CONFIG.statusEffects = CONFIG.TALESOFTHEOLDWEST.conditions.filter((effect) => !toRemove.includes(effect.id));
   // Status Effect Transfer
   for (const [id, value] of Object.entries(TALESOFTHEOLDWEST.conditions)) {

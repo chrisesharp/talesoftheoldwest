@@ -200,9 +200,10 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       if (context.actor.type === "pc") {
         this._prepareCompadres(context);
         this._prepareRemuda(context);
-        context.statuses = await this._prepareStatusEffects();
+        // context.statuses = await this._prepareStatusEffects();
         context.effects = await this._prepareActiveEffectCategories();
       }
+      context.statuses = await this._prepareStatusEffects();
       this._prepareItems(context);
       this._prepareCharacterData(context);
     }
@@ -1131,20 +1132,20 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @private
    */
-  static async _toggleCondition(event, target) {
-    event.preventDefault(); // Don't open context menu
-    event.stopPropagation(); // Don't trigger other events
-    if (event.detail > 1) return; // Ignore repeated clicks
-    let field = `system.conditions.${target.dataset.key}`;
+  // static async _toggleCondition(event, target) {
+  //   event.preventDefault(); // Don't open context menu
+  //   event.stopPropagation(); // Don't trigger other events
+  //   if (event.detail > 1) return; // Ignore repeated clicks
+  //   let field = `system.conditions.${target.dataset.key}`;
 
-    if (await this.actor.hasCondition(target.dataset.key)) {
-      await this.actor.removeCondition(target.dataset.key);
-      await this.actor.update({ [field]: false });
-    } else {
-      await this.actor.addCondition(target.dataset.key);
-      await this.actor.update({ [field]: true });
-    }
-  }
+  //   if (await this.actor.hasCondition(target.dataset.key)) {
+  //     await this.actor.removeCondition(target.dataset.key);
+  //     await this.actor.update({ [field]: false });
+  //   } else {
+  //     await this.actor.addCondition(target.dataset.key);
+  //     await this.actor.update({ [field]: true });
+  //   }
+  // }
 
   /**
    * Creates or deletes a configured status effect.
@@ -1154,7 +1155,8 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
    * @private
    */
   static async _toggleStatus(event, target) {
-    const status = target.dataset.statusId;
+    // const status = target.dataset.statusId;
+    const status = target.dataset.key;
     await this.actor.toggleStatusEffect(status);
   }
 

@@ -214,51 +214,71 @@
 					{{ localize 'TALESOFTHEOLDWEST.Conditions.Starving'}}
 				</label>
 				<a class="overwatch-toggle CSplit12" data-action="toggleCondition" data-key="starving">
-					{{#if (eq system.conditions.starving true)}}
+					{{#each statuses as |status id|}}
+					{{#if (eq status.name 'TALESOFTHEOLDWEST.Conditions.Starving')}}
+					{{#if status.active}}
 					<i class="far fa-dot-circle"></i>
 					{{else}}
 					<i class="far fa-circle"></i>
 					{{/if}}
+					{{/if}}
+					{{/each}}
 				</a>
 				<label class="dots resource-label CSplit21" data-key="dehydrated" data-tooltip="{{ localize 'TALESOFTHEOLDWEST.General.leftToAdd'}}">
 					{{ localize 'TALESOFTHEOLDWEST.Conditions.Dehydrated'}}
 				</label>
 				<a class="overwatch-toggle CSplit22" data-action="toggleCondition" data-key="dehydrated">
-					{{#if (eq system.conditions.dehydrated true)}}
+					{{#each statuses as |status id|}}
+					{{#if (eq status.name 'TALESOFTHEOLDWEST.Conditions.Dehydrated')}}
+					{{#if status.active}}
 					<i class="far fa-dot-circle"></i>
 					{{else}}
 					<i class="far fa-circle"></i>
 					{{/if}}
+					{{/if}}
+					{{/each}}
 				</a>
 				<label class="dots resource-label CSplit31" data-key="exhausted" data-tooltip="{{ localize 'TALESOFTHEOLDWEST.General.leftToAdd'}}">
 					{{ localize 'TALESOFTHEOLDWEST.Conditions.Exhausted'}}
 				</label>
 				<a class="overwatch-toggle CSplit32" data-action="toggleCondition" data-key="exhausted">
-					{{#if (eq system.conditions.exhausted true)}}
+					{{#each statuses as |status id|}}
+					{{#if (eq status.name 'TALESOFTHEOLDWEST.Conditions.Exhausted')}}
+					{{#if status.active}}
 					<i class="far fa-dot-circle"></i>
 					{{else}}
 					<i class="far fa-circle"></i>
 					{{/if}}
+					{{/if}}
+					{{/each}}
 				</a>
 				<label class="dots resource-label CSplit41" data-key="freezing" data-tooltip="{{ localize 'TALESOFTHEOLDWEST.General.leftToAdd'}}">
 					{{ localize 'TALESOFTHEOLDWEST.Conditions.Freezing'}}
 				</label>
 				<a class="overwatch-toggle CSplit42" data-action="toggleCondition" data-key="freezing">
-					{{#if (eq system.conditions.freezing true)}}
+					{{#each statuses as |status id|}}
+					{{#if (eq status.name 'TALESOFTHEOLDWEST.Conditions.Freezing')}}
+					{{#if status.active}}
 					<i class="far fa-dot-circle"></i>
 					{{else}}
 					<i class="far fa-circle"></i>
 					{{/if}}
+					{{/if}}
+					{{/each}}
 				</a>
 				<label class="dots resource-label CSplit51" data-key="heatstroke" data-tooltip="{{ localize 'TALESOFTHEOLDWEST.General.leftToAdd'}}">
 					{{ localize 'TALESOFTHEOLDWEST.Conditions.Heatstroke'}}
 				</label>
 				<a class="overwatch-toggle CSplit52" data-action="toggleCondition" data-key="heatstroke">
-					{{#if (eq system.conditions.heatstroke true)}}
+					{{#each statuses as |status id|}}
+					{{#if (eq status.name 'TALESOFTHEOLDWEST.Conditions.Heatstroke')}}
+					{{#if status.active}}
 					<i class="far fa-dot-circle"></i>
 					{{else}}
 					<i class="far fa-circle"></i>
 					{{/if}}
+					{{/if}}
+					{{/each}}
 				</a>
 			</div>
 		</div>
