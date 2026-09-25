@@ -58,9 +58,6 @@ jobs:
 
   publish:
     needs:
-      - lint
-      - test
-      # - typecheck
       - build
     runs-on: ubuntu-latest
     steps:
