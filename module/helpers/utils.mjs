@@ -5,6 +5,100 @@ export const getID = function () {
 	return '_' + Math.random().toString(36).substr(2, 9);
 };
 
+/**
+ * Scan a single item's itemModifiers (and featureModifiers) and push
+ * normalised modifier objects into the provided itemMods array.
+ * Shared between the actor sheet's _prepareItems and getRollData.
+ *
+ * @param {Item} i          The item to scan.
+ * @param {Array} itemMods  The accumulator array to push into.
+ */
+export function findMods(i, itemMods) {
+	if (!i.system.itemModifiers) return;
+
+	const stripHtml = (s) => (s ? s.replace(/<[^>]*>?/gm, "") : "");
+
+	if (i.type === "talent") {
+		if (i.system.basicisActive) {
+			for (let [, mods] of Object.entries(i.system.itemModifiers)) {
+				if (mods.modtype === "basic") {
+					itemMods.push({
+						name: mods.name,
+						itemname: i.name,
+						itemtype: i.type,
+						modtype: mods.modtype,
+						state: mods.state,
+						itemDescription: mods.description,
+						value: mods.value,
+						stored: i.system.stored,
+						basicisActive: i.system.basicisActive ?? false,
+						basicAction: stripHtml(i.system.basicAction),
+					});
+				}
+			}
+		}
+		if (i.system.advisActive) {
+			for (let [, mods] of Object.entries(i.system.itemModifiers)) {
+				if (mods.modtype === "advanced") {
+					itemMods.push({
+						name: mods.name,
+						itemname: i.name,
+						itemtype: i.type,
+						modtype: mods.modtype,
+						state: mods.state,
+						itemDescription: mods.description,
+						value: mods.value,
+						stored: i.system.stored,
+						advisActive: i.system.advisActive ?? false,
+						advAction: stripHtml(i.system.advAction),
+					});
+				}
+			}
+		}
+	} else {
+		for (let [, mods] of Object.entries(i.system.itemModifiers)) {
+			itemMods.push({
+				name: mods.name,
+				itemname: i.name,
+				itemtype: i.type,
+				modtype: mods.modtype,
+				state: mods.state,
+				itemDescription: mods.description,
+				value: mods.value,
+				stored: i.system.stored,
+				basicisActive: i.system.basicisActive ?? false,
+				advisActive: i.system.advisActive ?? false,
+				basicAction: stripHtml(i.system.basicAction),
+				advAction: stripHtml(i.system.advAction),
+			});
+		}
+	}
+
+	if (i.system.featureModifiers) {
+		for (let [, feature] of Object.entries(i.system.featureModifiers)) {
+			for (let [, mods] of Object.entries(feature.itemModifiers)) {
+				itemMods.push({
+					name: feature.name,
+					itemname: i.name,
+					itemtype: i.type,
+					feature: feature.feature ?? false,
+					modtype: mods.name,
+					state: mods.state,
+					itemDescription: feature.description,
+					value: mods.value,
+					stored: i.system.stored,
+					basicisActive: i.system.basicisActive ?? false,
+					advisActive: i.system.advisActive ?? false,
+					basicAction: stripHtml(i.system.basicAction),
+					advAction: stripHtml(i.system.advAction),
+				});
+			}
+		}
+	}
+}
+
+
+
 export async function prepModOutput(rollType, rollData, dataset) {
 	let floop = 1;
 	let iloop = 1;

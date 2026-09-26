@@ -46,6 +46,15 @@ export class totowActor extends Actor {
   getRollData() {
     let spanner = { ...super.getRollData(), ...(this.system.getRollData?.() ?? null) };
     spanner.actorType = this.type;
+
+    // Build itemMods so that prepModOutput can surface Conditional modifiers
+    // at roll time. This mirrors what _prepareItems does on the sheet.
+    const itemMods = [];
+    for (const i of this.items) {
+      argpUtils.findMods(i, itemMods);
+    }
+    spanner.itemMods = Object.groupBy(itemMods, ({ name }) => name);
+
     return spanner;
   }
   // *************************************************

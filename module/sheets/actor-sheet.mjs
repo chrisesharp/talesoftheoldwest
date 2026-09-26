@@ -2,6 +2,7 @@ import { prepareActiveEffectCategories } from "../helpers/effects.mjs";
 import { rollAttrib } from "../helpers/diceroll.mjs";
 import { logger } from "../helpers/logger.mjs";
 import TOTOWActiveEffect from "../documents/active-effect.mjs";
+import { findMods } from "../helpers/utils.mjs";
 
 const { api, sheets } = foundry.applications;
 
@@ -340,26 +341,26 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       switch (i.type) {
         case "item":
           gear.push(i);
-          _findmods(i, itemMods);
+          findMods(i, itemMods);
           break;
         case "weapon":
           weapon.push(i);
-          _findmods(i, itemMods);
+          findMods(i, itemMods);
           break;
         case "talent":
           talent.push(i);
-          _findmods(i, itemMods);
+          findMods(i, itemMods);
           break;
         case "crit":
           critInj.push(i);
+          findMods(i, itemMods);
           break;
         case "animalquality":
           animalquality.push(i);
-          _findmods(i, itemMods);
+          findMods(i, itemMods);
           break;
         case "amenities":
           amenities.push(i);
-          // _findmods(i, itemMods);
           break;
 
         default:
@@ -370,11 +371,10 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     }
     if (context.actor.type === "pc") {
       if (context.system.remuda.remudaMounted !== "false") {
-        // const horse = this.actor.getRemuda(remuda.remudaMounted);
         for (let [key, modItems] of Object.entries(context.system.remuda.details)) {
           if (modItems.actor.system.general.mounted === true) {
             for (let i of modItems.actor.items) {
-              _findmods(i, itemMods);
+              findMods(i, itemMods);
             }
           }
         }
@@ -389,88 +389,6 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     context.animalquality = animalquality.toSorted((a, b) => (a.sort || 0) - (b.sort || 0));
     context.amenities = amenities.toSorted((a, b) => (a.sort || 0) - (b.sort || 0));
     context.system.itemMods = Object.groupBy(itemMods, ({ name }) => name);
-
-    async function _findmods(i, itemMods) {
-      if (i.system.itemModifiers) {
-        if (i.type === "talent") {
-          if (i.system.basicisActive) {
-            for (let [key, mods] of Object.entries(i.system.itemModifiers)) {
-              if (mods.modtype === "basic") {
-                itemMods.push({
-                  name: mods.name,
-                  itemname: i.name,
-                  itemtype: i.type,
-                  modtype: mods.modtype,
-                  state: mods.state,
-                  itemDescription: mods.description,
-                  value: mods.value,
-                  stored: i.system.stored,
-                  basicisActive: i.system.basicisActive ? i.system.basicisActive : false,
-                  basicAction: i.system.basicAction.replace(/<[^>]*>?/gm, "") ? i.system.basicAction.replace(/<[^>]*>?/gm, "") : "",
-                });
-              }
-            }
-          }
-          if (i.system.advisActive) {
-            for (let [key, mods] of Object.entries(i.system.itemModifiers)) {
-              if (mods.modtype === "advanced") {
-                itemMods.push({
-                  name: mods.name,
-                  itemname: i.name,
-                  itemtype: i.type,
-                  modtype: mods.modtype,
-                  state: mods.state,
-                  itemDescription: mods.description,
-                  value: mods.value,
-                  stored: i.system.stored,
-                  advisActive: i.system.advisActive ? i.system.advisActive : false,
-                  advAction: i.system.advAction.replace(/<[^>]*>?/gm, "") ? i.system.advAction.replace(/<[^>]*>?/gm, "") : "",
-                });
-              }
-            }
-          }
-        } else {
-          for (let [key, mods] of Object.entries(i.system.itemModifiers)) {
-            itemMods.push({
-              name: mods.name,
-              itemname: i.name,
-              itemtype: i.type,
-              modtype: mods.modtype,
-              state: mods.state,
-              itemDescription: mods.description,
-              value: mods.value,
-              stored: i.system.stored,
-              basicisActive: i.system.basicisActive ? i.system.basicisActive : false,
-              advisActive: i.system.advisActive ? i.system.advisActive : false,
-              basicAction: i.system.basicAction.replace(/<[^>]*>?/gm, "") ? i.system.basicAction.replace(/<[^>]*>?/gm, "") : "",
-              advAction: i.system.advAction.replace(/<[^>]*>?/gm, "") ? i.system.advAction.replace(/<[^>]*>?/gm, "") : "",
-            });
-          }
-        }
-        if (i.system.featureModifiers) {
-          for (let [key, feature] of Object.entries(i.system.featureModifiers)) {
-            for (let [key, mods] of Object.entries(feature.itemModifiers)) {
-              itemMods.push({
-                name: feature.name,
-                itemname: i.name,
-                itemtype: i.type,
-                feature: feature.feature ? feature.feature : false,
-                modtype: mods.name,
-                state: mods.state,
-                itemDescription: feature.description,
-                value: mods.value,
-                stored: i.system.stored,
-                basicisActive: i.system.basicisActive ? i.system.basicisActive : false,
-                advisActive: i.system.advisActive ? i.system.advisActive : false,
-                basicAction: i.system.basicAction.replace(/<[^>]*>?/gm, "") ? i.system.basicAction.replace(/<[^>]*>?/gm, "") : "",
-                advAction: i.system.advAction.replace(/<[^>]*>?/gm, "") ? i.system.advAction.replace(/<[^>]*>?/gm, "") : "",
-              });
-            }
-          }
-        }
-        return itemMods;
-      }
-    }
   }
   /**
    * Organize and classify Items for Character sheets.
@@ -540,7 +458,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
           for (let [attrib, modItems] of Object.entries(itemMods)) {
             for (let [skey, subAttar] of Object.entries(modItems)) {
               if (subAttar.state === "Active") {
-                if (subAttar.itemtype === "item" || (subAttar.state === "onPC" && subAttar.itemtype != "talent" && subAttar.itemtype != "weapon" && !subAttar.stored)) {
+                if ((subAttar.itemtype === "item" || subAttar.itemtype === "crit") && !subAttar.stored || (subAttar.state === "onPC" && subAttar.itemtype != "talent" && subAttar.itemtype != "weapon" && !subAttar.stored)) {
                   switch (attrib) {
                     case "docity":
                     case "quick":
