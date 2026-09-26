@@ -56,14 +56,20 @@ export function findMods(i, itemMods) {
 			}
 		}
 	} else {
+		// For crit items, use the immediate effect text as the description shown in the
+		// conditional roll dialog, since mods.description is the generic item description.
+		const isCrit = i.type === 'crit';
+		const critDescription = isCrit
+			? stripHtml(i.system.imediateeffect || i.system.longtermeffect || i.name)
+			: null;
 		for (let [, mods] of Object.entries(i.system.itemModifiers)) {
 			itemMods.push({
 				name: mods.name,
 				itemname: i.name,
 				itemtype: i.type,
-				modtype: mods.modtype,
+				modtype: isCrit ? null : mods.modtype,
 				state: mods.state,
-				itemDescription: mods.description,
+				itemDescription: isCrit ? critDescription : mods.description,
 				value: mods.value,
 				stored: i.system.stored,
 				basicisActive: i.system.basicisActive ?? false,
@@ -183,10 +189,19 @@ export async function prepModOutput(rollType, rollData, dataset) {
 				break;
 		}
 	} else {
-		// it's an Attribute or Ability
-		// let spanner = [];
+		// it's an Attribute or Ability.
+		// dataset.key may be a raw key ("move") or an un-evaluated i18n string
+		// ("TALESOFTHEOLDWEST.Attributes.quick.listName") due to a Handlebars
+		// quoting bug in the attribute template. Normalise by resolving via i18n if needed.
+		const rawKey = dataset.key?.trim() ?? '';
+		const resolvedKey = rawKey.startsWith('TALESOFTHEOLDWEST.') ? game.i18n.localize(rawKey) : rawKey;
+		// dataset.attr is the parent attribute for an ability roll (e.g. "quick" for "move").
+		// Crit modifiers are keyed by attribute, so we match on either the ability key
+		// itself OR its parent attribute so that e.g. a "quick" crit modifier surfaces
+		// when rolling "move", "shootin", "operate", etc.
+		const attrKey = dataset.attr?.trim() ?? '';
 		for (const akey in rollData.itemMods) {
-			if (akey === dataset.key) {
+			if (akey === resolvedKey || (attrKey && akey === attrKey)) {
 				await modifiers(rollData.itemMods, dataset, akey);
 			}
 		}
@@ -247,20 +262,21 @@ export async function modifiers(itemModspath, dataset, akey) {
 						
 						break;
 				}
-			} else if ((akey.itemtype === 'item' || akey.itemtype === 'animalquality') && !akey.stored) {
+			} else if ((akey.itemtype === 'item' || akey.itemtype === 'animalquality' || akey.itemtype === 'crit') && !akey.stored) {
 				switch (akey.state) {
 					case 'Conditional':
-						
+						{
+							const modLabel = akey.modtype
+								? `<span style="color:rgba(5, 40, 116, 1);font-weight:bold"> ${akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)}</span> - `
+								: '';
 							dataset.conditional += `<div class="grid-conGrid" >
-					<input class="con1" type="checkbox" 
-					id="iloop${iloop} - ${akey.name}" 
-					name="iloop${iloop} - ${akey.name}" 
-					value="${akey.value}" 
-					/><span class="con2" style="color: black"><strong>${akey.itemname}</strong></span><span class="con3" ><span style="color:rgba(5, 40, 116, 1);font-weight:bold"> ${
-								akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)
-							}</span> - ${akey.itemDescription}</span></div>`;
+					<input class="con1" type="checkbox"
+					id="iloop${iloop} - ${akey.name}"
+					name="iloop${iloop} - ${akey.name}"
+					value="${akey.value}"
+					/><span class="con2" style="color: black"><strong>${akey.itemname}</strong></span><span class="con3" >${modLabel}${akey.itemDescription}</span></div>`;
 							iloop++;
-						
+						}
 						break;
 					case 'onPC':
 						

@@ -528,7 +528,6 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
         value: Number(0),
         state: "Conditional",
         modtype: target.dataset.modtype,
-        name: item.name,
         id: item.id,
         description: item.system.description.replace(/<[^>]*>?/gm, ""),
         basicAction: item.system.basicAction.replace(/<[^>]*>?/gm, ""),
@@ -540,7 +539,6 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
         value: Number(0),
         state: "Conditional",
         modtype: target.dataset.modtype,
-        name: item.name,
         id: item.id,
         description: item.system.description.replace(/<[^>]*>?/gm, ""),
       };
