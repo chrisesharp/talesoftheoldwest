@@ -1597,8 +1597,8 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     const type = itemData.type;
     const alwaysAllowedItems = CONFIG.TALESOFTHEOLDWEST.physicalItems;
     const allowedItems = {
-      pc: ["item", "weapon", "talent", "critical-injury", "npc", "animalquality"],
-      npc: ["item", "weapon", "talent", "critical-injury"],
+      pc: ["item", "weapon", "talent", "crit", "npc", "animalquality"],
+      npc: ["item", "weapon", "talent", "crit"],
       animal: ["item", "weapon", "animalquality"],
       towncharter: ["amenities"],
       // vehicles: ['item', 'weapon', 'armor'],
