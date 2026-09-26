@@ -213,101 +213,35 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
 
   /** @override */
   async _preparePartContext(partId, context) {
+    const options = {
+            secrets: this.document.isOwner,
+            rollData: this.actor.getRollData(),
+            relativeTo: this.actor,
+          };
     switch (partId) {
       case "skills":
       case "compadres":
       case "remuda":
         context.tab = context.tabs[partId];
-        if (game.version && foundry.utils.isNewerVersion(game.version, "12.343")) {
-          context.enrichedBiography = await foundry.applications.ux.TextEditor.enrichHTML(this.actor.system.biography, {
-            // Whether to show secret blocks in the finished html
-            secrets: this.document.isOwner,
-            // Data to fill in for inline rolls
-            rollData: this.actor.getRollData(),
-            // Relative UUID resolution
-            relativeTo: this.actor,
-          });
-          context.enrichedAttacks = await foundry.applications.ux.TextEditor.enrichHTML(this.actor.system.general.attacks, {
-            // Whether to show secret blocks in the finished html
-            secrets: this.document.isOwner,
-            // Data to fill in for inline rolls
-            rollData: this.actor.getRollData(),
-            // Relative UUID resolution
-            relativeTo: this.actor,
-          });
-        } else {
-          context.enrichedBiography = await foundry.applications.ux.TextEditor.enrichHTML(this.actor.system.biography, {
-            // Whether to show secret blocks in the finished html
-            secrets: this.document.isOwner,
-            // Data to fill in for inline rolls
-            rollData: this.actor.getRollData(),
-            // Relative UUID resolution
-            relativeTo: this.actor,
-          });
-          context.enrichedAttacks = await foundry.applications.ux.TextEditor.enrichHTML(this.actor.system.general.attacks, {
-            // Whether to show secret blocks in the finished html
-            secrets: this.document.isOwner,
-            // Data to fill in for inline rolls
-            rollData: this.actor.getRollData(),
-            // Relative UUID resolution
-            relativeTo: this.actor,
-          });
-        }
+        context.enrichedBiography = await foundry.applications.ux.TextEditor.enrichHTML(this.actor.system.biography, options);
+        context.enrichedAttacks = await foundry.applications.ux.TextEditor.enrichHTML(this.actor.system.general.attacks, options);
         break;
       case "gear":
       case "towncharter":
         context.tab = context.tabs[partId];
-        // context.enrichedHorseNotes = await foundry.applications.ux.TextEditor.enrichHTML(this.actor.system.horse.horseNotes, {
-        // 	// Whether to show secret blocks in the finished html
-        // 	secrets: this.document.isOwner,
-        // 	// Data to fill in for inline rolls
-        // 	rollData: this.actor.getRollData(),
-        // 	// Relative UUID resolution
-        // 	relativeTo: this.actor,
-        // });
         break;
       case "amenities":
         context.tab = context.tabs[partId];
-        // context.enrichedHorseNotes = await foundry.applications.ux.TextEditor.enrichHTML(this.actor.system.horse.horseNotes, {
-        // 	// Whether to show secret blocks in the finished html
-        // 	secrets: this.document.isOwner,
-        // 	// Data to fill in for inline rolls
-        // 	rollData: this.actor.getRollData(),
-        // 	// Relative UUID resolution
-        // 	relativeTo: this.actor,
-        // });
         break;
-
       case "description":
         context.tab = context.tabs[partId];
         // Enrich biography info for display
         // Enrichment turns text like `[[/r 1d20]]` into buttons
-        if (game.version && foundry.utils.isNewerVersion(game.version, "12.343")) {
-          context.enrichedBiography = await foundry.applications.ux.TextEditor.enrichHTML(this.actor.system.biography, {
-            // Whether to show secret blocks in the finished html
-            secrets: this.document.isOwner,
-            // Data to fill in for inline rolls
-            rollData: this.actor.getRollData(),
-            // Relative UUID resolution
-            relativeTo: this.actor,
-          });
-        } else {
-          context.enrichedBiography = await foundry.applications.ux.TextEditor.enrichHTML(this.actor.system.biography, {
-            // Whether to show secret blocks in the finished html
-            secrets: this.document.isOwner,
-            // Data to fill in for inline rolls
-            rollData: this.actor.getRollData(),
-            // Relative UUID resolution
-            relativeTo: this.actor,
-          });
-        }
+        context.enrichedBiography = await foundry.applications.ux.TextEditor.enrichHTML(this.actor.system.biography, options);
         break;
       case "effects":
         context.tab = context.tabs[partId];
-        // Prepare active effects
         context.effects = prepareActiveEffectCategories(
-          // A generator that returns all effects stored on the actor
-          // as well as any items
           this.actor.allApplicableEffects(),
         );
         break;
@@ -327,9 +261,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     // Default tab for first time it's rendered this session
     if (this.actor.type === "towncharter") {
       if (!this.tabGroups[tabGroup]) this.tabGroups[tabGroup] = "towncharter";
-    } else {
-      if (!this.tabGroups[tabGroup]) this.tabGroups[tabGroup] = "skills";
-    }
+    } else if (!this.tabGroups[tabGroup]) this.tabGroups[tabGroup] = "skills";
     return parts.reduce((tabs, partId) => {
       const tab = {
         cssClass: "",
@@ -449,13 +381,13 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       }
     }
     // Sort then assign
-    context.allGear = allGear.sort((a, b) => (a.sort || 0) - (b.sort || 0));
-    context.gear = gear.sort((a, b) => (a.sort || 0) - (b.sort || 0));
-    context.weapon = weapon.sort((a, b) => (a.sort || 0) - (b.sort || 0));
-    context.system.critInj = critInj.sort((a, b) => (a.sort || 0) - (b.sort || 0));
-    context.talent = talent.sort((a, b) => (a.sort || 0) - (b.sort || 0));
-    context.animalquality = animalquality.sort((a, b) => (a.sort || 0) - (b.sort || 0));
-    context.amenities = amenities.sort((a, b) => (a.sort || 0) - (b.sort || 0));
+    context.allGear = allGear.toSorted((a, b) => (a.sort || 0) - (b.sort || 0));
+    context.gear = gear.toSorted((a, b) => (a.sort || 0) - (b.sort || 0));
+    context.weapon = weapon.toSorted((a, b) => (a.sort || 0) - (b.sort || 0));
+    context.system.critInj = critInj.toSorted((a, b) => (a.sort || 0) - (b.sort || 0));
+    context.talent = talent.toSorted((a, b) => (a.sort || 0) - (b.sort || 0));
+    context.animalquality = animalquality.toSorted((a, b) => (a.sort || 0) - (b.sort || 0));
+    context.amenities = amenities.toSorted((a, b) => (a.sort || 0) - (b.sort || 0));
     context.system.itemMods = Object.groupBy(itemMods, ({ name }) => name);
 
     async function _findmods(i, itemMods) {
