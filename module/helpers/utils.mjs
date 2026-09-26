@@ -134,11 +134,11 @@ export async function prepModOutput(rollType, rollData, dataset) {
 			switch (rollData.itemModifiers[ikey].state) {
 				case 'Conditional':
 					dataset.conditional += `<div class="grid-conGrid">
-					<input class="con1" type="checkbox" 
-					id="iloop${iloop} - ${rollData.featureModifiers[fkey].itemModifiers[ikey].name}" 
-					name="iloop${iloop} - ${rollData.featureModifiers[fkey].itemModifiers[ikey].name}" 
-					value="${rollData.featureModifiers[fkey].itemModifiers[ikey].value}" 
-					/><span class="con3" style="color: black">${rollData.featureModifiers[fkey].itemDescription}</span></div>`;
+					<input class="con1" type="checkbox"
+					id="iloop${iloop} - ${rollData.itemModifiers[ikey].name}"
+					name="iloop${iloop} - ${rollData.itemModifiers[ikey].name}"
+					value="${rollData.itemModifiers[ikey].value}"
+					/><span class="con3" style="color: black">${rollData.itemModifiers[ikey].itemDescription}</span></div>`;
 					iloop++;
 					break;
 
@@ -153,14 +153,10 @@ export async function prepModOutput(rollType, rollData, dataset) {
 					switch (akey) {
 						case 'shootin':
 							rollData.expertFanning = rollData.actor.itemMods[akey].find((a) => a.itemname === 'Expert Fanning')?.basicisActive;
-							console.log('shootin', rollData.actor.itemMods[akey], rollData.actor.itemMods[akey][0].itemname);
 							await modifiers(rollData.actor.itemMods, dataset, akey);
-
 							break;
 						case 'quick':
-							console.log('quick', rollData.actor.itemMods[akey]);
-							await this.modifiers(rollData.actor.itemMods, dataset, akey);
-
+							await modifiers(rollData.actor.itemMods, dataset, akey);
 							break;
 
 						default:
@@ -172,14 +168,10 @@ export async function prepModOutput(rollType, rollData, dataset) {
 				for (const akey in rollData.actor.itemMods) {
 					switch (akey) {
 						case 'fightin':
-							console.log('fightin', rollData.actor.itemMods[akey]);
-							await this.modifiers(rollData.actor.itemMods, dataset, akey);
-
+							await modifiers(rollData.actor.itemMods, dataset, akey);
 							break;
 						case 'grit':
-							console.log('grit', rollData.actor.itemMods[akey]);
-							await this.modifiers(rollData.actor.itemMods, dataset, akey);
-
+							await modifiers(rollData.actor.itemMods, dataset, akey);
 							break;
 
 						default:
