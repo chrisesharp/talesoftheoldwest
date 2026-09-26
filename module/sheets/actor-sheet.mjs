@@ -538,18 +538,14 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     }
 
     for (let [a, abl] of Object.entries(aData.attributes)) {
-      let target = `system.attributes.${a}.mod`;
-      let upData = Number(abl.value) + Number(attrMod[a]);
-      attribData[target] = upData;
+      aData.attributes[a].mod = Number(abl.value) + Number(attrMod[a] || 0);
     }
 
     for (let [s, skl] of Object.entries(aData.abilities)) {
       const conSkl = skl.attr;
-      let target = `system.abilities.${s}.mod`;
-      let abData = Number(skl.value) + Number(aData.attributes[conSkl].mod) + Number(sklMod[s]);
-      attribData[target] = abData;
+      const attrBaseMod = aData.attributes[conSkl]?.mod ?? Number(aData.attributes[conSkl]?.value || 0);
+      aData.abilities[s].mod = Number(skl.value) + Number(attrBaseMod) + Number(sklMod[s] || 0);
     }
-    await this.actor.update(attribData);
   }
 
   async _prepareCompadres(sheetData) {
@@ -585,9 +581,9 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     return sheetData;
   }
 
-  async _prepareAmenities(sheetData) {
+  _prepareAmenities(sheetData) {
     const aData = this.actor.system;
-    var attrMod = {
+    const attrMod = {
       farming: 0,
       mercantile: 0,
       natural: 0,
@@ -596,45 +592,23 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       welfare: 0,
     };
 
-    for (let [skey, Attrib] of Object.entries(this.actor.items.contents)) {
-      if (Attrib.type === "amenities" && Attrib.system.completed) {
-        let base = Attrib.system.modifiers;
-        for (let [bkey, aAttrib] of Object.entries(base)) {
-          switch (bkey) {
-            case "farming":
-              attrMod.farming = attrMod.farming += Number(aAttrib);
-              break;
-            case "mercantile":
-              attrMod.mercantile = attrMod.mercantile += Number(aAttrib);
-              break;
-            case "natural":
-              attrMod.natural = attrMod.natural += Number(aAttrib);
-              break;
-            case "law":
-              attrMod.law = attrMod.law += Number(aAttrib);
-              break;
-            case "civic":
-              attrMod.civic = attrMod.civic += Number(aAttrib);
-              break;
-            case "welfare":
-              attrMod.welfare = attrMod.welfare += Number(aAttrib);
-              break;
-
-            default:
-              break;
+    for (const attrib of this.actor.items) {
+      if (attrib.type === "amenities" && attrib.system?.completed && attrib.system?.modifiers) {
+        const base = attrib.system.modifiers;
+        for (const [bkey, aAttrib] of Object.entries(base)) {
+          if (bkey in attrMod) {
+            attrMod[bkey] += Number(aAttrib) || 0;
           }
         }
       }
     }
 
-    await this.actor.update({
-      "system.aspects.farming.mod": (aData.aspects.farming.mod = parseInt(attrMod.farming || 0)),
-      "system.aspects.mercantile.mod": (aData.aspects.mercantile.mod = parseInt(attrMod.mercantile || 0)),
-      "system.aspects.natural.mod": (aData.aspects.natural.mod = parseInt(attrMod.natural || 0)),
-      "system.aspects.law.mod": (aData.aspects.law.mod = parseInt(attrMod.law || 0)),
-      "system.aspects.civic.mod": (aData.aspects.civic.mod = parseInt(attrMod.civic || 0)),
-      "system.aspects.welfare.mod": (aData.aspects.welfare.mod = parseInt(attrMod.welfare || 0)),
-    });
+    aData.aspects.farming.mod = parseInt(attrMod.farming || 0);
+    aData.aspects.mercantile.mod = parseInt(attrMod.mercantile || 0);
+    aData.aspects.natural.mod = parseInt(attrMod.natural || 0);
+    aData.aspects.law.mod = parseInt(attrMod.law || 0);
+    aData.aspects.civic.mod = parseInt(attrMod.civic || 0);
+    aData.aspects.welfare.mod = parseInt(attrMod.welfare || 0);
   }
 
   /**

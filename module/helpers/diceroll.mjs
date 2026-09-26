@@ -61,99 +61,55 @@ export async function totowDiceButtons(message, html, msgContent) {
 		}
 	}
 }
-export async function totowDiceListeners(html) {
-	let listenArea = '';
-	// Check the Foundry version to determine how to get the chat log
-	if (game.version && foundry.utils.isNewerVersion(game.version, '12.343')) {
-		listenArea = document.querySelectorAll('.chat-log');
-		if (!listenArea) return;
-		for (const addButton of listenArea) {
-			addButton.addEventListener('click', async (ev) => {
-				switch (ev.target.dataset.rollButton) {
-					case 'push': {
-						ev.preventDefault();
-						ev.stopPropagation();
-						let message = game.messages.get(ev.target.dataset.messageId);
-						let results = message.getFlag('talesoftheoldwest', 'results');
-						if (!results[1].canPush) {
-							let errorObj = { error: 'totow.ErrorsAlreadyPushed' };
-							return ui.notifications.warn(new Error(game.i18n.localize(errorObj.error)));
-						} else {
-							return pushRoll(message, results);
-						}
-					}
-					case 'buy-off':
-						{
-							ev.preventDefault();
-							ev.stopPropagation();
-							let message = game.messages.get(ev.target.dataset.messageId);
-							let results = message.getFlag('talesoftheoldwest', 'results');
-							new TOTWBuyOffDialog(message, results).render(true);
-						}
-						break;
+let _chatListenersInitialized = false;
 
-					case 'roll-trouble':
-						{
-							ev.preventDefault();
-							ev.stopPropagation();
-							let messageId = ev.target.dataset.messageId;
-							let message = game.messages.get(messageId);
-							let results = message.getFlag('talesoftheoldwest', 'results');
-							if (ev.shiftKey) {
-								new TOTWManualTroubleDialog(results, ev, messageId, message).render(true);
-							} else {
-								new TOTWWhichTroubleDialog(results, ev, messageId, message).render(true);
-							}
-						}
-						break;
-				}
-			});
-		}
-	} else {
-		//  For Foundry versions before 11, use the old method to get the chat log
-		listenArea = document.getElementById('chat-log');
-		if (!listenArea) return;
+export function totowDiceListeners() {
+	if (_chatListenersInitialized) return;
+	_chatListenersInitialized = true;
 
-		listenArea.addEventListener('click', async (ev) => {
-			switch (ev.target.dataset.rollButton) {
-				case 'push': {
-					ev.preventDefault();
-					ev.stopPropagation();
-					let message = game.messages.get(ev.target.dataset.messageId);
-					let results = message.getFlag('talesoftheoldwest', 'results');
-					if (!results[1].canPush) {
-						let errorObj = { error: 'totow.ErrorsAlreadyPushed' };
-						return ui.notifications.warn(new Error(game.i18n.localize(errorObj.error)));
-					} else {
-						return pushRoll(message, results);
-					}
+	document.addEventListener('click', async (ev) => {
+		const button = ev.target.closest('[data-roll-button]');
+		if (!button) return;
+
+		const rollButton = button.dataset.rollButton;
+		const messageId = button.dataset.messageId;
+		if (!rollButton || !messageId) return;
+
+		const message = game.messages?.get(messageId);
+		if (!message) return;
+
+		const results = message.getFlag('talesoftheoldwest', 'results');
+		if (!results || !results[1]) return;
+
+		switch (rollButton) {
+			case 'push': {
+				ev.preventDefault();
+				ev.stopPropagation();
+				if (!results[1].canPush) {
+					let errorObj = { error: 'totow.ErrorsAlreadyPushed' };
+					return ui.notifications.warn(new Error(game.i18n.localize(errorObj.error)));
+				} else {
+					return pushRoll(message, results);
 				}
-				case 'buy-off':
-					{
-						ev.preventDefault();
-						ev.stopPropagation();
-						let message = game.messages.get(ev.target.dataset.messageId);
-						let results = message.getFlag('talesoftheoldwest', 'results');
-						new TOTWBuyOffDialog(message, results).render(true);
-					}
-					break;
-				case 'roll-trouble':
-					{
-						ev.preventDefault();
-						ev.stopPropagation();
-						let messageId = ev.target.dataset.messageId;
-						let message = game.messages.get(messageId);
-						let results = message.getFlag('talesoftheoldwest', 'results');
-						if (ev.shiftKey) {
-							new TOTWManualTroubleDialog(results, ev, messageId, message).render(true);
-						} else {
-							new TOTWWhichTroubleDialog(results, ev, messageId, message).render(true);
-						}
-					}
-					break;
 			}
-		});
-	}
+			case 'buy-off': {
+				ev.preventDefault();
+				ev.stopPropagation();
+				new TOTWBuyOffDialog(message, results).render(true);
+				break;
+			}
+			case 'roll-trouble': {
+				ev.preventDefault();
+				ev.stopPropagation();
+				if (ev.shiftKey) {
+					new TOTWManualTroubleDialog(results, ev, messageId, message).render(true);
+				} else {
+					new TOTWWhichTroubleDialog(results, ev, messageId, message).render(true);
+				}
+				break;
+			}
+		}
+	});
 }
 
 export async function pushRoll(chatMessage, origRollData, origRoll) {
@@ -188,11 +144,10 @@ export async function pushRoll(chatMessage, origRollData, origRoll) {
 	origRollData[1].rest = result.rest;
 	origRollData[1].totalSuccess += result.totalSuccess;
 	origRollData[1].faithpoints = myActor.system.general.faithpoints.value;
-	origRollData[1].successes = totalRolled
-		? result.totalSuccess + origRollData[1].totalSuccess === 2
-		: result.totalSuccess + origRollData[1].totalSuccess > 0 && result.totalSuccess + origRollData[1].totalSuccess < 3;
-	origRollData[1].criticalSuccess = origRollData[1].totalSuccess >= 3;
-	origRollData[1].failure = totalRolled ? result.totalSuccess + origRollData[1].totalSuccess < 2 : result.totalSuccess + origRollData[1].totalSuccess === 0;
+	const finalSuccesses = origRollData[1].totalSuccess;
+	origRollData[1].criticalSuccess = finalSuccesses >= 3;
+	origRollData[1].successes = totalRolled ? finalSuccesses === 2 : finalSuccesses > 0 && finalSuccesses < 3;
+	origRollData[1].failure = totalRolled ? finalSuccesses < 2 : finalSuccesses === 0;
 	origRollData[1].totalRolled = totalRolled;
 	origRollData[1].buyoff += result.trouble > 0 ? 1 : 0;
 

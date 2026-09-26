@@ -1,4 +1,4 @@
-// import TargetedConditionPrompt from "../applications/apps/targeted-condition-prompt.mjs";
+import TargetedConditionPrompt from "../applications/apps/targeted-condition-prompt.mjs";
 
 /**
  * @import { StatusEffectConfig } from "@client/config.mjs";
@@ -41,10 +41,14 @@ export default class TOTOWActiveEffect extends foundry.documents.ActiveEffect {
    */
   static async targetedConditionPrompt(statusId, effectData) {
     try {
+      if (typeof TargetedConditionPrompt === "undefined") {
+        console.warn(`TargetedConditionPrompt is not available for condition ${statusId}.`);
+        return;
+      }
       let imposingActorUuid = await TargetedConditionPrompt.create({ context: { statusId } });
 
-      if (foundry.utils.parseUuid(imposingActorUuid)) {
-        effectData.changes = this.changes ?? [];
+      if (imposingActorUuid && foundry.utils.parseUuid(imposingActorUuid)) {
+        effectData.changes = effectData.changes ?? [];
         effectData.changes.push({
           key: `system.statuses.${statusId}.sources`,
           mode: CONST.ACTIVE_EFFECT_MODES.ADD,
@@ -52,7 +56,8 @@ export default class TOTOWActiveEffect extends foundry.documents.ActiveEffect {
         });
       }
     } catch (error) {
-      ui.notifications.warn("TOTOW.ActiveEffect.TargetedConditionPrompt.Warning", { localize: true });
+      console.warn("TargetedConditionPrompt error:", error);
+      ui.notifications?.warn("TOTOW.ActiveEffect.TargetedConditionPrompt.Warning", { localize: true });
     }
   }
 

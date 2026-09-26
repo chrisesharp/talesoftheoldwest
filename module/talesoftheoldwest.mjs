@@ -166,16 +166,13 @@ Hooks.once("ready", async () => {
   if (game.settings.get("core", "combatTrackerConfig").turnMarker.src.length === 0) {
     game.settings.set("core", "combatTrackerConfig", { turnMarker: { src: "systems/talesoftheoldwest/assets/icons/snake.webp" } });
   }
+  totowDiceListeners();
 });
 
 // V13 spinner
 Hooks.on("renderGamePause", (_app, html, options) => {
   document.getElementById("pause").innerHTML =
     `<img src=\"systems/talesoftheoldwest/assets/icons/snake.webp\" class=\"fa-spin\"><figcaption>"SIT A SPELL"</figcaption>`;
-});
-
-Hooks.on("renderChatLog", (log, html, data) => {
-  totowDiceListeners();
 });
 
 // ***************************

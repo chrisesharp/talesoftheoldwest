@@ -87,24 +87,26 @@ async function ModuleUpdate(aPack, updateAssets) {
             }
             break;
           case "add":
-            if (!game[assetType].getName(assetName)) {
-              const [c] = aPack[field].partition((d) => d.name != assetName);
+            if (!game[assetType]?.getName(assetName)) {
+              const c = (aPack[field] || []).filter((d) => d.name === assetName);
               if (c.length) {
                 newAdd.push(c[0]);
               }
             } else {
               console.warn(`${assetName} ${assetType} Exists so no overwrite.  Delete first!`);
-              // Uncomment the next line if you want a distructive add.
+              // Uncomment the next line if you want a destructive add.
               // await assetName.delete({ deleteSubfolders: true, deleteContents: true });
             }
 
             break;
           case "update":
-            { const [u] = aPack[field].partition((d) => d._id != assetID);
-            if (u.length) {
-              newUpdate.push(u[0]);
+            {
+              const u = (aPack[field] || []).filter((d) => d._id === assetID);
+              if (u.length) {
+                newUpdate.push(u[0]);
+              }
+              break;
             }
-            break; }
           default:
             break;
         }

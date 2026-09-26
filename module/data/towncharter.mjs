@@ -99,6 +99,34 @@ export default class totowTownCharter extends totowActorBase {
   }
 
   prepareDerivedData() {
+    // Calculate aspect modifiers dynamically from completed amenities items
+    if (this.parent?.items) {
+      let farmingMod = 0;
+      let mercantileMod = 0;
+      let naturalMod = 0;
+      let lawMod = 0;
+      let civicMod = 0;
+      let welfareMod = 0;
+
+      for (const item of this.parent.items) {
+        if (item.type === "amenities" && item.system?.completed && item.system?.modifiers) {
+          farmingMod += Number(item.system.modifiers.farming) || 0;
+          mercantileMod += Number(item.system.modifiers.mercantile) || 0;
+          naturalMod += Number(item.system.modifiers.natural) || 0;
+          lawMod += Number(item.system.modifiers.law) || 0;
+          civicMod += Number(item.system.modifiers.civic) || 0;
+          welfareMod += Number(item.system.modifiers.welfare) || 0;
+        }
+      }
+
+      this.aspects.farming.mod = farmingMod;
+      this.aspects.mercantile.mod = mercantileMod;
+      this.aspects.natural.mod = naturalMod;
+      this.aspects.law.mod = lawMod;
+      this.aspects.civic.mod = civicMod;
+      this.aspects.welfare.mod = welfareMod;
+    }
+
     this.aspects.farming.score = this.aspects.farming.value + this.aspects.farming.mod;
     this.aspects.mercantile.score = this.aspects.mercantile.value + this.aspects.mercantile.mod;
     this.aspects.natural.score = this.aspects.natural.value + this.aspects.natural.mod;

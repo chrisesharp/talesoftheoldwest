@@ -54,30 +54,6 @@ export function enrichTextEditors() {
 				enricher: drawFromTableEnricher,
 			},
 			{
-				pattern: /@fas\[(.+?)\]/gm,
-				enricher: async (match, options) => {
-					const doc = document.createElement('span');
-					doc.innerHTML = `<i class="fas ${match[1]}"></i>`;
-					return doc;
-				},
-			},
-		]
-	);
-	CONFIG.TextEditor.enrichers.push(
-		...[
-			{
-				pattern: /@RAW\[(.+?)\]/gm,
-				enricher: async (match, options) => {
-					const myData = await $.ajax({
-						url: match[1],
-						type: 'GET',
-					});
-					const doc = document.createElement('span');
-					doc.innerHTML = myData;
-					return doc;
-				},
-			},
-			{
 				pattern: TEXT_DRAW_FROM_TABLE_PATTERN,
 				enricher: textDrawFromTableEnricher,
 			},

@@ -68,16 +68,24 @@ Hooks.on("ready", () => {
 
 export async function FirstTimeSetup() {
   const pack = game.packs.get(adventurePack);
+  if (!pack) {
+    logger.warn(`Compendium pack ${adventurePack} not found.`);
+    return;
+  }
   const adventureId = pack.index.find((a) => a.name === adventurePackName)?._id;
+  if (!adventureId) {
+    logger.warn(`Adventure ${adventurePackName} not found in pack ${adventurePack}.`);
+    return;
+  }
   const adventure = await pack.getDocument(adventureId);
-  await pack.getDocuments();
-  await pack.getDocuments();
-	await pack.getName(adventurePackName).sheet._updateObject({}, new FormData());
-  await game.settings.set(moduleKey, "imported", true);
-  await game.settings.set(moduleKey, "migrationVersion", game.system.version);
-  await createThumbs(adventure);
-  ui.notifications.notify("Import Complete");
-  game.journal.getName(welcomeJournalEntry).show();
+  if (adventure) {
+    await adventure.sheet._updateObject({}, new FormData());
+    await game.settings.set(moduleKey, "imported", true);
+    await game.settings.set(moduleKey, "migrationVersion", game.system.version);
+    await createThumbs(adventure);
+    ui.notifications.notify("Import Complete");
+    game.journal.getName(welcomeJournalEntry)?.show();
+  }
 }
 
 export async function ModuleImport() {
@@ -124,7 +132,7 @@ export async function ReImport() {
 
   for (const [field, cls] of Object.entries(Adventure.contentFields)) {
     const collection = game.collections.get(cls.documentName);
-    const [c] = adventureData[field].partition((d) => collection.has(d._id));
+    const c = (adventureData[field] || []).filter((d) => !collection.has(d._id));
     if (c.length) {
       toCreate[cls.documentName] = c;
       created += c.length;

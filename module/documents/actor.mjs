@@ -247,76 +247,85 @@ export class totowActor extends Actor {
       case "npc":
         {
           resultImage = diceRoll.results[0].img;
-          // Split out the components
-          testArray = messG
-            .replace(/(<p>)|(<strong>)|(<\/strong>)/gi, "")
-            .replace(/(<\/p>)/gi, ": ")
-            .split(/[:] /gi);
+          // Parse structured critical injury fields with robust regex matching
+          const extractField = (label) => {
+            const pattern = new RegExp(`<strong>${label}</strong>:\\s*([\\s\\S]*?)(?=(?:<p><strong>|<\\/p>|$))`, "i");
+            const match = pattern.exec(messG);
+            return match ? match[1].replace(/<\/?[^>]+(>|$)/g, "").trim() : "";
+          };
 
-          // Process Fatial
-          fatal = testArray[5].split(/[\/] /gi);
-          if (fatal[0] != game.i18n.localize("TALESOFTHEOLDWEST.General.no")) {
-            if (fatal[1] === game.i18n.localize("TALESOFTHEOLDWEST.Criticals.instant")) {
-              cFatal = true;
+          const rawLocation = extractField("Location") || "Body";
+          const rawInjury = extractField("Injury") || "Critical Injury";
+          const rawFatal = extractField("Fatal") || "No";
+          let rawHealingTime = extractField("Healing Time") || "-";
+          const rawImmediate = extractField("Immediate Effect") || "None";
+          let rawLongTerm = extractField("Long-Term Effect") || extractField("Long Term Effect") || "None";
+
+          // Retain testArray structure for backwards-compatibility with downstream variable usage
+          testArray = [
+            "Location", rawLocation,
+            "Injury", rawInjury,
+            "Fatal", rawFatal,
+            "Healing Time", rawHealingTime,
+            "Immediate Effect", rawImmediate,
+            "Long-Term Effect", rawLongTerm,
+          ];
+
+          // Process Fatal
+          const isFatalYes = /^yes/i.test(rawFatal);
+          if (isFatalYes) {
+            cFatal = true;
+            if (/instant/i.test(rawFatal)) {
+              fatal = ["YES", "Instant"];
               fatal[0] =
-                '<strong style="color: red;">' + fatal[0].toUpperCase() + "</strong><br>" + game.i18n.localize("TALESOFTHEOLDWEST.Criticals.endOfTheTrail");
+                '<strong style="color: red;">' + fatal[0] + "</strong><br>" + game.i18n.localize("TALESOFTHEOLDWEST.Criticals.endOfTheTrail");
               testArray[11] = '<strong style="color: red;">' + testArray[11] + "</strong>";
             } else {
-              rollFatal = fatal[1].match(/^\[\[([0-9]d[0-9]+)]/)[1];
-              newFatalTime = fatal[1].match(/^\[\[([0-9]d[0-9]+)\]\] ?(.*)/)[2];
-              fatal[1] = (await new Roll(`${rollFatal}`).evaluate()).result + " " + newFatalTime;
-              fatal[0] = fatal[0].toUpperCase();
+              const fatalDiceMatch = rawFatal.match(/\[\[([0-9]+d[0-9]+)\]\]\s*(.*)/i);
+              if (fatalDiceMatch) {
+                rollFatal = fatalDiceMatch[1];
+                newFatalTime = fatalDiceMatch[2] || "";
+                const evalRoll = (await new Roll(`${rollFatal}`).evaluate()).result;
+                fatal = ["YES", `${evalRoll} ${newFatalTime}`.trim()];
+              } else {
+                fatal = ["YES", rawFatal];
+              }
 
-              switch (testArray[5]) {
-                case game.i18n.localize("TALESOFTHEOLDWEST.General.yes") + " ":
-                  {
-                    cFatal = true;
-                    fatal[0] = '<strong style="color: red;">' + game.i18n.localize("TALESOFTHEOLDWEST.General.yes").toUpperCase() + "</strong>";
-                  }
-                  break;
-                case game.i18n.localize("TALESOFTHEOLDWEST.General.yes") + " −1 / [[1d6]] Rounds":
-                case game.i18n.localize("TALESOFTHEOLDWEST.General.yes") + " −1 / [[2d6]] Rounds":
-                case game.i18n.localize("TALESOFTHEOLDWEST.General.yes") + " −1 / [[1d6]] Turns":
-                  {
-                    cFatal = true;
-                    fatal[0] =
-                      '<strong style="color: red;">' +
-                      game.i18n.localize("TALESOFTHEOLDWEST.General.yes").toUpperCase() +
-                      "</strong><br>" +
-                      game.i18n.localize("TALESOFTHEOLDWEST.Criticals.rollResilience") +
-                      fatal[1] +
-                      "<br> -1 to <strong>" +
-                      game.i18n.localize("TALESOFTHEOLDWEST.Ability.Doctorin.long") +
-                      "</strong> roll.";
-                  }
-                  break;
-                case game.i18n.localize("TALESOFTHEOLDWEST.General.yes") + " / [[1d6]] Turns":
-                case game.i18n.localize("TALESOFTHEOLDWEST.General.yes") + " / [[2d6]] Turns":
-                case game.i18n.localize("TALESOFTHEOLDWEST.General.yes") + " / [[1d6]] Days":
-                  {
-                    cFatal = true;
-                    fatal[0] =
-                      '<strong style="color: red;">' +
-                      game.i18n.localize("TALESOFTHEOLDWEST.General.yes").toUpperCase() +
-                      "</strong><br>" +
-                      game.i18n.localize("TALESOFTHEOLDWEST.Criticals.rollResilience") +
-                      fatal[1];
-                  }
-                  break;
-                default:
-                  cFatal = false;
-                  break;
+              const hasPenalty = /[-−]1/i.test(rawFatal);
+              if (hasPenalty) {
+                fatal[0] =
+                  '<strong style="color: red;">' +
+                  game.i18n.localize("TALESOFTHEOLDWEST.General.yes").toUpperCase() +
+                  "</strong><br>" +
+                  game.i18n.localize("TALESOFTHEOLDWEST.Criticals.rollResilience") +
+                  fatal[1] +
+                  "<br> -1 to <strong>" +
+                  game.i18n.localize("TALESOFTHEOLDWEST.Ability.Doctorin.long") +
+                  "</strong> roll.";
+              } else {
+                fatal[0] =
+                  '<strong style="color: red;">' +
+                  game.i18n.localize("TALESOFTHEOLDWEST.General.yes").toUpperCase() +
+                  "</strong><br>" +
+                  game.i18n.localize("TALESOFTHEOLDWEST.Criticals.rollResilience") +
+                  fatal[1];
               }
             }
           } else {
-            fatal[0] = game.i18n.localize("TALESOFTHEOLDWEST.General.no");
+            cFatal = false;
+            fatal = [game.i18n.localize("TALESOFTHEOLDWEST.General.no"), ""];
           }
 
           // Process Healing Time
-          if ((testArray[7].length > 0) & (fatal[1] != "Instant")) {
-            rollheal = testArray[7].match(/^\[\[([0-9]d[0-9]+)]/)[1];
-            newHealTime = testArray[7].match(/^\[\[([0-9]d[0-9]+)\]\] ?(.*)/)[2];
-            testArray[7] = (await new Roll(`${rollheal}`).evaluate()).result + " " + newHealTime;
+          if (rawHealingTime && rawHealingTime !== "-" && !/instant/i.test(rawFatal)) {
+            const healDiceMatch = rawHealingTime.match(/\[\[([0-9]+d[0-9]+)\]\]\s*(.*)/i);
+            if (healDiceMatch) {
+              rollheal = healDiceMatch[1];
+              newHealTime = healDiceMatch[2] || "";
+              testArray[7] = (await new Roll(`${rollheal}`).evaluate()).result + " " + newHealTime;
+            } else {
+              testArray[7] = rawHealingTime;
+            }
           } else {
             testArray[7] = game.i18n.localize("TALESOFTHEOLDWEST.ItemModifierSelect.none");
           }

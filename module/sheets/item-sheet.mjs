@@ -967,51 +967,28 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
     await target.update({ "system.featureModifiers": system.featureModifiers, "system.conditionNames": update });
 
     for (const ikey in target.system.featureModifiers[fkey - 1].itemModifiers) {
-      switch (target.system.featureModifiers[fkey - 1].itemModifiers[ikey].name) {
+      const mod = target.system.featureModifiers[fkey - 1].itemModifiers[ikey];
+      const modVal = Number(mod.value) || 0;
+      switch (mod.name) {
         case "attackbonus":
-          if (Math.sign(Number(target.system.featureModifiers[fkey - 1].itemModifiers[ikey].value))) {
-            await target.update({
-              "system.attackbonus": target.system.attackbonus + Number(target.system.featureModifiers[fkey - 1].itemModifiers[ikey].value),
-            });
-          } else {
-            await target.update({
-              "system.attackbonus": target.system.attackbonus - Number(target.system.featureModifiers[fkey - 1].itemModifiers[ikey].value),
-            });
-          }
-
+          await target.update({
+            "system.attackbonus": (Number(target.system.attackbonus) || 0) + modVal,
+          });
           break;
         case "drawbonus":
-          if (Math.sign(Number(target.system.featureModifiers[fkey - 1].itemModifiers[ikey].value))) {
-            await target.update({
-              "system.bonusdraw": target.system.bonusdraw + Number(target.system.featureModifiers[fkey - 1].itemModifiers[ikey].value),
-            });
-          } else {
-            await target.update({
-              "system.bonusdraw": target.system.bonusdraw - Number(target.system.featureModifiers[fkey - 1].itemModifiers[ikey].value),
-            });
-          }
+          await target.update({
+            "system.bonusdraw": (Number(target.system.bonusdraw) || 0) + modVal,
+          });
           break;
         case "damage":
-          if (Math.sign(Number(target.system.featureModifiers[fkey - 1].itemModifiers[ikey].value))) {
-            await target.update({
-              "system.damage": target.system.damage + Number(target.system.featureModifiers[fkey - 1].itemModifiers[ikey].value),
-            });
-          } else {
-            await target.update({
-              "system.damage": target.system.damage - Number(target.system.featureModifiers[fkey - 1].itemModifiers[ikey].value),
-            });
-          }
+          await target.update({
+            "system.damage": (Number(target.system.damage) || 0) + modVal,
+          });
           break;
         case "crit":
-          if (Math.sign(Number(target.system.featureModifiers[fkey - 1].itemModifiers[ikey].value))) {
-            await target.update({
-              "system.crit": target.system.crit + Number(target.system.featureModifiers[fkey - 1].itemModifiers[ikey].value),
-            });
-          } else {
-            await target.update({
-              "system.crit": target.system.crit - Number(target.system.featureModifiers[fkey - 1].itemModifiers[ikey].value),
-            });
-          }
+          await target.update({
+            "system.crit": (Number(target.system.crit) || 0) + modVal,
+          });
           break;
       }
     }
@@ -1032,50 +1009,28 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
     let temp = itemData.system.featureModifiers.filter((o) => o.id === li?.dataset?.itemId);
 
     for (const ikey in temp[0].itemModifiers) {
-      switch (temp[0].itemModifiers[ikey].name) {
+      const mod = temp[0].itemModifiers[ikey];
+      const modVal = Number(mod.value) || 0;
+      switch (mod.name) {
         case "attackbonus":
-          if (Math.sign(Number(temp[0].itemModifiers[ikey].value))) {
-            await itemData.update({
-              "system.attackbonus": itemData.system.attackbonus - Number(temp[0].itemModifiers[ikey].value),
-            });
-          } else {
-            await itemData.update({
-              "system.attackbonus": itemData.system.attackbonus + Number(temp[0].itemModifiers[ikey].value),
-            });
-          }
+          await itemData.update({
+            "system.attackbonus": (Number(itemData.system.attackbonus) || 0) - modVal,
+          });
           break;
         case "drawbonus":
-          if (Math.sign(Number(temp[0].itemModifiers[ikey].value))) {
-            await itemData.update({
-              "system.bonusdraw": itemData.system.bonusdraw - Number(temp[0].itemModifiers[ikey].value),
-            });
-          } else {
-            await itemData.update({
-              "system.bonusdraw": itemData.system.bonusdraw + Number(temp[0].itemModifiers[ikey].value),
-            });
-          }
+          await itemData.update({
+            "system.bonusdraw": (Number(itemData.system.bonusdraw) || 0) - modVal,
+          });
           break;
         case "damage":
-          if (Math.sign(Number(temp[0].itemModifiers[ikey].value))) {
-            await itemData.update({
-              "system.damage": itemData.system.damage - Number(temp[0].itemModifiers[ikey].value),
-            });
-          } else {
-            await itemData.update({
-              "system.damage": itemData.system.damage + Number(temp[0].itemModifiers[ikey].value),
-            });
-          }
+          await itemData.update({
+            "system.damage": (Number(itemData.system.damage) || 0) - modVal,
+          });
           break;
         case "crit":
-          if (Math.sign(Number(temp[0].itemModifiers[ikey].value))) {
-            await itemData.update({
-              "system.crit": itemData.system.crit - Number(temp[0].itemModifiers[ikey].value),
-            });
-          } else {
-            await itemData.update({
-              "system.crit": itemData.system.crit + Number(temp[0].itemModifiers[ikey].value),
-            });
-          }
+          await itemData.update({
+            "system.crit": (Number(itemData.system.crit) || 0) - modVal,
+          });
           break;
       }
     }

@@ -138,9 +138,9 @@ async function rollTrouble(results, ev, messageId, message, formData) {
 		trouble = Number(results[1].trouble);
 	}
 
-	if (formData) {
-		trouble = Number(formData.manMod) || 1;
-		console.log('trouble', manMod);
+	if (formData && formData.manMod !== undefined) {
+		const parsed = Number(formData.manMod);
+		trouble = Math.min(Math.max(Number.isFinite(parsed) && parsed > 0 ? parsed : 1, 1), 4);
 	}
 
 	switch (troubleTable) {
