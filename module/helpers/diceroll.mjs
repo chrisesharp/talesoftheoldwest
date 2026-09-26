@@ -2,8 +2,6 @@ import { TOTWWhichTroubleDialog, TOTWBuyOffDialog, TOTWManualTroubleDialog, upda
 // import { prepModOutput } from './utils.mjs';
 
 export async function totowDiceButtons(message, html, msgContent) {
-	// let messageId = html.dataset.messageId;
-	// let message = game.messages.get(messageId);
 	const messageId = message.id;
 
 	let buttonArea = html.querySelector('#buttonlist');
@@ -390,32 +388,3 @@ export async function evaluateTOTWRoll(dataset, roll, formula, itemData) {
 	// console.log('evalResult', evalResult);
 	return evalResult;
 }
-
-// async function updateChatMessage(chatMessage, result, newRoleData) {
-// 	if (game.version && foundry.utils.isNewerVersion(game.version, '12.343')) {
-// 		return foundry.applications.handlebars.renderTemplate('systems/talesoftheoldwest/templates/chat/roll.hbs', newRoleData[1]).then((html) => {
-// 			chatMessage['content'] = html;
-// 			return chatMessage
-// 				.update({
-// 					content: html,
-// 					['flags.data']: { results: newRoleData.results },
-// 				})
-// 				.then((newMsg) => {
-// 					ui.chat.updateMessage(newMsg);
-// 				});
-// 		});
-// 	} else {
-// 		// For Foundry versions before 11, use the old renderTemplate method
-// 		return renderTemplate('systems/talesoftheoldwest/templates/chat/roll.hbs', newRoleData[1]).then((html) => {
-// 			chatMessage['content'] = html;
-// 			return chatMessage
-// 				.update({
-// 					content: html,
-// 					['flags.data']: { results: newRoleData.results },
-// 				})
-// 				.then((newMsg) => {
-// 					ui.chat.updateMessage(newMsg);
-// 				});
-// 		});
-// 	}
-// }
