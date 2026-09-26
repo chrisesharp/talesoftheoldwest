@@ -555,13 +555,13 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     let attribData = {};
 
     let anyMods = 0;
-    var attrMod = {
+    const attrMod = {
       grit: 0,
       quick: 0,
       cunning: 0,
       docity: 0,
     };
-    var sklMod = {
+    const sklMod = {
       labor: 0,
       presence: 0,
       fightin: 0,
@@ -583,11 +583,34 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       switch (aType) {
         case "animal":
           for (let [attrib, modItems] of Object.entries(itemMods)) {
-            // if (modItems.type !== 'weapon' && itemMods) {
             for (let [skey, subAttar] of Object.entries(modItems)) {
-              switch (subAttar.state) {
-                case "onAnimal":
+              if (subAttar.state === "onAnimal") {
+                switch (attrib) {
+                  case "quick":
+                  case "cunning":
+                  case "grit":
+                    attrMod[attrib] = attrMod[attrib] += Number(subAttar.value);
+                    anyMods++;
+                    break;
+                  default:
+                    if (!subAttar.feature) {
+                      sklMod[attrib] = sklMod[attrib] += Number(subAttar.value);
+                      anyMods++;
+                    }
+                    break;
+                }
+              }
+            } 
+          }
+          break;
+
+        case "pc":
+          for (let [attrib, modItems] of Object.entries(itemMods)) {
+            for (let [skey, subAttar] of Object.entries(modItems)) {
+              if (subAttar.state === "Active") {
+                if (subAttar.itemtype === "item" || (subAttar.state === "onPC" && subAttar.itemtype != "talent" && subAttar.itemtype != "weapon" && !subAttar.stored)) {
                   switch (attrib) {
+                    case "docity":
                     case "quick":
                     case "cunning":
                     case "grit":
@@ -601,119 +624,62 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
                       }
                       break;
                   }
-                  break;
-                default:
-                  break;
-              } //switch (subAttar.state) {
-            } // for (let [skey, subAttar] of Object.entries(allItems)) {
-            // } // if (allItems.type !== 'weapon' && itemMods) {
-          } // for (let [attrib, allItems] of Object.entries(itemMods)) {
-
-          break;
-
-        case "pc":
-          for (let [attrib, modItems] of Object.entries(itemMods)) {
-            for (let [skey, subAttar] of Object.entries(modItems)) {
-              switch (subAttar.state) {
-                case "Active":
-                  {
-                    if (subAttar.state === "onPC" && subAttar.itemtype != "talent" && subAttar.itemtype != "weapon" && !subAttar.stored) {
-                      switch (attrib) {
-                        case "docity":
-                        case "quick":
-                        case "cunning":
-                        case "grit":
-                          attrMod[attrib] = attrMod[attrib] += Number(subAttar.value);
-                          anyMods++;
-                          break;
-                        default:
-                          if (!subAttar.feature) {
-                            sklMod[attrib] = sklMod[attrib] += Number(subAttar.value);
-                            anyMods++;
-                          }
-                          break;
-                      }
-                    } else if (subAttar.itemtype === "weapon" && !subAttar.stored) {
-                      switch (subAttar.modtype) {
-                        case "docity":
-                        case "quick":
-                        case "cunning":
-                        case "grit":
-                          attrMod[subAttar.modtype] = attrMod[subAttar.modtype] += Number(subAttar.value);
-                          anyMods++;
-                          break;
-                        default:
-                          sklMod[subAttar.modtype] = sklMod[subAttar.modtype] += Number(subAttar.value);
-                          anyMods++;
-                          break;
-                      }
-                    } else if (subAttar.itemtype === "talent") {
-                      switch (subAttar.modtype) {
-                        case "basic":
-                          {
-                            if (subAttar.basicAction) {
-                              switch (attrib) {
-                                case "docity":
-                                case "quick":
-                                case "cunning":
-                                case "grit":
-                                  attrMod[attrib] = attrMod[attrib] += Number(subAttar.value);
-                                  anyMods++;
-                                  break;
-                                default:
-                                  if (!subAttar.feature) {
-                                    sklMod[attrib] = sklMod[attrib] += Number(subAttar.value);
-                                    anyMods++;
-                                  }
-                                  break;
-                              }
-                            }
-                          }
-
-                          break;
-                        case "advanced":
-                          {
-                            if (subAttar.advisActive) {
-                              switch (attrib) {
-                                case "docity":
-                                case "quick":
-                                case "cunning":
-                                case "grit":
-                                  attrMod[attrib] = attrMod[attrib] += Number(subAttar.value);
-                                  anyMods++;
-                                  break;
-                                default:
-                                  if (!subAttar.feature) {
-                                    sklMod[attrib] = sklMod[attrib] += Number(subAttar.value);
-                                    anyMods++;
-                                  }
-                                  break;
-                              }
-                            }
-                          }
-                          break;
-                      }
-                    } else if (subAttar.itemtype === "item") {
-                      switch (attrib) {
-                        case "docity":
-                        case "quick":
-                        case "cunning":
-                        case "grit":
-                          attrMod[attrib] = attrMod[attrib] += Number(subAttar.value);
-                          anyMods++;
-                          break;
-                        default:
-                          if (!subAttar.feature) {
-                            sklMod[attrib] = sklMod[attrib] += Number(subAttar.value);
-                            anyMods++;
-                          }
-                          break;
-                      }
-                    }
+                } else if (subAttar.itemtype === "weapon" && !subAttar.stored) {
+                  switch (subAttar.modtype) {
+                    case "docity":
+                    case "quick":
+                    case "cunning":
+                    case "grit":
+                      attrMod[subAttar.modtype] = attrMod[subAttar.modtype] += Number(subAttar.value);
+                      anyMods++;
+                      break;
+                    default:
+                      sklMod[subAttar.modtype] = sklMod[subAttar.modtype] += Number(subAttar.value);
+                      anyMods++;
+                      break;
                   }
-                  break;
-                default:
-                  break;
+                } else if (subAttar.itemtype === "talent") {
+                  switch (subAttar.modtype) {
+                    case "basic":
+                      if (subAttar.basicAction) {
+                        switch (attrib) {
+                          case "docity":
+                          case "quick":
+                          case "cunning":
+                          case "grit":
+                            attrMod[attrib] = attrMod[attrib] += Number(subAttar.value);
+                            anyMods++;
+                            break;
+                          default:
+                            if (!subAttar.feature) {
+                              sklMod[attrib] = sklMod[attrib] += Number(subAttar.value);
+                              anyMods++;
+                            }
+                            break;
+                        }
+                      }
+                      break;
+                    case "advanced":
+                      if (subAttar.advisActive) {
+                        switch (attrib) {
+                          case "docity":
+                          case "quick":
+                          case "cunning":
+                          case "grit":
+                            attrMod[attrib] = attrMod[attrib] += Number(subAttar.value);
+                            anyMods++;
+                            break;
+                          default:
+                            if (!subAttar.feature) {
+                              sklMod[attrib] = sklMod[attrib] += Number(subAttar.value);
+                              anyMods++;
+                            }
+                            break;
+                        }
+                      }
+                      break;
+                  }
+                }
               }
             }
           }
