@@ -11,9 +11,6 @@ const { api, sheets } = foundry.applications;
 export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSheetV2) {
   constructor(options = {}) {
     super(options);
-    // TODO V13 not needed
-    // 	// this.#dragDrop = this.#createDragDropHandlers();
-    this.#dragDrop = this.#createDragDropHandlers();
   }
 
   /** @override */
@@ -35,10 +32,6 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
     form: {
       submitOnChange: true,
     },
-    // Custom property that's merged into `this.options`
-    // TODO V13
-    // dragDrop: [{ dragSelector: '.draggable', dropSelector: null }],
-    dragDrop: [{ dragSelector: "[data-drag]", dropSelector: null }],
   };
 
   /* -------------------------------------------- */
@@ -280,75 +273,33 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
         context.tab = context.tabs[partId];
         // Enrich description info for display
         // Enrichment turns text like `[[/r 1d20]]` into buttons
-        if (game.version && foundry.utils.isNewerVersion(game.version, "12.343")) {
-          context.enrichedDescription = await foundry.applications.ux.TextEditor.enrichHTML(this.item.system.description, {
-            // Whether to show secret blocks in the finished html
-            secrets: this.document.isOwner,
-            // Data to fill in for inline rolls
-            rollData: this.item.getRollData(),
-            // Relative UUID resolution
-            relativeTo: this.item,
-          });
-        } else {
-          context.enrichedDescription = await foundry.applications.ux.TextEditor.enrichHTML(this.item.system.description, {
-            // Whether to show secret blocks in the finished html
-            secrets: this.document.isOwner,
-            // Data to fill in for inline rolls
-            rollData: this.item.getRollData(),
-            // Relative UUID resolution
-            relativeTo: this.item,
-          });
-        }
+        context.enrichedDescription = await foundry.applications.ux.TextEditor.enrichHTML(this.item.system.description, {
+          secrets: this.document.isOwner,
+          rollData: this.item.getRollData(),
+          relativeTo: this.item,
+        });
         break;
       case "basic":
         // case 'body':
         context.tab = context.tabs[partId];
         // Enrich description info for display
         // Enrichment turns text like `[[/r 1d20]]` into buttons
-        if (game.version && foundry.utils.isNewerVersion(game.version, "12.343")) {
-          context.enrichedBasic = await foundry.applications.ux.TextEditor.enrichHTML(this.item.system.basicAction, {
-            // Whether to show secret blocks in the finished html
-            secrets: this.document.isOwner,
-            // Data to fill in for inline rolls
-            rollData: this.item.getRollData(),
-            // Relative UUID resolution
-            relativeTo: this.item,
-          });
-        } else {
-          context.enrichedBasic = await foundry.applications.ux.TextEditor.enrichHTML(this.item.system.basicAction, {
-            // Whether to show secret blocks in the finished html
-            secrets: this.document.isOwner,
-            // Data to fill in for inline rolls
-            rollData: this.item.getRollData(),
-            // Relative UUID resolution
-            relativeTo: this.item,
-          });
-        }
+        context.enrichedBasic = await foundry.applications.ux.TextEditor.enrichHTML(this.item.system.basicAction, {
+          secrets: this.document.isOwner,
+          rollData: this.item.getRollData(),
+          relativeTo: this.item,
+        });
         break;
       case "advanced":
         // case 'body':
         context.tab = context.tabs[partId];
         // Enrich description info for display
         // Enrichment turns text like `[[/r 1d20]]` into buttons
-        if (game.version && foundry.utils.isNewerVersion(game.version, "12.343")) {
-          context.enrichedAdvanced = await foundry.applications.ux.TextEditor.enrichHTML(this.item.system.advAction, {
-            // Whether to show secret blocks in the finished html
-            secrets: this.document.isOwner,
-            // Data to fill in for inline rolls
-            rollData: this.item.getRollData(),
-            // Relative UUID resolution
-            relativeTo: this.item,
-          });
-        } else {
-          context.enrichedAdvanced = await foundry.applications.ux.TextEditor.enrichHTML(this.item.system.advAction, {
-            // Whether to show secret blocks in the finished html
-            secrets: this.document.isOwner,
-            // Data to fill in for inline rolls
-            rollData: this.item.getRollData(),
-            // Relative UUID resolution
-            relativeTo: this.item,
-          });
-        }
+        context.enrichedAdvanced = await foundry.applications.ux.TextEditor.enrichHTML(this.item.system.advAction, {
+          secrets: this.document.isOwner,
+          rollData: this.item.getRollData(),
+          relativeTo: this.item,
+        });
         break;
       case "modifiers":
         context.tab = context.tabs[partId];
@@ -433,26 +384,7 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
    * @protected
    */
   async _onRender(context, options) {
-    // TODO V13 Not needed
-
-    this.#dragDrop.forEach((d) => d.bind(this.element));
-
-    // TODO V13
-    // 	await super._onRender(context, options);
-    // new DragDrop.implementation({
-    // 	dragSelector: '.draggable',
-    // 	dropSelector: null,
-    // 	permissions: {
-    // 		dragstart: this._canDragStart.bind(this),
-    // 		drop: this._canDragDrop.bind(this),
-    // 	},
-    // 	callbacks: {
-    // 		dragstart: this._onDragStart.bind(this),
-    // 		dragover: this._onDragOver.bind(this),
-    // 		drop: this._onDrop.bind(this),
-    // 	},
-    // }).bind(this.element);
-
+    await super._onRender(context, options);
     // You may want to add other special handling here
     // Foundry comes with a large number of utility classes, e.g. SearchFilter
     // That you may want to implement yourself.
@@ -482,15 +414,7 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
    * @protected
    */
   static async _addqualitymodifier(event, target) {
-    let item = "";
-    let actor = "";
-    if (target.dataset.isembedded === "true") {
-      actor = game.actors.get(target.dataset.actor);
-      item = actor.getEmbeddedDocument("items", target.dataset.origin);
-      let myId = target.dataset.origin;
-    } else {
-      item = game.items.get(target.dataset.origin);
-    }
+    const item = totowItemSheet._resolveActionItem(target);
 
     const itemModifiers = item.system.itemModifiers || {};
     // To preserve order, make sure the new index is the highest
@@ -508,16 +432,8 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
     await item.update(update);
   }
   static async _addTalentModifier(event, target) {
-    let item = "";
-    let actor = "";
     let update = {};
-    if (target.dataset.isembedded === "true") {
-      actor = game.actors.get(target.dataset.actor);
-      item = actor.getEmbeddedDocument("items", target.dataset.origin);
-      let myId = target.dataset.origin;
-    } else {
-      item = game.items.get(target.dataset.origin);
-    }
+    const item = totowItemSheet._resolveActionItem(target);
 
     const itemModifiers = item.system.itemModifiers || {};
     // To preserve order, make sure the new index is the highest
@@ -558,15 +474,7 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
    * @protected
    */
   static async _addmodifier(event, target) {
-    let item = "";
-    let actor = "";
-    if (target.dataset.isembedded === "true") {
-      actor = game.actors.get(target.dataset.actor);
-      item = actor.getEmbeddedDocument("items", target.dataset.origin);
-      let myId = target.dataset.origin;
-    } else {
-      item = game.items.get(target.dataset.origin);
-    }
+    const item = totowItemSheet._resolveActionItem(target);
     // const data = await item.getData();
     const itemModifiers = item.system.itemModifiers || {};
     // To preserve order, make sure the new index is the highest
@@ -590,15 +498,7 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
    * @protected
    */
   static async _deletemodifier(event, target) {
-    let item = "";
-    let actor = "";
-    if (target.dataset.isembedded === "true") {
-      actor = game.actors.get(target.dataset.actor);
-      item = actor.getEmbeddedDocument("items", target.dataset.origin);
-      let myId = target.dataset.origin;
-    } else {
-      item = game.items.get(target.dataset.origin);
-    }
+    const item = totowItemSheet._resolveActionItem(target);
     // To preserve order, make sure the new index is the highest
     const itemModifiers = foundry.utils.duplicate(item.system.itemModifiers || {});
     const modifierId = target.dataset.modifierId;
@@ -740,62 +640,37 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
   }
 
   /**
-   *
-   * DragDrop
-   *
-   */
-
-  /**
-   * Define whether a user is able to begin a dragstart workflow for a given drag selector
-   * @param {string} selector       The candidate HTML selector for dragging
-   * @returns {boolean}             Can the current user drag this selector?
+   * Override the base _dragDrop getter to use [data-drag] selector instead of .draggable.
+   * @type {foundry.applications.ux.DragDrop}
    * @protected
    */
+  get _dragDrop() {
+    return this.#dragDrop ??= new foundry.applications.ux.DragDrop.implementation({
+      dragSelector: "[data-drag]",
+      permissions: {
+        dragstart: this._canDragStart.bind(this),
+        drop: this._canDragDrop.bind(this),
+      },
+      callbacks: {
+        dragstart: this._onDragStart.bind(this),
+        dragover: this._onDragOver.bind(this),
+        drop: this._onDrop.bind(this),
+      },
+    });
+  }
+
+  /** @type {foundry.applications.ux.DragDrop|null} */
+  #dragDrop = null;
+
+  /** @override */
   _canDragStart(selector) {
-    // game.user fetches the current user
     return this.isEditable;
   }
 
-  /**
-   * Define whether a user is able to conclude a drag-and-drop workflow for a given drop selector
-   * @param {string} selector       The candidate HTML selector for the drop target
-   * @returns {boolean}             Can the current user drop on this selector?
-   * @protected
-   */
+  /** @override */
   _canDragDrop(selector) {
-    // game.user fetches the current user
     return this.isEditable;
   }
-
-  /**
-   * Callback actions which occur at the beginning of a drag start workflow.
-   * @param {DragEvent} event       The originating DragEvent
-   * @protected
-   */
-  _onDragStart(event) {
-    const li = event.currentTarget;
-    if ("link" in event.target.dataset) return;
-
-    let dragData = null;
-
-    // Active Effect
-    if (li.dataset.effectId) {
-      const effect = this.item.effects.get(li.dataset.effectId);
-      dragData = effect.toDragData();
-    }
-
-    if (!dragData) return;
-
-    // Set data transfer
-    event.dataTransfer.setData("text/plain", JSON.stringify(dragData));
-  }
-
-  /**
-   * Callback actions which occur when a dragged element is over a drop target.
-   * @param {DragEvent} event       The originating DragEvent
-   * @protected
-   */
-  _onDragOver(event) {}
 
   /**
    * Callback actions which occur when a dragged element is dropped on a target.
@@ -1091,43 +966,16 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
     if (!this.item.isOwner) return [];
   }
 
-  /** The following pieces set up drag handling and are unlikely to need modification  */
-
   /**
-   * Returns an array of DragDrop instances
-   * @type {DragDrop[]}
+   * Resolve the item targeted by a sheet action button.
+   * @param {HTMLElement} target  The [data-action] element.
+   * @returns {Item}
    */
-  // TODO V13 Not needed
-  get dragDrop() {
-    return this.#dragDrop;
-  }
-
-  // This is marked as private because there's no real need
-  // for subclasses or external hooks to mess with it directly
-  // TODO V13 Not needed
-
-  #dragDrop;
-
-  /**
-   * Create drag-and-drop workflow handlers for this Application
-   * @returns {DragDrop[]}     An array of DragDrop handlers
-   * @private
-   */
-  // TODO V13 Not needed
-
-  #createDragDropHandlers() {
-    return this.options.dragDrop.map((d) => {
-      d.permissions = {
-        dragstart: this._canDragStart.bind(this),
-        drop: this._canDragDrop.bind(this),
-      };
-      d.callbacks = {
-        dragstart: this._onDragStart.bind(this),
-        dragover: this._onDragOver.bind(this),
-        drop: this._onDrop.bind(this),
-      };
-      return new foundry.applications.ux.DragDrop(d);
-    });
+  static _resolveActionItem(target) {
+    if (target.dataset.isembedded === "true") {
+      return game.actors.get(target.dataset.actor).getEmbeddedDocument("items", target.dataset.origin);
+    }
+    return game.items.get(target.dataset.origin);
   }
 
   _currencyField(event) {

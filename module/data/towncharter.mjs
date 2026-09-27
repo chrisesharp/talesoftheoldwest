@@ -98,6 +98,21 @@ export default class totowTownCharter extends totowActorBase {
     return schema;
   }
 
+  /**
+   * Map a town charter aspect score to its 1–6 rank tier.
+   * @param {number} score
+   * @returns {number} 0 if score < 1, otherwise 1–6.
+   */
+  static _getAspectRank(score) {
+    if (score < 1)  return 0;
+    if (score < 3)  return 1;
+    if (score < 7)  return 2;
+    if (score < 13) return 3;
+    if (score < 19) return 4;
+    if (score < 27) return 5;
+    return 6;
+  }
+
   prepareDerivedData() {
     // Calculate aspect modifiers dynamically from completed amenities items
     if (this.parent?.items) {
@@ -141,84 +156,9 @@ export default class totowTownCharter extends totowActorBase {
     this.aspects.civic.max = 30 - this.aspects.civic.score;
     this.aspects.welfare.max = 30 - this.aspects.welfare.score;
 
-    if (this.aspects.farming.score >= 1 && this.aspects.farming.score < 3) {
-      this.aspects.farmingrank.value = 1;
-    } else if (this.aspects.farming.score >= 3 && this.aspects.farming.score < 7) {
-      this.aspects.farmingrank.value = 2;
-    } else if (this.aspects.farming.score >= 7 && this.aspects.farming.score < 13) {
-      this.aspects.farmingrank.value = 3;
-    } else if (this.aspects.farming.score >= 13 && this.aspects.farming.score < 19) {
-      this.aspects.farmingrank.value = 4;
-    } else if (this.aspects.farming.score >= 19 && this.aspects.farming.score < 27) {
-      this.aspects.farmingrank.value = 5;
-    } else if (this.aspects.farming.score >= 27) {
-      this.aspects.farmingrank.value = 6;
-    }
-
-    if (this.aspects.mercantile.score >= 1 && this.aspects.mercantile.score < 3) {
-      this.aspects.mercantilerank.value = 1;
-    } else if (this.aspects.mercantile.score >= 3 && this.aspects.mercantile.score < 7) {
-      this.aspects.mercantilerank.value = 2;
-    } else if (this.aspects.mercantile.score >= 7 && this.aspects.mercantile.score < 13) {
-      this.aspects.mercantilerank.value = 3;
-    } else if (this.aspects.mercantile.score >= 13 && this.aspects.mercantile.score < 19) {
-      this.aspects.mercantilerank.value = 4;
-    } else if (this.aspects.mercantile.score >= 19 && this.aspects.mercantile.score < 27) {
-      this.aspects.mercantilerank.value = 5;
-    } else if (this.aspects.mercantile.score >= 27) {
-      this.aspects.mercantilerank.value = 6;
-    }
-    if (this.aspects.natural.score >= 1 && this.aspects.natural.score < 3) {
-      this.aspects.naturalrank.value = 1;
-    } else if (this.aspects.natural.score >= 3 && this.aspects.natural.score < 7) {
-      this.aspects.naturalrank.value = 2;
-    } else if (this.aspects.natural.score >= 7 && this.aspects.natural.score < 13) {
-      this.aspects.naturalrank.value = 3;
-    } else if (this.aspects.natural.score >= 13 && this.aspects.natural.score < 19) {
-      this.aspects.naturalrank.value = 4;
-    } else if (this.aspects.natural.score >= 19 && this.aspects.natural.score < 27) {
-      this.aspects.naturalrank.value = 5;
-    } else if (this.aspects.natural.score >= 27) {
-      this.aspects.naturalrank.value = 6;
-    }
-    if (this.aspects.law.score >= 1 && this.aspects.law.score < 3) {
-      this.aspects.lawrank.value = 1;
-    } else if (this.aspects.law.score >= 3 && this.aspects.law.score < 7) {
-      this.aspects.lawrank.value = 2;
-    } else if (this.aspects.law.score >= 7 && this.aspects.law.score < 13) {
-      this.aspects.lawrank.value = 3;
-    } else if (this.aspects.law.score >= 13 && this.aspects.law.score < 19) {
-      this.aspects.lawrank.value = 4;
-    } else if (this.aspects.law.score >= 19 && this.aspects.law.score < 27) {
-      this.aspects.lawrank.value = 5;
-    } else if (this.aspects.law.score >= 27) {
-      this.aspects.lawrank.value = 6;
-    }
-    if (this.aspects.civic.score >= 1 && this.aspects.civic.score < 3) {
-      this.aspects.civicrank.value = 1;
-    } else if (this.aspects.civic.score >= 3 && this.aspects.civic.score < 7) {
-      this.aspects.civicrank.value = 2;
-    } else if (this.aspects.civic.score >= 7 && this.aspects.civic.score < 13) {
-      this.aspects.civicrank.value = 3;
-    } else if (this.aspects.civic.score >= 13 && this.aspects.civic.score < 19) {
-      this.aspects.civicrank.value = 4;
-    } else if (this.aspects.civic.score >= 19 && this.aspects.civic.score < 27) {
-      this.aspects.civicrank.value = 5;
-    } else if (this.aspects.civic.score >= 27) {
-      this.aspects.civicrank.value = 6;
-    }
-    if (this.aspects.welfare.score >= 1 && this.aspects.welfare.score < 3) {
-      this.aspects.welfarerank.value = 1;
-    } else if (this.aspects.welfare.score >= 3 && this.aspects.welfare.score < 7) {
-      this.aspects.welfarerank.value = 2;
-    } else if (this.aspects.welfare.score >= 7 && this.aspects.welfare.score < 13) {
-      this.aspects.welfarerank.value = 3;
-    } else if (this.aspects.welfare.score >= 13 && this.aspects.welfare.score < 19) {
-      this.aspects.welfarerank.value = 4;
-    } else if (this.aspects.welfare.score >= 19 && this.aspects.welfare.score < 27) {
-      this.aspects.welfarerank.value = 5;
-    } else if (this.aspects.welfare.score >= 27) {
-      this.aspects.welfarerank.value = 6;
+    const aspects = ['farming', 'mercantile', 'natural', 'law', 'civic', 'welfare'];
+    for (const key of aspects) {
+      this.aspects[`${key}rank`].value = totowTownCharter._getAspectRank(this.aspects[key].score);
     }
 
     this.general.prosperitytotal.value =

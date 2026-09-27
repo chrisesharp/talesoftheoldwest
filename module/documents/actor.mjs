@@ -2,6 +2,29 @@ import { rollAttrib } from "../helpers/diceroll.mjs";
 import * as argpUtils from "../helpers/utils.mjs";
 import TOTOWActiveEffect from "../documents/active-effect.mjs";
 
+/** Maps a critical injury roll total to the modifiers it applies. */
+const CRIT_MODIFIERS = {
+  11: [{ name: 'TALESOFTHEOLDWEST.Ability.Move.listName',        value: '-1', state: 'Active' },
+       { name: 'TALESOFTHEOLDWEST.Ability.Fightin.listName',     value: '-1', state: 'Active' }],
+  14: [{ name: 'TALESOFTHEOLDWEST.Ability.Move.listName',        value: '-1', state: 'Active' },
+       { name: 'TALESOFTHEOLDWEST.Ability.Fightin.listName',     value: '-1', state: 'Active' }],
+  12: [{ name: 'TALESOFTHEOLDWEST.Ability.Move.listName',        value: '-1', state: 'Active' }],
+  21: [{ name: 'TALESOFTHEOLDWEST.Ability.Move.listName',        value: '-1', state: 'Active' }],
+  23: [{ name: 'TALESOFTHEOLDWEST.Ability.Move.listName',        value: '-1', state: 'Active' }],
+  41: [{ name: 'TALESOFTHEOLDWEST.Ability.Move.listName',        value: '-1', state: 'Active' }],
+  51: [{ name: 'TALESOFTHEOLDWEST.Ability.Move.listName',        value: '-1', state: 'Active' }],
+  22: [{ name: 'TALESOFTHEOLDWEST.Ability.Resilience.listName',  value: '-1', state: 'Active' }],
+  44: [{ name: 'TALESOFTHEOLDWEST.Ability.Resilience.listName',  value: '-1', state: 'Active' }],
+  31: [{ name: 'TALESOFTHEOLDWEST.Ability.Shootin.listName',     value: '-1', state: 'Active' }],
+  32: [{ name: 'TALESOFTHEOLDWEST.Ability.Shootin.listName',     value: '-1', state: 'Active' },
+       { name: 'TALESOFTHEOLDWEST.Ability.Fightin.listName',     value: '-1', state: 'Active' }],
+  52: [{ name: 'TALESOFTHEOLDWEST.Ability.Move.listName',        value: '-2', state: 'Active' }],
+  61: [{ name: 'TALESOFTHEOLDWEST.Ability.Performin.listName',   value: '-1', state: 'Active' }],
+  62: [{ name: 'TALESOFTHEOLDWEST.Ability.Labor.listName',       value: '-1', state: 'Active' }],
+  63: [{ name: 'TALESOFTHEOLDWEST.Ability.Shootin.listName',     value: '-2', state: 'Active' },
+       { name: 'TALESOFTHEOLDWEST.Ability.Hawkeye.listName',     value: '-2', state: 'Active' }],
+};
+
 /**
  * Extend the base Actor document by defining a custom roll data structure which is ideal for the Simple system.
  * @extends {Actor}
@@ -128,22 +151,6 @@ export class totowActor extends Actor {
     if (existing.length) {
       if (active) return true;
       await this.deleteEmbeddedDocuments("ActiveEffect", existing);
-      // for (const effect of this.effects) {
-      //   for (const effectList of CONFIG.statusEffects) {
-      //     if (effectList.id === effect.name.toLowerCase()) {
-      //       hitList.push(effectList.tableNumber);
-      //     }
-      //   }
-      // }
-      // hitList.sort().reverse();
-      // await this.update({ "system.general.panic.lastRoll": hitList[0] });
-      // if (hitList.length === 0) {
-      //   if (status.resp === "panic") {
-      //     await this.update({ "system.general.panic.lastRoll": -1 });
-      //   } else {
-      //     await this.update({ "system.general.stressresponse.value": -1 });
-      //   }
-      // }
       return false;
     }
 
@@ -152,17 +159,6 @@ export class totowActor extends Actor {
     const effect = await TOTOWActiveEffect.fromStatusEffect(statusId);
     if (overlay) effect.updateSource({ "flags.core.overlay": true });
     if (effectEnd) effect.updateSource({ "system.end.type": effectEnd });
-    // if (this.type === "character") {
-    //   if (status.resp === "panic") {
-    //     if (status.tableNumber > this.system.general.panic.lastRoll) {
-    //       await this.update({ "system.general.panic.lastRoll": status.tableNumber });
-    //     }
-    //   } else {
-    //     if (status.tableNumber > this.system.general.stressresponse.value) {
-    //       await this.update({ "system.general.stressresponse.value": status.tableNumber });
-    //     }
-    //   }
-    // }
     return TOTOWActiveEffect.create(effect, { parent: this, keepId: true });
   }
 
@@ -236,12 +232,7 @@ export class totowActor extends Actor {
       const roll = await new Roll(formula).evaluate();
       diceRoll = await atable.draw({ roll: roll, displayChat: false });
     }
-    let messG = "";
-    if (game.version && foundry.utils.isNewerVersion(game.version, "12.343")) {
-      messG = diceRoll.results[0].description;
-    } else {
-      messG = diceRoll.results[0].text;
-    }
+    let messG = diceRoll.results[0].description;
     switch (type) {
       case "pc":
       case "npc":
@@ -331,94 +322,17 @@ export class totowActor extends Actor {
           }
 
           // Setup Modifiers
-          switch (diceRoll.roll._total) {
-            case 11:
-            case 14:
-              update[`system.itemModifiers.[0]`] = {
-                name: game.i18n.localize("TALESOFTHEOLDWEST.Ability.Move.listName"),
-                value: "-1",
-                state: "Active",
+          const critMods = CRIT_MODIFIERS[diceRoll.roll._total];
+          if (critMods) {
+            critMods.forEach((mod, i) => {
+              update[`system.itemModifiers.[${i}]`] = {
+                name: game.i18n.localize(mod.name),
+                value: mod.value,
+                state: mod.state,
               };
-              update[`system.itemModifiers.[1]`] = {
-                name: game.i18n.localize("TALESOFTHEOLDWEST.Ability.Fightin.listName"),
-                value: "-1",
-                state: "Active",
-              };
-              break;
-            case 12:
-            case 21:
-            case 23:
-            case 41:
-            case 51:
-              update[`system.itemModifiers.[0]`] = {
-                name: game.i18n.localize("TALESOFTHEOLDWEST.Ability.Move.listName"),
-                value: "-1",
-                state: "Active",
-              };
-              break;
-            case 22:
-            case 44:
-              update[`system.itemModifiers.[0]`] = {
-                name: game.i18n.localize("TALESOFTHEOLDWEST.Ability.Resilience.listName"),
-                value: "-1",
-                state: "Active",
-              };
-              break;
-            case 31:
-              update[`system.itemModifiers.[0]`] = {
-                name: game.i18n.localize("TALESOFTHEOLDWEST.Ability.Shootin.listName"),
-                value: "-1",
-                state: "Active",
-              };
-              break;
-            case 32:
-              update[`system.itemModifiers.[0]`] = {
-                name: game.i18n.localize("TALESOFTHEOLDWEST.Ability.Shootin.listName"),
-                value: "-1",
-                state: "Active",
-              };
-              update[`system.itemModifiers.[1]`] = {
-                name: game.i18n.localize("TALESOFTHEOLDWEST.Ability.Fightin.listName"),
-                value: "-1",
-                state: "Active",
-              };
-              break;
-            case 52:
-              update[`system.itemModifiers.[0]`] = {
-                name: game.i18n.localize("TALESOFTHEOLDWEST.Ability.Move.listName"),
-                value: "-2",
-                state: "Active",
-              };
-              break;
-            case 61:
-              update[`system.itemModifiers.[0]`] = {
-                name: game.i18n.localize("TALESOFTHEOLDWEST.Ability.Performin.listName"),
-                value: "-1",
-                state: "Active",
-              };
-              break;
-            case 62:
-              update[`system.itemModifiers.[0]`] = {
-                name: game.i18n.localize("TALESOFTHEOLDWEST.Ability.Labor.listName"),
-                value: "-1",
-                state: "Active",
-              };
-              break;
-            case 63:
-              update[`system.itemModifiers.[0]`] = {
-                name: game.i18n.localize("TALESOFTHEOLDWEST.Ability.Shootin.listName"),
-                value: "-2",
-                state: "Active",
-              };
-              update[`system.itemModifiers.[1]`] = {
-                name: game.i18n.localize("TALESOFTHEOLDWEST.Ability.Hawkeye.listName"),
-                value: "-2",
-                state: "Active",
-              };
-              break;
-            default:
-              noMods = true;
-              break;
+            });
+          } else {
+            noMods = true;
           }
 
           //
@@ -467,13 +381,7 @@ export class totowActor extends Actor {
     }
 
     // Now push the correct chat message
-    let html = "";
-    if (game.version && foundry.utils.isNewerVersion(game.version, "12.343")) {
-      html = await foundry.applications.handlebars.renderTemplate(`systems/talesoftheoldwest/templates/chat/crit-roll-${actor.type}.hbs`, htmlData);
-    } else {
-      // For Foundry versions before 11, use the old renderTemplate method
-      html = await renderTemplate(`systems/talesoftheoldwest/templates/chat/crit-roll-${actor.type}.hbs`, htmlData);
-    }
+    const html = await foundry.applications.handlebars.renderTemplate(`systems/talesoftheoldwest/templates/chat/crit-roll-${actor.type}.hbs`, htmlData);
     let chatData = {
       user: game.user.id,
       speaker: {
@@ -505,49 +413,27 @@ export class totowActor extends Actor {
   }
 
   async rollCritMan(actor, type, dataset) {
-    let content = "";
-    let response = "";
-    if (game.version && foundry.utils.isNewerVersion(game.version, "12.343")) {
-      content = await foundry.applications.handlebars.renderTemplate(
-        "systems/talesoftheoldwest/templates/dialog/roll-char-manual-crit-dialog.html",
-        actor,
-        type,
-        dataset,
-      );
-      response = await foundry.applications.api.DialogV2.wait({
-        window: { title: "TALESOFTHEOLDWEST.dialog.RollManCrit" },
-        content,
-        rejectClose: false,
-        buttons: [
-          {
-            label: "TALESOFTHEOLDWEST.dialog.roll",
-            callback: (event, button) => new foundry.applications.ux.FormDataExtended(button.form).object,
-          },
-          {
-            label: "TALESOFTHEOLDWEST.dialog.cancel",
-            action: "cancel",
-          },
-        ],
-      });
-    } else {
-      // For Foundry versions before 11, use the old renderTemplate method
-      content = await renderTemplate("systems/talesoftheoldwest/templates/dialog/roll-char-manual-crit-dialog.html", actor, type, dataset);
-      response = await foundry.applications.api.DialogV2.wait({
-        window: { title: "TALESOFTHEOLDWEST.dialog.RollManCrit" },
-        content,
-        rejectClose: false,
-        buttons: [
-          {
-            label: "TALESOFTHEOLDWEST.dialog.roll",
-            callback: (event, button) => new FormDataExtended(button.form).object,
-          },
-          {
-            label: "TALESOFTHEOLDWEST.dialog.cancel",
-            action: "cancel",
-          },
-        ],
-      });
-    }
+    const content = await foundry.applications.handlebars.renderTemplate(
+      "systems/talesoftheoldwest/templates/dialog/roll-char-manual-crit-dialog.html",
+      actor,
+      type,
+      dataset,
+    );
+    const response = await foundry.applications.api.DialogV2.wait({
+      window: { title: "TALESOFTHEOLDWEST.dialog.RollManCrit" },
+      content,
+      rejectClose: false,
+      buttons: [
+        {
+          label: "TALESOFTHEOLDWEST.dialog.roll",
+          callback: (event, button) => new foundry.applications.ux.FormDataExtended(button.form).object,
+        },
+        {
+          label: "TALESOFTHEOLDWEST.dialog.cancel",
+          action: "cancel",
+        },
+      ],
+    });
     if (!response || response === "cancel") return "cancelled";
     if (!response.manCrit.match(/^[1-6]?[1-6]$/gm)) {
       ui.notifications.warn(game.i18n.localize("TALESOFTHEOLDWEST.dialog.RollManCharCrit"));
@@ -590,14 +476,7 @@ export class totowActor extends Actor {
             if (dataset.label === game.i18n.localize("TALESOFTHEOLDWEST.Ability.Animalhandlin.long") && actor.type == "pc") {
               if (actor.system.remuda.remudaMounted !== "false") {
                 let horse = await this.getRemuda(actor.system.remuda.remudaMounted);
-                let content = "";
-                if (game.version && foundry.utils.isNewerVersion(game.version, "12.343")) {
-                  content = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/dialog/riding-my-horse.hbs", horse);
-                } else {
-                  // For Foundry versions before 11, use the old renderTemplate method
-
-                  content = await renderTemplate("systems/talesoftheoldwest/templates/dialog/riding-my-horse.hbs", horse);
-                }
+                const content = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/dialog/riding-my-horse.hbs", horse);
                 const response = await foundry.applications.api.DialogV2.confirm({
                   window: { title: "TALESOFTHEOLDWEST.dialog.Ride-My-Horse-Dialog" },
                   content,
@@ -637,54 +516,25 @@ export class totowActor extends Actor {
         let response = "";
         await argpUtils.prepModOutput(rollType, rollData, dataset);
         if (dataset.conditional) {
-          let content = "";
-          if (game.version && foundry.utils.isNewerVersion(game.version, "12.343")) {
-            content = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/dialog/conditional-modifiers.html", {
-              config,
-              dataset,
-            });
-            response = await foundry.applications.api.DialogV2.wait({
-              window: { title: "TALESOFTHEOLDWEST.Item.General.roll-modifiers" },
-              // position: { width: 'auto' },
-              // classes: ["my-special-class"],
-              content,
-              rejectClose: false,
-              buttons: [
-                {
-                  label: "TALESOFTHEOLDWEST.dialog.roll",
-                  callback: (event, button) => new foundry.applications.ux.FormDataExtended(button.form).object,
-                },
-                {
-                  label: "TALESOFTHEOLDWEST.dialog.cancel",
-                  action: "cancel",
-                },
-              ],
-            });
-          } else {
-            // For Foundry versions before 11, use the old renderTemplate method
-
-            content = await renderTemplate("systems/talesoftheoldwest/templates/dialog/conditional-modifiers.html", {
-              config,
-              dataset,
-            });
-            response = await foundry.applications.api.DialogV2.wait({
-              window: { title: "TALESOFTHEOLDWEST.Item.General.roll-modifiers" },
-              // position: { width: 'auto' },
-              // classes: ["my-special-class"],
-              content,
-              rejectClose: false,
-              buttons: [
-                {
-                  label: "TALESOFTHEOLDWEST.dialog.roll",
-                  callback: (event, button) => new FormDataExtended(button.form).object,
-                },
-                {
-                  label: "TALESOFTHEOLDWEST.dialog.cancel",
-                  action: "cancel",
-                },
-              ],
-            });
-          }
+          const content = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/dialog/conditional-modifiers.html", {
+            config,
+            dataset,
+          });
+          response = await foundry.applications.api.DialogV2.wait({
+            window: { title: "TALESOFTHEOLDWEST.Item.General.roll-modifiers" },
+            content,
+            rejectClose: false,
+            buttons: [
+              {
+                label: "TALESOFTHEOLDWEST.dialog.roll",
+                callback: (event, button) => new foundry.applications.ux.FormDataExtended(button.form).object,
+              },
+              {
+                label: "TALESOFTHEOLDWEST.dialog.cancel",
+                action: "cancel",
+              },
+            ],
+          });
 
           if (!response || response === "cancel") return "cancelled";
 
@@ -702,86 +552,54 @@ export class totowActor extends Actor {
       }
 
       async function sendToChat(actor, event, target, result) {
-        let html = "";
-        {
-          if (game.version && foundry.utils.isNewerVersion(game.version, "12.343")) {
-            html = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/chat/roll.hbs", result[1]);
-          } else {
-            // For Foundry versions before 11, use the old renderTemplate method
-
-            html = await renderTemplate("systems/talesoftheoldwest/templates/chat/roll.hbs", result[1]);
-          }
-          let chatData = {
-            user: game.user.id,
-            speaker: ChatMessage.getSpeaker({
-              alias: actor.name,
-              actor: actor.id,
-            }),
-            rolls: [result[0]],
-            rollMode: game.settings.get("core", "rollMode"),
-            content: html,
-            sound: CONFIG.sounds.dice,
-            // flags: {talesoftheoldwest:	[{'isType': actor.type}]}
-          };
-          if (["gmroll", "blindroll"].includes(chatData.rollMode)) {
-            chatData.whisper = ChatMessage.getWhisperRecipients("GM");
-          } else if (chatData.rollMode === "selfroll") {
-            chatData.whisper = [game.user];
-          }
-          const msg = await ChatMessage.create(chatData);
-          result[1].messageNo = msg.id;
-          await msg.setFlag("talesoftheoldwest", "results", result);
-          await msg.setFlag("talesoftheoldwest", "isType", actor.type);
-
-          return result;
+        const html = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/chat/roll.hbs", result[1]);
+        let chatData = {
+          user: game.user.id,
+          speaker: ChatMessage.getSpeaker({
+            alias: actor.name,
+            actor: actor.id,
+          }),
+          rolls: [result[0]],
+          rollMode: game.settings.get("core", "rollMode"),
+          content: html,
+          sound: CONFIG.sounds.dice,
+          // flags: {talesoftheoldwest:	[{'isType': actor.type}]}
+        };
+        if (["gmroll", "blindroll"].includes(chatData.rollMode)) {
+          chatData.whisper = ChatMessage.getWhisperRecipients("GM");
+        } else if (chatData.rollMode === "selfroll") {
+          chatData.whisper = [game.user];
         }
+        const msg = await ChatMessage.create(chatData);
+        result[1].messageNo = msg.id;
+        await msg.setFlag("talesoftheoldwest", "results", result);
+        await msg.setFlag("talesoftheoldwest", "isType", actor.type);
+
+        return result;
       }
     }
     this.render();
   }
 
   async modRoll(actor, event, target) {
-    let content = "";
-    let response = "";
-    if (game.version && foundry.utils.isNewerVersion(game.version, "12.343")) {
-      content = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/dialog/roll-modifier.html", actor, event, target);
-      response = await foundry.applications.api.DialogV2.wait({
-        window: { title: "TALESOFTHEOLDWEST.Item.General.roll-modifiers" },
-        content,
-        rejectClose: false,
-        buttons: [
-          {
-            label: "TALESOFTHEOLDWEST.dialog.roll",
-            callback: (event, button) => new foundry.applications.ux.FormDataExtended(button.form).object,
-          },
-          {
-            label: "TALESOFTHEOLDWEST.dialog.cancel",
-            action: "cancel",
-          },
-        ],
-      });
-    } else {
-      // For Foundry versions before 11, use the old renderTemplate method
-
-      content = await renderTemplate("systems/talesoftheoldwest/templates/dialog/roll-modifier.html", actor, event, target);
-      response = await foundry.applications.api.DialogV2.wait({
-        window: { title: "TALESOFTHEOLDWEST.Item.General.roll-modifiers" },
-        content,
-        rejectClose: false,
-        buttons: [
-          {
-            label: "TALESOFTHEOLDWEST.dialog.roll",
-            callback: (event, button) => new FormDataExtended(button.form).object,
-          },
-          {
-            label: "TALESOFTHEOLDWEST.dialog.cancel",
-            action: "cancel",
-          },
-        ],
-      });
-    }
+    const content = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/dialog/roll-modifier.html", actor, event, target);
+    const response = await foundry.applications.api.DialogV2.wait({
+      window: { title: "TALESOFTHEOLDWEST.Item.General.roll-modifiers" },
+      content,
+      rejectClose: false,
+      buttons: [
+        {
+          label: "TALESOFTHEOLDWEST.dialog.roll",
+          callback: (event, button) => new foundry.applications.ux.FormDataExtended(button.form).object,
+        },
+        {
+          label: "TALESOFTHEOLDWEST.dialog.cancel",
+          action: "cancel",
+        },
+      ],
+    });
     if (!response || response === "cancel") return "cancelled";
-    target.dataset.mod = parseInt(target.dataset.mod || 0) + parseInt(response.manMod || 0);
+    target.dataset.mod = Number.parseInt(target.dataset.mod || 0) + Number.parseInt(response.manMod || 0);
 
     await actor.diceRoll(actor, event, target);
   }

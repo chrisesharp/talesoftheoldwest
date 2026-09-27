@@ -11,10 +11,8 @@ const { api, sheets } = foundry.applications;
  * @extends {ActorSheetV2}
  */
 export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) {
-  // TODO V13 Not needed
   constructor(options = {}) {
     super(options);
-    this.#dragDrop = this.#createDragDropHandlers();
   }
 
   /** @override */
@@ -49,9 +47,6 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       compadresView: { handler: this._onCompadresView, buttons: [0, 2] },
       compadresRemove: { handler: this._onCompadresRemove, buttons: [0, 2] },
     },
-    // Custom property that's merged into `this.options`
-    // TODO V13 Not needed
-    dragDrop: [{ dragSelector: "[data-drag]", dropSelector: null }],
     form: {
       submitOnChange: true,
     },
@@ -719,10 +714,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
    * @override
    */
   async _onRender(context, options) {
-    // TODO V13 Not needed
-    this.#dragDrop.forEach((d) => d.bind(this.element));
-    // TODO V13
-    // await super._onRender(context, options);
+    await super._onRender(context, options);
     this.#disableOverrides();
     // You may want to add other special handling here
     // Foundry comes with a large number of utility classes, e.g. SearchFilter
@@ -1158,69 +1150,44 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     return await item.update({ [temp]: event.target.value }, {});
   }
 
-  /***************
-   *
-   * Drag and Drop
-   *
-   ***************/
-
   /**
-   * Define whether a user is able to begin a dragstart workflow for a given drag selector
-   * @param {string} selector       The candidate HTML selector for dragging
-   * @returns {boolean}             Can the current user drag this selector?
+   * Override the base _dragDrop getter to use [data-drag] selector instead of .draggable.
+   * @type {foundry.applications.ux.DragDrop}
    * @protected
    */
-  // TODO V13 Not needed
+  get _dragDrop() {
+    return this.#dragDrop ??= new foundry.applications.ux.DragDrop.implementation({
+      dragSelector: "[data-drag]",
+      permissions: {
+        dragstart: this._canDragStart.bind(this),
+        drop: this._canDragDrop.bind(this),
+      },
+      callbacks: {
+        dragstart: this._onDragStart.bind(this),
+        dragover: this._onDragOver.bind(this),
+        drop: this._onDrop.bind(this),
+      },
+    });
+  }
+
+  /** @type {foundry.applications.ux.DragDrop|null} */
+  #dragDrop = null;
+
+  /** @override */
   _canDragStart(selector) {
-    // game.user fetches the current user
     return this.isEditable;
   }
 
-  /**
-   * Define whether a user is able to conclude a drag-and-drop workflow for a given drop selector
-   * @param {string} selector       The candidate HTML selector for the drop target
-   * @returns {boolean}             Can the current user drop on this selector?
-   * @protected
-   */
-  // TODO V13 Not needed
+  /** @override */
   _canDragDrop(selector) {
-    // game.user fetches the current user
     return this.isEditable;
   }
-
-  /**
-   * Callback actions which occur at the beginning of a drag start workflow.
-   * @param {DragEvent} event       The originating DragEvent
-   * @protected
-   */
-  // TODO V13 Not needed
-  _onDragStart(event) {
-    const docRow = event.currentTarget.closest("li");
-    if ("link" in event.target.dataset) return;
-
-    // Chained operation
-    let dragData = this._getEmbeddedDocument(docRow)?.toDragData();
-
-    if (!dragData) return;
-
-    // Set data transfer
-    event.dataTransfer.setData("text/plain", JSON.stringify(dragData));
-  }
-
-  /**
-   * Callback actions which occur when a dragged element is over a drop target.
-   * @param {DragEvent} event       The originating DragEvent
-   * @protected
-   */
-  // TODO V13 Not needed
-  _onDragOver(event) {}
 
   /**
    * Callback actions which occur when a dragged element is dropped on a target.
    * @param {DragEvent} event       The originating DragEvent
    * @protected
    */
-  // TODO V13 Not needed
   async _onDrop(event) {
     const data = foundry.applications.ux.TextEditor.getDragEventData(event);
     const actor = this.actor;
@@ -1342,7 +1309,6 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
    * @returns {Promise<Item[]|boolean>}  The created or updated Item instances, or false if the drop was not permitted.
    * @protected
    */
-  // TODO V13 Not needed
   async _onDropItem(event, data) {
     if (!this.actor.isOwner) return false;
     const item = await Item.implementation.fromDropData(data);
@@ -1421,7 +1387,6 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
    * @param {Item} item
    * @private
    */
-  // TODO V13 Not needed
   _onSortItem(event, item) {
     // Get the drag source and drop target
     const items = this.actor.items;
@@ -1452,43 +1417,6 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
 
     // Perform the update
     return this.actor.updateEmbeddedDocuments("Item", updateData);
-  }
-
-  /** The following pieces set up drag handling and are unlikely to need modification  */
-
-  /**
-   * Returns an array of DragDrop instances
-   * @type {DragDrop[]}
-   */
-  // TODO V13 Not needed
-  get dragDrop() {
-    return this.#dragDrop;
-  }
-
-  // This is marked as private because there's no real need
-  // for subclasses or external hooks to mess with it directly
-  // TODO V13 Not needed
-  #dragDrop;
-
-  /**
-   * Create drag-and-drop workflow handlers for this Application
-   * @returns {DragDrop[]}     An array of DragDrop handlers
-   * @private
-   */
-  // TODO V13 Not needed
-  #createDragDropHandlers() {
-    return this.options.dragDrop.map((d) => {
-      d.permissions = {
-        dragstart: this._canDragStart.bind(this),
-        drop: this._canDragDrop.bind(this),
-      };
-      d.callbacks = {
-        dragstart: this._onDragStart.bind(this),
-        dragover: this._onDragOver.bind(this),
-        drop: this._onDrop.bind(this),
-      };
-      return new foundry.applications.ux.DragDrop(d);
-    });
   }
 
   /********************

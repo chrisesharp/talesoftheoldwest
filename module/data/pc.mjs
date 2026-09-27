@@ -1,5 +1,18 @@
 import totowActorBase from './actor-base.mjs';
 
+/**
+ * Row = publicspirit (1–6), Column = morals (1–6).
+ * Each entry is the key used in CONFIG.TALESOFTHEOLDWEST.Reputation[key].label.
+ */
+const REPUTATION_KEYS = [
+	['oneone',   'onetwo',   'onethree',   'onefour',   'onefive',   'onesix'  ],
+	['twoone',   'twotwo',   'twothree',   'twofour',   'twofive',   'twosix'  ],
+	['threeone', 'threetwo', 'threethree', 'threefour', 'threefive', 'threesix'],
+	['fourone',  'fourtwo',  'fourthree',  'fourfour',  'fourfive',  'foursix' ],
+	['fiveone',  'fivetwo',  'fivethree',  'fivefour',  'fivefive',  'fivesix' ],
+	['sixone',   'sixtwo',   'sixthree',   'sixfour',   'sixfive',   'sixsix'  ],
+];
+
 export default class totowPC extends totowActorBase {
 	static LOCALIZATION_PREFIXES = [...super.LOCALIZATION_PREFIXES, 'TALESOFTHEOLDWEST.Actor.PC'];
 
@@ -146,147 +159,12 @@ export default class totowPC extends totowActorBase {
 		// Rem the Try/Catch back in when the table data is included in the Core Rules Module and we have a registered setting.
 		// try {
 		// 	if (game.settings.get('talesoftheoldwest.corerules', 'imported')) {
-		let x = this.general.publicspirit.value;
-		let y = this.general.morals.value;
-		switch (x) {
-			case 1:
-				switch (y) {
-					case 1:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.oneone.label);
-						break;
-					case 2:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.onetwo.label);
-						break;
-					case 3:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.onethree.label);
-						break;
-					case 4:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.onefour.label);
-						break;
-					case 5:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.onefive.label);
-						break;
-					case 6:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.onesix.label);
-						break;
-				}
-				break;
-			case 2:
-				switch (y) {
-					case 1:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.twoone.label);
-						break;
-					case 2:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.twotwo.label);
-						break;
-					case 3:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.twothree.label);
-						break;
-					case 4:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.twofour.label);
-						break;
-					case 5:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.twofive.label);
-						break;
-					case 6:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.twosix.label);
-						break;
-				}
-				break;
-			case 3:
-				switch (y) {
-					case 1:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.threeone.label);
-						break;
-					case 2:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.threetwo.label);
-						break;
-					case 3:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.threethree.label);
-						break;
-					case 4:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.threefour.label);
-						break;
-					case 5:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.threefive.label);
-						break;
-					case 6:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.threesix.label);
-						break;
-				}
-				break;
-			case 4:
-				switch (y) {
-					case 1:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.fourone.label);
-						break;
-					case 2:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.fourtwo.label);
-						break;
-					case 3:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.fourthree.label);
-						break;
-					case 4:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.fourfour.label);
-						break;
-					case 5:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.fourfive.label);
-						break;
-					case 6:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.foursix.label);
-						break;
-				}
-				break;
-			case 5:
-				switch (y) {
-					case 1:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.fiveone.label);
-						break;
-					case 2:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.fivetwo.label);
-						break;
-					case 3:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.fivethree.label);
-						break;
-					case 4:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.fivefour.label);
-						break;
-					case 5:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.fivefive.label);
-						break;
-					case 6:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.fivesix.label);
-						break;
-				}
-				break;
-			case 6:
-				switch (y) {
-					case 1:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.sixone.label);
-						break;
-					case 2:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.sixtwo.label);
-						break;
-					case 3:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.sixthree.label);
-						break;
-					case 4:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.sixfour.label);
-						break;
-					case 5:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.sixfive.label);
-						break;
-					case 6:
-						this.general.reputation = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation.sixsix.label);
-						break;
-				}
-				break;
-
-			default:
-				this.general.reputation = '';
-
-				break;
-		}
+		const x = this.general.publicspirit.value;
+		const y = this.general.morals.value;
+		const key = REPUTATION_KEYS[x - 1]?.[y - 1];
+		this.general.reputation = key
+			? game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation[key].label)
+			: '';
 		// 	}
 		// } catch (error) {}
 	}

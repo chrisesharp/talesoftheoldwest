@@ -189,13 +189,7 @@ async function rollTrouble(results, ev, messageId, message, formData) {
 		textMessage: displayText,
 	};
 	// Now push the correct chat message
-	let html = '';
-	if (game.version && foundry.utils.isNewerVersion(game.version, '12.343')) {
-		html = await foundry.applications.handlebars.renderTemplate(`systems/talesoftheoldwest/templates/chat/trouble-roll.hbs`, htmlData);
-	} else {
-		// For Foundry versions before 11, use the old renderTemplate method
-		html = await renderTemplate(`systems/talesoftheoldwest/templates/chat/trouble-roll.hbs`, htmlData);
-	}
+	const html = await foundry.applications.handlebars.renderTemplate(`systems/talesoftheoldwest/templates/chat/trouble-roll.hbs`, htmlData);
 	let chatData = {
 		user: game.user.id,
 		speaker: {
