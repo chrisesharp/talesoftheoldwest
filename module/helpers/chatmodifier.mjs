@@ -1,118 +1,128 @@
-export class TOTWBuyOffDialog extends FormApplication {
-	constructor(chatMessage, results) {
-		super();
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+
+export class TOTWBuyOffDialog extends HandlebarsApplicationMixin(ApplicationV2) {
+	constructor(chatMessage, results, options = {}) {
+		super(options);
 		this.chatMessage = chatMessage;
 		this.origRollData = results;
 	}
 
-	static get defaultOptions() {
-		return foundry.utils.mergeObject(super.defaultOptions, {
-			classes: ['form'],
-			popOut: true,
-			template: 'systems/talesoftheoldwest/templates/dialog/buy-off.html',
-			id: 'TOTWBuyOffDialog',
-			title: game.i18n.localize('TALESOFTHEOLDWEST.dialog.Buy-OffTrouble'),
-			height: 'auto',
-			width: 'auto',
+	/** @override */
+	static DEFAULT_OPTIONS = {
+		id: 'TOTWBuyOffDialog',
+		classes: ['form'],
+		window: {
+			title: 'TALESOFTHEOLDWEST.dialog.Buy-OffTrouble',
 			minimizable: false,
 			resizable: true,
-			closeOnSubmit: true,
-			submitOnClose: false,
-			submitOnChange: false,
-		});
-	}
+		},
+		position: { width: 'auto', height: 'auto' },
+		actions: {
+			buyOff: TOTWBuyOffDialog.#onBuyOff,
+		},
+	};
 
-	getData() {
-		// Send data to the template
-		let messageResultsFlag = this.chatMessage.getFlag('talesoftheoldwest', 'results');
+	/** @override */
+	static PARTS = {
+		form: {
+			template: 'systems/talesoftheoldwest/templates/dialog/buy-off.hbs',
+		},
+	};
+
+	/** @override */
+	async _prepareContext(options) {
+		const messageResultsFlag = this.chatMessage.getFlag('talesoftheoldwest', 'results');
 		const rd = Array.isArray(messageResultsFlag) ? messageResultsFlag[1] : messageResultsFlag.result;
 		const myActor = game.actors.get(rd.myActor);
 		const trouble = rd.trouble;
 		const faith = myActor.system.general.faithpoints.value;
-		let maxMod = 0;
-		if (trouble >= faith) {
-			maxMod = faith;
-		} else {
-			maxMod = trouble;
-		}
-		return {
-			trouble,
-			faith,
-			maxMod,
-		};
+		const maxMod = Math.min(trouble, faith);
+		return { trouble, faith, maxMod };
 	}
 
-	activateListeners(html) {
-		super.activateListeners(html);
-	}
-
-	async _onChangeInput(event) {
-		if (event.currentTarget.name.match(/^si_.*$/)) {
-			this.itemModifiers[event.currentTarget.name].checked = event.currentTarget.checked;
-		}
-		this.render();
-	}
-
-	async _updateObject(event, formData) {
-		await buyOff(this.chatMessage, this.origRollData, this.origRoll, event);
+	/** @this {TOTWBuyOffDialog} */
+	static async #onBuyOff(event, target) {
+		const troubleMod = Number(target.dataset.value);
+		await buyOff(this.chatMessage, this.origRollData, troubleMod);
+		this.close();
 	}
 }
 
-export class TOTWWhichTroubleDialog extends FormApplication {
-	constructor(results, messageId, message) {
-		super();
+export class TOTWWhichTroubleDialog extends HandlebarsApplicationMixin(ApplicationV2) {
+	constructor(results, messageId, message, options = {}) {
+		super(options);
 		this.origRollData = results;
 		this.messageId = messageId;
 		this.message = message;
 	}
 
-	static get defaultOptions() {
-		return foundry.utils.mergeObject(super.defaultOptions, {
-			classes: ['form'],
-			popOut: true,
-			template: 'systems/talesoftheoldwest/templates/dialog/which-trouble-dialog.hbs',
-			id: 'TOTWWhichTroubleDialog',
-			title: game.i18n.localize('TALESOFTHEOLDWEST.dialog.WhichTroubleTable'),
-			height: 'auto',
-			width: 'auto',
+	/** @override */
+	static DEFAULT_OPTIONS = {
+		id: 'TOTWWhichTroubleDialog',
+		classes: ['form'],
+		window: {
+			title: 'TALESOFTHEOLDWEST.dialog.WhichTroubleTable',
 			minimizable: false,
 			resizable: true,
-			closeOnSubmit: true,
-			submitOnClose: false,
-			submitOnChange: false,
-		});
+		},
+		position: { width: 'auto', height: 'auto' },
+		actions: {
+			rollTrouble: TOTWWhichTroubleDialog.#onRollTrouble,
+		},
+	};
+
+	/** @override */
+	static PARTS = {
+		form: {
+			template: 'systems/talesoftheoldwest/templates/dialog/which-trouble-dialog.hbs',
+		},
+	};
+
+	/** @override */
+	async _prepareContext(options) {
+		return {};
 	}
 
-	async _updateObject(event, formData, messageId) {
-		return rollTrouble(this.origRollData, event, this.messageId, this.message);
+	/** @this {TOTWWhichTroubleDialog} */
+	static async #onRollTrouble(event, target) {
+		const tableChoice = Number(target.dataset.value);
+		await rollTrouble(this.origRollData, tableChoice, this.messageId, this.message, undefined);
+		this.close();
 	}
 }
+
 export class TOTWManualTroubleDialog extends TOTWWhichTroubleDialog {
 
-	static get defaultOptions() {
-		return foundry.utils.mergeObject(super.defaultOptions, {
-			classes: ['form'],
-			popOut: true,
-			template: 'systems/talesoftheoldwest/templates/dialog/manual-trouble-dialog.hbs',
-			id: 'TOTWWhichTroubleDialog',
-			title: game.i18n.localize('TALESOFTHEOLDWEST.dialog.WhichTroubleTable'),
-			height: 'auto',
-			width: 'auto',
-			minimizable: false,
-			resizable: true,
-			closeOnSubmit: true,
-			submitOnClose: false,
-			submitOnChange: false,
-		});
-	}
+	/** @override */
+	static DEFAULT_OPTIONS = foundry.utils.mergeObject(
+		TOTWWhichTroubleDialog.DEFAULT_OPTIONS,
+		{
+			actions: {
+				rollTrouble: TOTWManualTroubleDialog.#onRollTroubleManual,
+			},
+		},
+		{ inplace: false },
+	);
 
-	async _updateObject(event, formData, messageId) {
-		return rollTrouble(this.origRollData, event, this.messageId, this.message, formData);
+	/** @override */
+	static PARTS = {
+		form: {
+			template: 'systems/talesoftheoldwest/templates/dialog/manual-trouble-dialog.hbs',
+		},
+	};
+
+	/** @this {TOTWManualTroubleDialog} */
+	static async #onRollTroubleManual(event, target) {
+		const tableChoice = Number(target.dataset.value);
+		const form = target.closest('form') ?? target.closest('.application');
+		const manModInput = form?.querySelector('[name="manMod"]');
+		const formData = manModInput ? { manMod: manModInput.value } : undefined;
+		await rollTrouble(this.origRollData, tableChoice, this.messageId, this.message, formData);
+		this.close();
 	}
 }
 
-async function buyOff(chatMessage, origRollData, origRoll, event) {
-	const troubleMod = Number(event.submitter.value);
+async function buyOff(chatMessage, origRollData, troubleMod) {
 	const rd = Array.isArray(origRollData) ? origRollData[1] : origRollData.result;
 
 	// remove a faith point from the actor
@@ -124,15 +134,14 @@ async function buyOff(chatMessage, origRollData, origRoll, event) {
 	rd.troubleBlank += troubleMod;
 	rd.faithpoints = myActor.system.general.faithpoints.value;
 	rd.buyoff -= troubleMod > 0 ? 1 : 0;
-	// await chatMessage.setFlag('talesoftheoldwest', 'results', origRollData.results);
-	await updateChatMessage(chatMessage, origRoll, origRollData);
+	await updateChatMessage(chatMessage, null, origRollData);
 }
 
-async function rollTrouble(results, ev, messageId, message, formData) {
+async function rollTrouble(results, tableChoice, messageId, message, formData) {
 	let table = '';
 	let displayText = '';
 	let rollAgainst = '';
-	const troubleTable = Number(ev.submitter.value);
+	const troubleTable = Number(tableChoice);
 	const rd = Array.isArray(results) ? results[1] : results.result;
 	let trouble = 0;
 	if (Number(rd.trouble) > 4) {
@@ -233,4 +242,3 @@ export async function updateChatMessage(chatMessage, result, newRoleData) {
 			});
 	});
 }
-

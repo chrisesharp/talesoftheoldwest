@@ -119,16 +119,16 @@ export function totowDiceListeners() {
 			case 'buy-off': {
 				ev.preventDefault();
 				ev.stopPropagation();
-				new TOTWBuyOffDialog(message, rollState).render(true);
+				new TOTWBuyOffDialog(message, rollState).render({ force: true });
 				break;
 			}
 			case 'roll-trouble': {
 				ev.preventDefault();
 				ev.stopPropagation();
 				if (ev.shiftKey) {
-					new TOTWManualTroubleDialog(rollState, ev, messageId, message).render(true);
+					new TOTWManualTroubleDialog(rollState, ev, messageId, message).render({ force: true });
 				} else {
-					new TOTWWhichTroubleDialog(rollState, ev, messageId, message).render(true);
+					new TOTWWhichTroubleDialog(rollState, ev, messageId, message).render({ force: true });
 				}
 				break;
 			}

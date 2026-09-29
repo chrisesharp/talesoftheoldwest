@@ -1,8 +1,6 @@
-<form class="flexcol">
-	<div style="padding: 1em 1em">
-		<h3>{{localize "TALESOFTHEOLDWEST.dialog.WhichTroubleTable"}}</h3>
-		<button type="submit" value="1">{{localize "TALESOFTHEOLDWEST.dialog.conflict-physical"}}</button>
-		<br /><br />
-		<button type="submit" value="2">{{localize "TALESOFTHEOLDWEST.dialog.mental-social"}}</button>
-	</div>
-</form>
+<div class="flexcol" style="padding: 1em 1em">
+	<h3>{{localize "TALESOFTHEOLDWEST.dialog.WhichTroubleTable"}}</h3>
+	<button type="button" data-action="rollTrouble" data-value="1">{{localize "TALESOFTHEOLDWEST.dialog.conflict-physical"}}</button>
+	<br /><br />
+	<button type="button" data-action="rollTrouble" data-value="2">{{localize "TALESOFTHEOLDWEST.dialog.mental-social"}}</button>
+</div>
