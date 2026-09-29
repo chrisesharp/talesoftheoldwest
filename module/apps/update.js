@@ -147,11 +147,10 @@ async function ModuleUpdate(aPack, updateAssets) {
 
 async function allDone(moduleKey, moduleTitle, updateNotes) {
   await game.settings.set(moduleKey, "migrationVersion", game.system.version);
-  Dialog.prompt({
-    title: `${moduleTitle} Update`,
+  await foundry.applications.api.DialogV2.prompt({
+    window: { title: `${moduleTitle} Update` },
     content: `<p>The update has completed and the following have been updated:</p> <br> ${updateNotes}`,
-    label: "Okay!",
-    callback: () => {},
+    ok: { label: "Okay!" },
   });
   logger.info(
     "Imported ",

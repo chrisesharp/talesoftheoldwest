@@ -563,7 +563,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     event.preventDefault();
     const compId = event.target.closest(".remuda").dataset.compid;
     const actor = game.actors.get(compId);
-    await actor.sheet.render(true);
+    await actor.sheet.render({ force: true });
     return this.render();
   }
 
@@ -608,7 +608,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     event.preventDefault();
     const compId = event.target.closest(".compadre, .compardre").dataset.compid;
     const actor = game.actors.get(compId);
-    return actor.sheet.render(true);
+    return actor.sheet.render({ force: true });
   }
 
   static async _onCompadresRemove(event) {
@@ -658,7 +658,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
    */
   static async _viewDoc(event, target) {
     const doc = this._getEmbeddedDocument(target);
-    doc.sheet.render(true);
+    doc.sheet.render({ force: true });
   }
 
   /**

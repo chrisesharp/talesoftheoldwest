@@ -10,7 +10,7 @@ export class TOTWBuyOffDialog extends HandlebarsApplicationMixin(ApplicationV2) 
 	/** @override */
 	static DEFAULT_OPTIONS = {
 		id: 'TOTWBuyOffDialog',
-		classes: ['form'],
+		classes: ['talesoftheoldwest', 'form'],
 		window: {
 			title: 'TALESOFTHEOLDWEST.dialog.Buy-OffTrouble',
 			minimizable: false,
@@ -59,7 +59,7 @@ export class TOTWWhichTroubleDialog extends HandlebarsApplicationMixin(Applicati
 	/** @override */
 	static DEFAULT_OPTIONS = {
 		id: 'TOTWWhichTroubleDialog',
-		classes: ['form'],
+		classes: ['talesoftheoldwest', 'form'],
 		window: {
 			title: 'TALESOFTHEOLDWEST.dialog.WhichTroubleTable',
 			minimizable: false,

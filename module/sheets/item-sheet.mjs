@@ -553,7 +553,7 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
    */
   static async _viewEffect(event, target) {
     const effect = this._getEffect(target);
-    effect.sheet.render(true);
+    effect.sheet.render({ force: true });
   }
 
   /**
@@ -618,7 +618,7 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
 
   static async _viewFeature(event, target) {
     const feature = this._getFeature(target);
-    feature.sheet.render(true);
+    feature.sheet.render({ force: true });
   }
 
   /** Helper Functions */

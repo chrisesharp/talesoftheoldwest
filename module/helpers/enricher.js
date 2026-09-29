@@ -85,37 +85,36 @@ export function enrichTextEditors() {
 		};
 		// This needs to be something other than CTRL as it conflicts with RMB on macs.
 		if (event.shiftKey) {
-			let dialog_content = `<p>${game.i18n.format('TALESOFTHEOLDWEST.dialog.Rollontable', {
+			const dialog_content = `<p>${game.i18n.format('TALESOFTHEOLDWEST.dialog.Rollontable', {
 				tablename: table.name,
 			})}</p>
-            <form>
-                <div class="form-group">
-                    <label>${game.i18n.localize('TALESOFTHEOLDWEST.dialog.Modifier')}</label>
-                    <input type="text" id="modifier" name="modifier" value="0" autofocus="autofocus" />
-                </div>
-            </form>`;
-			let x = new Dialog({
-				title: game.i18n.format('TALESOFTHEOLDWEST.dialog.Rollontable', {
-					tablename: table.name,
-				}),
-				content: dialog_content,
-				buttons: {
-					Ok: {
-						label: game.i18n.localize('TALESOFTHEOLDWEST.dialog.ok'),
-						callback: async (html) => {
-							let modifier = parseInt(html[0].querySelector("input[name='modifier'").value);
-							if (isNaN(modifier)) {
-								modifier = 0;
-							}
-							await myF(uuid, modifier);
-						},
-					},
-					Cancel: { label: game.i18n.localize('TALESOFTHEOLDWEST.dialog.cancel') },
+			         <form>
+			             <div class="form-group">
+			                 <label>${game.i18n.localize('TALESOFTHEOLDWEST.dialog.Modifier')}</label>
+			                 <input type="text" id="modifier" name="modifier" value="0" autofocus="autofocus" />
+			             </div>
+			         </form>`;
+			const result = await foundry.applications.api.DialogV2.prompt({
+				window: {
+					title: game.i18n.format('TALESOFTHEOLDWEST.dialog.Rollontable', {
+						tablename: table.name,
+					}),
 				},
+				position: { width: 300 },
+				content: dialog_content,
+				ok: {
+					label: game.i18n.localize('TALESOFTHEOLDWEST.dialog.ok'),
+					callback: (event, button, _dialog) => {
+						const input = button.form.elements.modifier?.value;
+						const modifier = parseInt(input, 10);
+						return isNaN(modifier) ? 0 : modifier;
+					},
+				},
+				rejectClose: false,
 			});
-			x.options.width = 200;
-			x.position.width = 300;
-			x.render(true);
+			if (result !== null && result !== undefined) {
+				await myF(uuid, result);
+			}
 		} else {
 			await myF(uuid, 0);
 		}

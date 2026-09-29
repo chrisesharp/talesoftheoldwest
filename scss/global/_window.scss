@@ -65,8 +65,16 @@ body {
 			width: fit-content;
 		}
 	}
+	.application.talesoftheoldwest.form {
+		background-image: variables.$app-background;
+		background-position: center;
+		background-repeat: no-repeat;
+		background-size: 100% 100%;
+		border: transparent;
+	}
 	.application.sheet.actor.talesoftheoldwest .window-content,
-	.application.sheet.item.talesoftheoldwest .window-content {
+	.application.sheet.item.talesoftheoldwest .window-content,
+	.application.talesoftheoldwest.form .window-content {
 		display: block;
 		overflow: auto;
 		backdrop-filter: blur(4px);

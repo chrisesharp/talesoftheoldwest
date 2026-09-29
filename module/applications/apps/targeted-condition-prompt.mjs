@@ -37,42 +37,17 @@ export default class TargetedConditionPrompt {
       </form>
     `;
 
-    if (foundry?.applications?.api?.DialogV2) {
-      const result = await foundry.applications.api.DialogV2.prompt({
-        window: { title: localizedLabel },
-        content,
-        ok: {
-          label: game.i18n?.localize("Confirm") || "Confirm",
-          callback: (event, button, dialog) => {
-            return button.form.elements.actorUuid?.value || null;
-          },
+    const result = await foundry.applications.api.DialogV2.prompt({
+      window: { title: localizedLabel },
+      content,
+      ok: {
+        label: game.i18n?.localize("Confirm") || "Confirm",
+        callback: (event, button, dialog) => {
+          return button.form.elements.actorUuid?.value || null;
         },
-        rejectClose: false,
-      });
-      return result || null;
-    }
-
-    // Fallback standard Dialog
-    return new Promise((resolve) => {
-      new Dialog({
-        title: localizedLabel,
-        content,
-        buttons: {
-          ok: {
-            label: game.i18n?.localize("Confirm") || "Confirm",
-            callback: (html) => {
-              const val = html.find('[name="actorUuid"]').val();
-              resolve(val || null);
-            },
-          },
-          cancel: {
-            label: game.i18n?.localize("Cancel") || "Cancel",
-            callback: () => resolve(null),
-          },
-        },
-        default: "ok",
-        close: () => resolve(null),
-      }).render(true);
+      },
+      rejectClose: false,
     });
+    return result || null;
   }
 }

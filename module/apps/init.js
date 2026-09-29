@@ -100,7 +100,7 @@ export async function ModuleImport() {
   const adventure = await pack.getDocument(adventureId);
 
   // await checkVersion();
-  await adventure.sheet.render(true);
+  await adventure.sheet.render({ force: true });
 
   Hooks.on("importAdventure", (created, updated) => {
     if (adventure.name === adventurePackName) {
@@ -169,15 +169,3 @@ async function createThumbs(adventure) {
   Scene.updateDocuments(updates);
 }
 
-async function checkVersion() {
-  const current = game.system.version;
-  // const required = requiredSystemVersion;
-  if (current < requiredSystemVersion) {
-    throw Dialog.prompt({
-      title: "Version Check",
-      content: `<h2>Failed to Import</h2><p>Your ${systemName} system version (${current}) is below the minimum required version (${requiredSystemVersion}).</p><p>Please update your system before proceeding.</p>`,
-      label: "Okay!",
-      callback: () => ui.notifications.warn("Aborted importing of compendium content. Update your system and try again."),
-    });
-  }
-}
