@@ -617,7 +617,7 @@ export class totowActor extends Actor {
       sound: CONFIG.sounds.lock,
     };
 
-    ChatMessage.applyRollMode(chatData, game.settings.get("core", "rollMode"));
+    ChatMessage.applyMode(chatData, game.settings.get("core", "rollMode"));
     return ChatMessage.create(chatData);
   }
 

@@ -163,16 +163,16 @@ async function rollTrouble(results, ev, messageId, message, formData) {
 
 	switch (TroubleTableResult.results.length) {
 		case 1:
-			displayText = TroubleTableResult.results[0].text;
+			displayText = TroubleTableResult.results[0].description;
 			break;
 		case 2:
-			displayText = TroubleTableResult.results[0].text + '<br />' + '<br />' + TroubleTableResult.results[1].text;
+			displayText = TroubleTableResult.results[0].description + '<br />' + '<br />' + TroubleTableResult.results[1].description;
 			break;
 		case 3:
-			displayText = TroubleTableResult.results[0].text + '<br />' + '<br />' + TroubleTableResult.results[2].text;
+			displayText = TroubleTableResult.results[0].description + '<br />' + '<br />' + TroubleTableResult.results[2].description;
 			break;
 		case 4:
-			displayText = TroubleTableResult.results[0].text + '<br />' + '<br />' + TroubleTableResult.results[3].text;
+			displayText = TroubleTableResult.results[0].description + '<br />' + '<br />' + TroubleTableResult.results[3].description;
 			break;
 
 		default:
@@ -207,7 +207,7 @@ async function rollTrouble(results, ev, messageId, message, formData) {
 	let aMessage = game.messages.get(rd.messageNo);
 	aMessage.setFlag('talesoftheoldwest', 'results', results);
 	messageId.target.remove();
-	ChatMessage.applyRollMode(chatData, game.settings.get('core', 'rollMode'));
+	ChatMessage.applyMode(chatData, game.settings.get('core', 'rollMode'));
 	return ChatMessage.create(chatData);
 	// return;
 
