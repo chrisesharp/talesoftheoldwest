@@ -25,8 +25,9 @@ export class TOTWBuyOffDialog extends FormApplication {
 	getData() {
 		// Send data to the template
 		let messageResultsFlag = this.chatMessage.getFlag('talesoftheoldwest', 'results');
-		const myActor = game.actors.get(messageResultsFlag[1].myActor);
-		const trouble = this.chatMessage.flags.talesoftheoldwest.results[1].trouble;
+		const rd = Array.isArray(messageResultsFlag) ? messageResultsFlag[1] : messageResultsFlag.result;
+		const myActor = game.actors.get(rd.myActor);
+		const trouble = rd.trouble;
 		const faith = myActor.system.general.faithpoints.value;
 		let maxMod = 0;
 		if (trouble >= faith) {
@@ -112,16 +113,17 @@ export class TOTWManualTroubleDialog extends TOTWWhichTroubleDialog {
 
 async function buyOff(chatMessage, origRollData, origRoll, event) {
 	const troubleMod = Number(event.submitter.value);
+	const rd = Array.isArray(origRollData) ? origRollData[1] : origRollData.result;
 
 	// remove a faith point from the actor
-	const myActor = game.actors.get(origRollData[1].myActor);
+	const myActor = game.actors.get(rd.myActor);
 	await myActor.update({ 'system.general.faithpoints.value': myActor.system.general.faithpoints.value - troubleMod });
 
-	origRollData[1].trouble -= troubleMod;
-	origRollData[1].troubleRest += troubleMod;
-	origRollData[1].troubleBlank += troubleMod;
-	origRollData[1].faithpoints = myActor.system.general.faithpoints.value;
-	origRollData[1].buyoff -= troubleMod > 0 ? 1 : 0;
+	rd.trouble -= troubleMod;
+	rd.troubleRest += troubleMod;
+	rd.troubleBlank += troubleMod;
+	rd.faithpoints = myActor.system.general.faithpoints.value;
+	rd.buyoff -= troubleMod > 0 ? 1 : 0;
 	// await chatMessage.setFlag('talesoftheoldwest', 'results', origRollData.results);
 	await updateChatMessage(chatMessage, origRoll, origRollData);
 }
@@ -131,11 +133,12 @@ async function rollTrouble(results, ev, messageId, message, formData) {
 	let displayText = '';
 	let rollAgainst = '';
 	const troubleTable = Number(ev.submitter.value);
+	const rd = Array.isArray(results) ? results[1] : results.result;
 	let trouble = 0;
-	if (Number(results[1].trouble) > 4) {
+	if (Number(rd.trouble) > 4) {
 		trouble = 4;
 	} else {
-		trouble = Number(results[1].trouble);
+		trouble = Number(rd.trouble);
 	}
 
 	if (formData && formData.manMod !== undefined) {
@@ -201,9 +204,9 @@ async function rollTrouble(results, ev, messageId, message, formData) {
 	};
 
 	// remove the Roll Trouble Button
-	results[1].totalTrouble = 'rolledTrouble';
+	rd.totalTrouble = 'rolledTrouble';
 
-	let aMessage = game.messages.get(results[1].messageNo);
+	let aMessage = game.messages.get(rd.messageNo);
 	aMessage.setFlag('talesoftheoldwest', 'results', results);
 	messageId.target.remove();
 	ChatMessage.applyRollMode(chatData, game.settings.get('core', 'rollMode'));
@@ -222,7 +225,8 @@ async function checkTables(type, trouble) {
 }
 
 export async function updateChatMessage(chatMessage, result, newRoleData) {
-	return foundry.applications.handlebars.renderTemplate('systems/talesoftheoldwest/templates/chat/roll.hbs', newRoleData[1]).then((html) => {
+	const rd = Array.isArray(newRoleData) ? newRoleData[1] : newRoleData.result;
+	return foundry.applications.handlebars.renderTemplate('systems/talesoftheoldwest/templates/chat/roll.hbs', rd).then((html) => {
 		chatMessage['content'] = html;
 		return chatMessage
 			.update({
@@ -232,6 +236,3 @@ export async function updateChatMessage(chatMessage, result, newRoleData) {
 	});
 }
 
-window.TOTWBuyOffDialog = TOTWBuyOffDialog;
-window.TOTWWhichTroubleDialog = TOTWWhichTroubleDialog;
-window.TOTWManualTroubleDialog = TOTWManualTroubleDialog;

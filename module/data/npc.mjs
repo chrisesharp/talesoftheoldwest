@@ -85,6 +85,31 @@ export default class totowNPC extends totowActorBase {
 		this.damage.shakes.max = this.attributes.quick.max - this.damage.shakes.value;
 		this.damage.vexes.max = this.attributes.cunning.max - this.damage.vexes.value;
 		this.damage.doubts.max = this.attributes.docity.max - this.damage.doubts.value;
+
+		// --- Attribute and ability mod calculation from active items ---
+		const attrMod = { grit: 0, quick: 0, cunning: 0, docity: 0 };
+		const sklMod = {};
+
+		if (this.parent?.items?.size) {
+			for (const item of this.parent.items) {
+				if (!item.system?.itemModifiers || item.system.stored) continue;
+				for (const mod of Object.values(item.system.itemModifiers)) {
+					if (mod.state !== 'Active') continue;
+					const val = Number(mod.value) || 0;
+					const target = mod.name?.toLowerCase();
+					if (target in attrMod) attrMod[target] += val;
+					else sklMod[target] = (sklMod[target] ?? 0) + val;
+				}
+			}
+		}
+
+		for (const [a, abl] of Object.entries(this.attributes)) {
+			this.attributes[a].mod = Number(abl.value) + Number(attrMod[a] ?? 0);
+		}
+		for (const [s, skl] of Object.entries(this.abilities)) {
+			const attrBase = this.attributes[skl.attr]?.mod ?? 0;
+			this.abilities[s].mod = Number(skl.value) + Number(attrBase) + Number(sklMod[s] ?? 0);
+		}
 	}
 
 	getRollData() {

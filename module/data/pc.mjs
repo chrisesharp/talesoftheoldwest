@@ -1,4 +1,5 @@
 import totowActorBase from './actor-base.mjs';
+import { findMods } from '../helpers/utils.mjs';
 
 /**
  * Row = publicspirit (1–6), Column = morals (1–6).
@@ -167,6 +168,100 @@ export default class totowPC extends totowActorBase {
 			: '';
 		// 	}
 		// } catch (error) {}
+
+		// --- Attribute and ability mod calculation from active items ---
+		const attrMod = { grit: 0, quick: 0, cunning: 0, docity: 0 };
+		const sklMod = {};
+
+		if (this.parent?.items?.size) {
+			const rawMods = [];
+			for (const item of this.parent.items) {
+				findMods(item, rawMods);
+			}
+			const itemMods = Object.groupBy(rawMods, ({ name }) => name);
+
+			for (const [attrib, modItems] of Object.entries(itemMods)) {
+				for (const subAttar of modItems) {
+					if (subAttar.state === 'Active') {
+						if ((subAttar.itemtype === 'item' || subAttar.itemtype === 'crit') && !subAttar.stored
+							|| (subAttar.state === 'onPC' && subAttar.itemtype !== 'talent' && subAttar.itemtype !== 'weapon' && !subAttar.stored)) {
+							switch (attrib) {
+								case 'docity':
+								case 'quick':
+								case 'cunning':
+								case 'grit':
+									attrMod[attrib] += Number(subAttar.value);
+									break;
+								default:
+									if (!subAttar.feature) {
+										sklMod[attrib] = (sklMod[attrib] ?? 0) + Number(subAttar.value);
+									}
+									break;
+							}
+						} else if (subAttar.itemtype === 'weapon' && !subAttar.stored) {
+							switch (subAttar.modtype) {
+								case 'docity':
+								case 'quick':
+								case 'cunning':
+								case 'grit':
+									attrMod[subAttar.modtype] += Number(subAttar.value);
+									break;
+								default:
+									sklMod[subAttar.modtype] = (sklMod[subAttar.modtype] ?? 0) + Number(subAttar.value);
+									break;
+							}
+						} else if (subAttar.itemtype === 'talent') {
+							switch (subAttar.modtype) {
+								case 'basic':
+									if (subAttar.basicAction) {
+										switch (attrib) {
+											case 'docity':
+											case 'quick':
+											case 'cunning':
+											case 'grit':
+												attrMod[attrib] += Number(subAttar.value);
+												break;
+											default:
+												if (!subAttar.feature) {
+													sklMod[attrib] = (sklMod[attrib] ?? 0) + Number(subAttar.value);
+												}
+												break;
+										}
+									}
+									break;
+								case 'advanced':
+									if (subAttar.advisActive) {
+										switch (attrib) {
+											case 'docity':
+											case 'quick':
+											case 'cunning':
+											case 'grit':
+												attrMod[attrib] += Number(subAttar.value);
+												break;
+											default:
+												if (!subAttar.feature) {
+													sklMod[attrib] = (sklMod[attrib] ?? 0) + Number(subAttar.value);
+												}
+												break;
+										}
+									}
+									break;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		for (const [a, abl] of Object.entries(this.attributes)) {
+			this.attributes[a].mod = Number(abl.value) + Number(attrMod[a] ?? 0);
+		}
+
+		for (const [s, skl] of Object.entries(this.abilities)) {
+			const conSkl = skl.attr;
+			const attrBase = this.attributes[conSkl]?.mod ?? Number(this.attributes[conSkl]?.value || 0);
+			this.abilities[s].mod = Number(skl.value) + Number(attrBase) + Number(sklMod[s] ?? 0);
+		}
 	}
 
 	getRollData() {}

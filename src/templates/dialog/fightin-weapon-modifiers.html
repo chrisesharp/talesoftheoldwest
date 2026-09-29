@@ -1,4 +1,4 @@
-<section>
+<section style="max-height: 70vh; overflow-y: auto;">
 	<div class="form-group" style="padding: 1em 1em 0em 1em">
 		<label class="resource-label" style="color: black">{{capitalise (localize "TALESOFTHEOLDWEST.General.targetIsProne")}}</label>
 		<input type="checkbox" id="prone" name="prone" value="2" />
@@ -16,12 +16,20 @@
 		<label class="resource-label" style="color: black">{{localize 'TALESOFTHEOLDWEST.DiceMod'}}</label>
 		<input style="max-width: 50px" style="width: 20px" id="modifier" name="modifier" value="0" data-dtype="Number" type="number" />
 	</div>
-	{{#if dataset.conditional}}
+	{{#if conditionalMods}}
 	<div style="padding: 1em 1em 0em 1em; text-align: center; font-size: large; color: black; font-weight: bold">
 		<label>{{localize 'TALESOFTHEOLDWEST.General.conditional'}}</label>
 	</div>
 	<div>
-		<label class="resource-label" style="color: black">{{keepMarkup dataset.conditional}}</label>
+		{{> "systems/talesoftheoldwest/templates/dialog/parts/conditional-modifiers.hbs"}}
+	</div>
+	{{/if}}
+	{{#if talentMods}}
+	<div style="padding: 1em 1em 0em 1em; text-align: center; font-size: large; color: black; font-weight: bold">
+		<label>{{localize 'TALESOFTHEOLDWEST.General.talents'}}</label>
+	</div>
+	<div>
+		{{> "systems/talesoftheoldwest/templates/dialog/parts/talent-modifiers.hbs"}}
 	</div>
 	{{/if}}
 </section>

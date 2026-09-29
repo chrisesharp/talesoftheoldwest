@@ -1,0 +1,9 @@
+{{! Renders a list of conditional modifier checkboxes from dataset.conditionalMods }}
+{{#each conditionalMods}}
+<div class="form-group" style="display: flex; align-items: flex-start; gap: 8px; margin: 0.25em 1em;">
+  <input type="checkbox" name="mods.{{this.id}}" value="{{this.value}}" style="margin-top: 4px; flex: 0 0 auto;" />
+  <label style="color: black; text-align: left; line-height: 1.3; flex: 1 1 auto;">
+    {{#if (eq this.kind "feature")}}<strong>{{this.label}}</strong>{{else}}{{this.label}}{{/if}}
+  </label>
+</div>
+{{/each}}

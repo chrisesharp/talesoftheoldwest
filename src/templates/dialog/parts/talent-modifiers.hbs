@@ -1,0 +1,10 @@
+{{! Renders a list of talent/feature descriptions from talentMods }}
+{{#each talentMods}}
+<div style="padding: 0.25em 1em; color: black;">
+  {{#if this.modtype}}
+    <strong>{{this.itemname}} ({{this.modtype}}):</strong> {{this.action}}
+  {{else}}
+    <strong>{{this.itemname}}:</strong> {{this.action}}
+  {{/if}}
+</div>
+{{/each}}

@@ -190,7 +190,6 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       if (this.document.img == "icons/svg/mystery-man.svg" && this.document.img != this.img) {
         this.document.update({ img: "systems/talesoftheoldwest/assets/icons/tied-scroll.webp" });
       }
-      this._prepareAmenities(context);
       this._prepareItems(context);
     } else {
       if (context.actor.type === "pc") {
@@ -201,7 +200,6 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       }
       context.statuses = await this._prepareStatusEffects();
       this._prepareItems(context);
-      this._prepareCharacterData(context);
     }
     logger.debug("Actor Sheet derived data:", context);
     return context;
@@ -392,157 +390,6 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
    *
    * @return {undefined}
    */
-  async _prepareCharacterData(context) {
-    const aData = context.system;
-    const aType = context.actor.type;
-    const itemData = context.allGear;
-    const itemMods = context.system.itemMods;
-    let attribData = {};
-
-    let anyMods = 0;
-    const attrMod = {
-      grit: 0,
-      quick: 0,
-      cunning: 0,
-      docity: 0,
-    };
-    const sklMod = {
-      labor: 0,
-      presence: 0,
-      fightin: 0,
-      resilience: 0,
-      move: 0,
-      operate: 0,
-      shootin: 0,
-      lightfingered: 0,
-      hawkeye: 0,
-      nature: 0,
-      insight: 0,
-      animalhandlin: 0,
-      performin: 0,
-      makin: 0,
-      doctorin: 0,
-      booklearnin: 0,
-    };
-    if (itemData.length) {
-      switch (aType) {
-        case "animal":
-          for (let [attrib, modItems] of Object.entries(itemMods)) {
-            for (let [skey, subAttar] of Object.entries(modItems)) {
-              if (subAttar.state === "onAnimal") {
-                switch (attrib) {
-                  case "quick":
-                  case "cunning":
-                  case "grit":
-                    attrMod[attrib] = attrMod[attrib] += Number(subAttar.value);
-                    anyMods++;
-                    break;
-                  default:
-                    if (!subAttar.feature) {
-                      sklMod[attrib] = sklMod[attrib] += Number(subAttar.value);
-                      anyMods++;
-                    }
-                    break;
-                }
-              }
-            } 
-          }
-          break;
-
-        case "pc":
-          for (let [attrib, modItems] of Object.entries(itemMods)) {
-            for (let [skey, subAttar] of Object.entries(modItems)) {
-              if (subAttar.state === "Active") {
-                if ((subAttar.itemtype === "item" || subAttar.itemtype === "crit") && !subAttar.stored || (subAttar.state === "onPC" && subAttar.itemtype != "talent" && subAttar.itemtype != "weapon" && !subAttar.stored)) {
-                  switch (attrib) {
-                    case "docity":
-                    case "quick":
-                    case "cunning":
-                    case "grit":
-                      attrMod[attrib] = attrMod[attrib] += Number(subAttar.value);
-                      anyMods++;
-                      break;
-                    default:
-                      if (!subAttar.feature) {
-                        sklMod[attrib] = sklMod[attrib] += Number(subAttar.value);
-                        anyMods++;
-                      }
-                      break;
-                  }
-                } else if (subAttar.itemtype === "weapon" && !subAttar.stored) {
-                  switch (subAttar.modtype) {
-                    case "docity":
-                    case "quick":
-                    case "cunning":
-                    case "grit":
-                      attrMod[subAttar.modtype] = attrMod[subAttar.modtype] += Number(subAttar.value);
-                      anyMods++;
-                      break;
-                    default:
-                      sklMod[subAttar.modtype] = sklMod[subAttar.modtype] += Number(subAttar.value);
-                      anyMods++;
-                      break;
-                  }
-                } else if (subAttar.itemtype === "talent") {
-                  switch (subAttar.modtype) {
-                    case "basic":
-                      if (subAttar.basicAction) {
-                        switch (attrib) {
-                          case "docity":
-                          case "quick":
-                          case "cunning":
-                          case "grit":
-                            attrMod[attrib] = attrMod[attrib] += Number(subAttar.value);
-                            anyMods++;
-                            break;
-                          default:
-                            if (!subAttar.feature) {
-                              sklMod[attrib] = sklMod[attrib] += Number(subAttar.value);
-                              anyMods++;
-                            }
-                            break;
-                        }
-                      }
-                      break;
-                    case "advanced":
-                      if (subAttar.advisActive) {
-                        switch (attrib) {
-                          case "docity":
-                          case "quick":
-                          case "cunning":
-                          case "grit":
-                            attrMod[attrib] = attrMod[attrib] += Number(subAttar.value);
-                            anyMods++;
-                            break;
-                          default:
-                            if (!subAttar.feature) {
-                              sklMod[attrib] = sklMod[attrib] += Number(subAttar.value);
-                              anyMods++;
-                            }
-                            break;
-                        }
-                      }
-                      break;
-                  }
-                }
-              }
-            }
-          }
-          break;
-      }
-    }
-
-    for (let [a, abl] of Object.entries(aData.attributes)) {
-      aData.attributes[a].mod = Number(abl.value) + Number(attrMod[a] || 0);
-    }
-
-    for (let [s, skl] of Object.entries(aData.abilities)) {
-      const conSkl = skl.attr;
-      const attrBaseMod = aData.attributes[conSkl]?.mod ?? Number(aData.attributes[conSkl]?.value || 0);
-      aData.abilities[s].mod = Number(skl.value) + Number(attrBaseMod) + Number(sklMod[s] || 0);
-    }
-  }
-
   async _prepareCompadres(sheetData) {
     sheetData.compadres = sheetData.actor.system.compadres.details.reduce((arr, o) => {
       o.actor = game.actors.get(o.id);
@@ -574,36 +421,6 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       return arr;
     }, []);
     return sheetData;
-  }
-
-  _prepareAmenities(sheetData) {
-    const aData = this.actor.system;
-    const attrMod = {
-      farming: 0,
-      mercantile: 0,
-      natural: 0,
-      law: 0,
-      civic: 0,
-      welfare: 0,
-    };
-
-    for (const attrib of this.actor.items) {
-      if (attrib.type === "amenities" && attrib.system?.completed && attrib.system?.modifiers) {
-        const base = attrib.system.modifiers;
-        for (const [bkey, aAttrib] of Object.entries(base)) {
-          if (bkey in attrMod) {
-            attrMod[bkey] += Number(aAttrib) || 0;
-          }
-        }
-      }
-    }
-
-    aData.aspects.farming.mod = parseInt(attrMod.farming || 0);
-    aData.aspects.mercantile.mod = parseInt(attrMod.mercantile || 0);
-    aData.aspects.natural.mod = parseInt(attrMod.natural || 0);
-    aData.aspects.law.mod = parseInt(attrMod.law || 0);
-    aData.aspects.civic.mod = parseInt(attrMod.civic || 0);
-    aData.aspects.welfare.mod = parseInt(attrMod.welfare || 0);
   }
 
   /**
@@ -768,6 +585,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
 
     const compId = event.target.closest(".remuda").dataset.compid;
     let horse = await this.actor.getRemuda(compId);
+    if (!horse?.actor) return;
 
     if (event.button === 2) {
       // right click
@@ -781,7 +599,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       // left click
       // return
       await horse.actor.update({ "system.general.mounted": false });
-      await this.actor.update({ "system.remuda.remudaMounted": false });
+      await this.actor.update({ "system.remuda.remudaMounted": "false" });
     }
     this.render();
   }
@@ -1047,28 +865,31 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     event.preventDefault(); // Don't open context menu
     event.stopPropagation(); // Don't trigger other events
     if (event.detail > 1) return; // Ignore repeated clicks
-    const dataset = target.dataset;
-    const damage = this.actor.system.damage[target.dataset.label];
-    const attribute = this.actor.system.attributes[target.dataset.attribute];
+    const remudaEl = target.closest(".remuda");
+    const actor = remudaEl ? (game.actors.get(remudaEl.dataset.compid) ?? this.actor) : this.actor;
+    const damage = actor.system.damage[target.dataset.label];
+    const attribute = actor.system.attributes[target.dataset.attribute];
     const field = `system.damage.${target.dataset.label}.value`;
     const aField = `system.attributes.${target.dataset.attribute}.value`;
 
     if (event.button === 2) {
       // right click
       if (damage.value) {
-        await this.actor.update({ [field]: damage.value - 1, [aField]: attribute.value + 1 });
-        if (damage.max != this.actor.system.attributes[target.dataset.attribute].max && !this.actor.system.conditions.broken) {
-          await this.actor.removeCondition("broken");
+        await actor.update({ [field]: damage.value - 1, [aField]: attribute.value + 1 });
+        if (damage.max != actor.system.attributes[target.dataset.attribute].max && !actor.system.conditions.broken) {
+          await actor.removeCondition("broken");
         }
+        if (remudaEl) this.render();
         return;
       }
     } else {
       // left click
       if (damage.max) {
-        await this.actor.update({ [field]: damage.value + 1, [aField]: attribute.value - 1 });
-        if (this.actor.system.attributes[target.dataset.attribute].value === 0 && this.actor.system.conditions.broken) {
-          await this.actor.addCondition("broken");
+        await actor.update({ [field]: damage.value + 1, [aField]: attribute.value - 1 });
+        if (actor.system.attributes[target.dataset.attribute].value === 0 && actor.system.conditions.broken) {
+          await actor.addCondition("broken");
         }
+        if (remudaEl) this.render();
         return;
       }
     }

@@ -1,5 +1,8 @@
+import { preloadHandlebarsTemplates } from "./templates.mjs";
+
 export const initializeHandlebars = () => {
 	registerHandlebarsHelpers();
+	preloadHandlebarsTemplates();
 };
 
 function registerHandlebarsHelpers() {

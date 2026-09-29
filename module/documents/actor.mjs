@@ -450,8 +450,6 @@ export class totowActor extends Actor {
     if (event.detail > 1) return; // Ignore repeated clicks
     const rollData = this.getRollData();
     const dataset = target.dataset;
-    dataset.conditional = "";
-    dataset.talent = "";
     dataset.myHorse = "false";
     // const targetActor = actor.getRollData();
     if (actor.type === "pc") {
@@ -514,11 +512,13 @@ export class totowActor extends Actor {
 
       async function processConditionals(rollType, dataset, rollData) {
         let response = "";
-        await argpUtils.prepModOutput(rollType, rollData, dataset);
-        if (dataset.conditional) {
+        const { conditionalMods, talentMods } = await argpUtils.prepModOutput(rollType, rollData, dataset);
+        if (conditionalMods?.length || talentMods?.length) {
           const content = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/dialog/conditional-modifiers.html", {
             config,
             dataset,
+            conditionalMods,
+            talentMods,
           });
           response = await foundry.applications.api.DialogV2.wait({
             window: { title: "TALESOFTHEOLDWEST.Item.General.roll-modifiers" },
@@ -538,13 +538,14 @@ export class totowActor extends Actor {
 
           if (!response || response === "cancel") return "cancelled";
 
-          Object.keys(response).forEach((key) => {
-            if (key.startsWith("floop") || key.startsWith("iloop")) {
-              response.modifier = parseInt(response.modifier || 0) + parseInt(response[key] || 0);
-            }
-          });
+          // Accumulate checked conditional modifiers (mods.* flat keys from structured partial).
+          // FormDataExtended stores dot-notation names as flat string keys, not nested objects,
+          // so `response["mods.f_0"]` exists but `response.mods` is undefined.
+          const checkboxSum = Object.entries(response)
+            .filter(([k]) => k.startsWith('mods.'))
+            .reduce((sum, [, v]) => sum + (Number(v) || 0), 0);
 
-          dataset.mod = parseInt(dataset.mod || 0) + parseInt(response.modifier || 0);
+          dataset.mod = parseInt(dataset.mod || 0) + checkboxSum;
         }
 
         result = await rollAttrib(dataset, rollData, actor);
@@ -552,14 +553,14 @@ export class totowActor extends Actor {
       }
 
       async function sendToChat(actor, event, target, result) {
-        const html = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/chat/roll.hbs", result[1]);
+        const html = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/chat/roll.hbs", result.result);
         let chatData = {
           user: game.user.id,
           speaker: ChatMessage.getSpeaker({
             alias: actor.name,
             actor: actor.id,
           }),
-          rolls: [result[0]],
+          rolls: [result.roll],
           rollMode: game.settings.get("core", "rollMode"),
           content: html,
           sound: CONFIG.sounds.dice,
@@ -571,7 +572,7 @@ export class totowActor extends Actor {
           chatData.whisper = [game.user];
         }
         const msg = await ChatMessage.create(chatData);
-        result[1].messageNo = msg.id;
+        result.result.messageNo = msg.id;
         await msg.setFlag("talesoftheoldwest", "results", result);
         await msg.setFlag("talesoftheoldwest", "isType", actor.type);
 
@@ -713,7 +714,12 @@ export class totowActor extends Actor {
    */
   async getRemuda(compId) {
     if (this.type !== "pc") return;
-    return this.system.remuda.details.find((o) => o.id === compId);
+    const entry = this.system.remuda.details.find((o) => o.id === compId);
+    if (!entry) return undefined;
+    return {
+      ...entry,
+      actor: game.actors.get(entry.id),
+    };
   }
 
   /**

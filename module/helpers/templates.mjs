@@ -4,7 +4,7 @@
  * @return {Promise}
  */
 export const preloadHandlebarsTemplates = async function () {
-	return loadTemplates([
+	return foundry.applications.handlebars.loadTemplates([
 		// Actor partials.
 		'systems/talesoftheoldwest/templates/actor/parts/actor-weapon.hbs',
 		'systems/talesoftheoldwest/templates/actor/parts/actor-talent.hbs',
@@ -22,5 +22,8 @@ export const preloadHandlebarsTemplates = async function () {
 		'systems/talesoftheoldwest/templates/actor/parts/towncharter-amenities.hbs',
 		// Item partials
 		'systems/talesoftheoldwest/templates/item/parts/item-effects.hbs',
+		// Dialog partials
+		'systems/talesoftheoldwest/templates/dialog/parts/conditional-modifiers.hbs',
+		'systems/talesoftheoldwest/templates/dialog/parts/talent-modifiers.hbs',
 	]);
 };

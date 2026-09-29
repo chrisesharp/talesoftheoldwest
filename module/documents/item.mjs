@@ -124,11 +124,11 @@ export class totowItem extends Item {
 		 * @param {object} config        CONFIG.TALESOFTHEOLDWEST reference.
 		 * @returns {Promise<object|'cancelled'>}
 		 */
-		async function _renderWeaponDialog(templatePath, titleKey, dataset, config) {
-			const content = await foundry.applications.handlebars.renderTemplate(templatePath, { config, dataset });
+		async function _renderWeaponDialog(templatePath, titleKey, dataset, config, conditionalMods, talentMods) {
+			const content = await foundry.applications.handlebars.renderTemplate(templatePath, { config, dataset, conditionalMods, talentMods });
 			const response = await foundry.applications.api.DialogV2.wait({
 				window: { title: titleKey },
-				position: { width: 440 },
+				position: { width: 500 },
 				content,
 				rejectClose: false,
 				buttons: [
@@ -140,27 +140,28 @@ export class totowItem extends Item {
 				],
 			});
 			if (!response || response === 'cancel') return 'cancelled';
-			// Accumulate floop* modifier keys
-			Object.keys(response).forEach((key) => {
-				if (key.startsWith('floop')) {
-					response.modifier = Number.parseInt(response.modifier || 0) + Number.parseInt(response[key] || 0);
-				}
-			});
+			// Accumulate checked conditional modifiers (mods.* flat keys from structured partial).
+			// FormDataExtended stores dot-notation names as flat string keys, not nested objects,
+			// so `response["mods.f_0"]` exists but `response.mods` is undefined.
+			const checkboxSum = Object.entries(response)
+				.filter(([k]) => k.startsWith('mods.'))
+				.reduce((sum, [, v]) => sum + (Number(v) || 0), 0);
+			response.modifier = (Number(response.modifier) || 0) + checkboxSum;
 			return response;
 		}
 
 		async function fightin(dataset, rollData, item) {
 			const config = CONFIG.TALESOFTHEOLDWEST;
 			const actor = game.actors.get(dataset.myActor);
-			dataset.conditional = '';
-			dataset.talent = '';
-			await argpUtils.prepModOutput('Items', rollData, dataset);
+			const { conditionalMods, talentMods } = await argpUtils.prepModOutput('Items', rollData, dataset);
 
 			const response = await _renderWeaponDialog(
 				'systems/talesoftheoldwest/templates/dialog/fightin-weapon-modifiers.html',
 				'TALESOFTHEOLDWEST.fightinmodifiers',
 				dataset,
 				config,
+				conditionalMods,
+				talentMods,
 			);
 			if (response === 'cancelled') return 'cancelled';
 
@@ -171,17 +172,17 @@ export class totowItem extends Item {
 			dataset.fightCalledstrikeMod   = Number(response.calledstrike   || 0);
 			dataset.fightmodifierMod       = Number(response.modifier);
 			dataset.baseMod                = Number(dataset.mod);
-			dataset.mod = Number(dataset.mod) + dataset.fightProneMod + dataset.fightAlloutattackMod + dataset.fightCalledstrikeMod + dataset.fightmodifierMod;
+			// DOMStringMap stores values as strings; wrap each term in Number()
+			// to prevent string concatenation instead of numeric addition.
+			dataset.mod = Number(dataset.mod) + Number(dataset.fightProneMod) + Number(dataset.fightAlloutattackMod) + Number(dataset.fightCalledstrikeMod) + Number(dataset.fightmodifierMod);
 
-			return rollAttrib(dataset, rollData, actor);
+			const { roll, result } = await rollAttrib(dataset, rollData, actor);
+			return { roll, result };
 		}
 
 		async function shootin(dataset, rollData, item) {
 			const config = CONFIG.TALESOFTHEOLDWEST;
 			const actor = game.actors.get(dataset.myActor);
-			dataset.conditional = '';
-			dataset.talent = '';
-
 			if (dataset.itemAmmo <= 0) {
 				const chatMessage =
 					`<div class="chatBG ${actor.id}"><span class="warnblink" style="font-weight:bold;font-size:larger">` +
@@ -190,13 +191,15 @@ export class totowItem extends Item {
 				actor.createChatMessage(chatMessage, actor.id);
 				return 'cancelled';
 			}
-			await argpUtils.prepModOutput('Items', rollData, dataset);
+			const { conditionalMods, talentMods } = await argpUtils.prepModOutput('Items', rollData, dataset);
 
 			const response = await _renderWeaponDialog(
 				'systems/talesoftheoldwest/templates/dialog/ranged-weapon-modifiers.hbs',
 				'TALESOFTHEOLDWEST.shootinmodifiers',
 				dataset,
 				config,
+				conditionalMods,
+				talentMods,
 			);
 			if (response === 'cancelled') return 'cancelled';
 
@@ -213,17 +216,19 @@ export class totowItem extends Item {
 			dataset.numberOfTargets   = Number(response.numberOfTargets);
 
 			const fanningMod = response.isFanning ? (-Math.abs(response.numberOfTargets) - 1) : 0;
-			dataset.mod = Number(dataset.mod) + dataset.shootrangeMod + dataset.shootcalledShotsMod +
-				dataset.shootcoverMod + dataset.shootsizeMod + dataset.shootvisibilityMod + fanningMod + dataset.shootmodifierMod;
+			// DOMStringMap stores values as strings; wrap each term in Number()
+			// to prevent string concatenation instead of numeric addition.
+			dataset.mod = Number(dataset.mod) + Number(dataset.shootrangeMod) + Number(dataset.shootcalledShotsMod) +
+				Number(dataset.shootcoverMod) + Number(dataset.shootsizeMod) + Number(dataset.shootvisibilityMod) + fanningMod + Number(dataset.shootmodifierMod);
 
-			const result = await rollAttrib(dataset, rollData, actor);
+			const rollState = await rollAttrib(dataset, rollData, actor);
 
 			if (response.isFanning) {
 				await item.update({ 'system.ammo': rollData.expertFanning ? 1 : 0 });
 			} else {
 				await item.update({ 'system.ammo': item.system.ammo - 1 });
 			}
-			return result;
+			return rollState;
 		}
 	}
 }

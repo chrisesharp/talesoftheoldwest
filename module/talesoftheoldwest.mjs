@@ -123,8 +123,6 @@ Hooks.once("init", function () {
   registerSettings();
   enrichTextEditors();
 
-  // // Preload Handlebars templates.
-  // return preloadHandlebarsTemplates();
   Hooks.on("renderChatMessageHTML", (msg, html, msgContent) => {
     totowDiceButtons(msg, html, msgContent);
 

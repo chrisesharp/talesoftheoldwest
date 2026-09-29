@@ -100,6 +100,29 @@
 								/>
 							</div>
 						</div>
+						<div class='sheet-animal-attributes animal-stats'>
+							<div class='aH1 heading'>
+								<label class='resource-label' data-label='{{localize "TALESOFTHEOLDWEST.Attributes.grit.type"}}'><em>{{capitalise (localize 'TALESOFTHEOLDWEST.Attributes.grit.type')}}</em></label>
+							</div>
+							<div class='aH2 newdots' data-action='changeDamage' data-label='{{localize "TALESOFTHEOLDWEST.Attributes.grit.type"}}' data-attribute='{{localize "TALESOFTHEOLDWEST.Attributes.grit.listName"}}' data-tooltip='{{localize "TALESOFTHEOLDWEST.General.leftToAdd"}}' data-speaker-id='{{actor.id}}'>
+								{{#times actor.system.damage.hurts.value}}<a class='far fa-dot-circle'></a>{{/times}}
+								{{#times actor.system.damage.hurts.max}}<a class='far fa-circle'></a>{{/times}}
+							</div>
+							<div class='aS1 heading'>
+								<label class='resource-label' data-label='{{localize "TALESOFTHEOLDWEST.Attributes.quick.type"}}'><em>{{capitalise (localize 'TALESOFTHEOLDWEST.Attributes.quick.type')}}</em></label>
+							</div>
+							<div class='aS2 newdots' data-action='changeDamage' data-label='{{localize "TALESOFTHEOLDWEST.Attributes.quick.type"}}' data-attribute='{{localize "TALESOFTHEOLDWEST.Attributes.quick.listName"}}' data-tooltip='{{localize "TALESOFTHEOLDWEST.General.leftToAdd"}}' data-speaker-id='{{actor.id}}'>
+								{{#times actor.system.damage.shakes.value}}<a class='far fa-dot-circle'></a>{{/times}}
+								{{#times actor.system.damage.shakes.max}}<a class='far fa-circle'></a>{{/times}}
+							</div>
+							<div class='aV1 heading'>
+								<label class='resource-label' data-label='{{localize "TALESOFTHEOLDWEST.Attributes.cunning.type"}}'><em>{{capitalise (localize 'TALESOFTHEOLDWEST.Attributes.cunning.type')}}</em></label>
+							</div>
+							<div class='aV2 newdots' data-action='changeDamage' data-label='{{localize "TALESOFTHEOLDWEST.Attributes.cunning.type"}}' data-attribute='{{localize "TALESOFTHEOLDWEST.Attributes.cunning.listName"}}' data-tooltip='{{localize "TALESOFTHEOLDWEST.General.leftToAdd"}}' data-speaker-id='{{actor.id}}'>
+								{{#times actor.system.damage.vexes.value}}<a class='far fa-dot-circle'></a>{{/times}}
+								{{#times actor.system.damage.vexes.max}}<a class='far fa-circle'></a>{{/times}}
+							</div>
+						</div>
 						<div class='riding-bonus' style="padding-top: 10px;justify-self: center;">
 							<div class="rideSplit1">
 								<label

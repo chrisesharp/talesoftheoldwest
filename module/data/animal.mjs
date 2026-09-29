@@ -65,6 +65,25 @@ export default class totowANIMAL extends totowActorBase {
 			}),
 		});
 
+		schema.damage = new fields.SchemaField({
+			hurts: new fields.SchemaField({
+				value: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0, max: 10 }),
+				max: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0, max: 10 }),
+			}),
+			shakes: new fields.SchemaField({
+				value: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0, max: 10 }),
+				max: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0, max: 10 }),
+			}),
+			vexes: new fields.SchemaField({
+				value: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0, max: 10 }),
+				max: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0, max: 10 }),
+			}),
+		});
+
+		schema.conditions = new fields.SchemaField({
+			broken: new fields.BooleanField({ initial: false }),
+		});
+
 		schema.general = new fields.SchemaField({
 			breed: new fields.StringField({ required: true, blank: true }),
 			cost: new fields.StringField({ initial: '0', min: 0, required: false, blank: true }),
@@ -90,6 +109,40 @@ export default class totowANIMAL extends totowActorBase {
 			// Handle ability label localization.
 			this.abilities[key].label = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.animalabilities[key].name) ?? key;
 			this.abilities[key].upper = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.animalabilities[key].name).toUpperCase() ?? key;
+		}
+
+		this.damage.hurts.max  = this.attributes.grit.max    - this.damage.hurts.value;
+		this.damage.shakes.max = this.attributes.quick.max   - this.damage.shakes.value;
+		this.damage.vexes.max  = this.attributes.cunning.max - this.damage.vexes.value;
+		if (!this.damage.hurts.max || !this.damage.shakes.max || !this.damage.vexes.max) {
+			this.conditions.broken = true;
+		} else {
+			this.conditions.broken = false;
+		}
+
+		// --- Attribute and ability mod calculation from active items ---
+		const attrMod = { grit: 0, quick: 0, cunning: 0 };
+		const sklMod = {};
+
+		if (this.parent?.items?.size) {
+			for (const item of this.parent.items) {
+				if (!item.system?.itemModifiers || item.system.stored) continue;
+				for (const mod of Object.values(item.system.itemModifiers)) {
+					if (mod.state !== 'onAnimal') continue;
+					const val = Number(mod.value) || 0;
+					const target = mod.name?.toLowerCase();
+					if (target in attrMod) attrMod[target] += val;
+					else if (!mod.feature) sklMod[target] = (sklMod[target] ?? 0) + val;
+				}
+			}
+		}
+
+		for (const [a, abl] of Object.entries(this.attributes)) {
+			this.attributes[a].mod = Number(abl.value) + Number(attrMod[a] ?? 0);
+		}
+		for (const [s, skl] of Object.entries(this.abilities)) {
+			const attrBase = this.attributes[skl.attr]?.mod ?? 0;
+			this.abilities[s].mod = Number(skl.value) + Number(attrBase) + Number(sklMod[s] ?? 0);
 		}
 	}
 	getRollData() {

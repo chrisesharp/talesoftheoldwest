@@ -1,3 +1,12 @@
+/**
+ * @typedef {Object} ModifierEntry
+ * @property {string}  id            - Stable unique ID (e.g. `f_0`, `i_0`).
+ * @property {string}  name          - Modifier key name (for display).
+ * @property {string}  label         - Human-readable label shown in the dialog.
+ * @property {number}  value         - Numeric modifier value.
+ * @property {'feature'|'item'} kind - Source kind, used for icon/colour in template.
+ */
+
 export const getID = function () {
 	// Math.random should be unique because of its seeding algorithm.
 	// Convert it to base 36 (numbers + letters), and grab the first 9 characters
@@ -106,25 +115,29 @@ export function findMods(i, itemMods) {
 
 
 export async function prepModOutput(rollType, rollData, dataset) {
-	let floop = 1;
-	let iloop = 1;
+	const conditionalMods = [];
+	const talentMods      = [];
 	const feature = game.i18n.localize('TALESOFTHEOLDWEST.Item.General.feature');
 	if (rollType === 'Items') {
 		for (const fkey in rollData.featureModifiers) {
 			for (const ikey in rollData.featureModifiers[fkey].itemModifiers) {
 				switch (rollData.featureModifiers[fkey].itemModifiers[ikey].state) {
 					case 'Conditional':
-						dataset.conditional += `<div class="grid-conGrid" >
-					<input class="con1" type="checkbox" 
-					id="floop${floop} - ${rollData.featureModifiers[fkey].itemModifiers[ikey].name}" 
-					name="floop${floop} - ${rollData.featureModifiers[fkey].itemModifiers[ikey].name}" 
-					value="${rollData.featureModifiers[fkey].itemModifiers[ikey].value}" 
-					/><span  class="con3" style="color: black"><span style="color:rgba(5, 40, 116, 1);font-weight:bold">${feature}</span> - ${rollData.featureModifiers[fkey].description}</span></div>`;
-						floop++;
+						conditionalMods.push({
+							id: `f_${conditionalMods.length}`,
+							name: rollData.featureModifiers[fkey].itemModifiers[ikey].name,
+							label: `${feature} - ${rollData.featureModifiers[fkey].description}`,
+							value: rollData.featureModifiers[fkey].itemModifiers[ikey].value,
+							kind: 'feature',
+						});
 						break;
 
 					case 'Chat':
-						dataset.talent += `<strong style="color:black">${rollData.featureModifiers[fkey].name}</strong> - <span style="color:rgba(5, 40, 116, 1);font-weight:bold">${feature}</span> - ${rollData.featureModifiers[fkey].description}<br /><br />`;
+						talentMods.push({
+							itemname: rollData.featureModifiers[fkey].name,
+							modtype: feature,
+							action: rollData.featureModifiers[fkey].description,
+						});
 						break;
 				}
 			}
@@ -133,17 +146,21 @@ export async function prepModOutput(rollType, rollData, dataset) {
 		for (const ikey in rollData.itemModifiers) {
 			switch (rollData.itemModifiers[ikey].state) {
 				case 'Conditional':
-					dataset.conditional += `<div class="grid-conGrid">
-					<input class="con1" type="checkbox"
-					id="iloop${iloop} - ${rollData.itemModifiers[ikey].name}"
-					name="iloop${iloop} - ${rollData.itemModifiers[ikey].name}"
-					value="${rollData.itemModifiers[ikey].value}"
-					/><span class="con3" style="color: black">${rollData.itemModifiers[ikey].itemDescription}</span></div>`;
-					iloop++;
+					conditionalMods.push({
+						id: `i_${conditionalMods.length}`,
+						name: rollData.itemModifiers[ikey].name,
+						label: rollData.itemModifiers[ikey].itemDescription,
+						value: rollData.itemModifiers[ikey].value,
+						kind: 'item',
+					});
 					break;
 
 				case 'Chat':
-					dataset.talent += `<strong style="color:black">${rollData.itemModifiers[ikey].name}</strong> - ${rollData.itemModifiers[ikey].itemDescription}<br /><br />`;
+					talentMods.push({
+						itemname: rollData.itemModifiers[ikey].name,
+						modtype: null,
+						action: rollData.itemModifiers[ikey].itemDescription,
+					});
 					break;
 			}
 		}
@@ -153,10 +170,10 @@ export async function prepModOutput(rollType, rollData, dataset) {
 					switch (akey) {
 						case 'shootin':
 							rollData.expertFanning = rollData.actor.itemMods[akey].find((a) => a.itemname === 'Expert Fanning')?.basicisActive;
-							await modifiers(rollData.actor.itemMods, dataset, akey);
+							modifiers(rollData.actor.itemMods, conditionalMods, talentMods, dataset, akey);
 							break;
 						case 'quick':
-							await modifiers(rollData.actor.itemMods, dataset, akey);
+							modifiers(rollData.actor.itemMods, conditionalMods, talentMods, dataset, akey);
 							break;
 
 						default:
@@ -168,10 +185,10 @@ export async function prepModOutput(rollType, rollData, dataset) {
 				for (const akey in rollData.actor.itemMods) {
 					switch (akey) {
 						case 'fightin':
-							await modifiers(rollData.actor.itemMods, dataset, akey);
+							modifiers(rollData.actor.itemMods, conditionalMods, talentMods, dataset, akey);
 							break;
 						case 'grit':
-							await modifiers(rollData.actor.itemMods, dataset, akey);
+							modifiers(rollData.actor.itemMods, conditionalMods, talentMods, dataset, akey);
 							break;
 
 						default:
@@ -194,108 +211,99 @@ export async function prepModOutput(rollType, rollData, dataset) {
 		const attrKey = dataset.attr?.trim() ?? '';
 		for (const akey in rollData.itemMods) {
 			if (akey === resolvedKey || (attrKey && akey === attrKey)) {
-				await modifiers(rollData.itemMods, dataset, akey);
+				modifiers(rollData.itemMods, conditionalMods, talentMods, dataset, akey);
 			}
 		}
 	}
-	return dataset;
+	// Return the arrays as a plain object — do NOT assign to dataset (a
+	// DOMStringMap) which would coerce the arrays to "[object Object]" strings.
+	return { conditionalMods, talentMods };
 }
 
-export async function modifiers(itemModspath, dataset, akey) {
-	let floop = 1;
-	let iloop = 1;
+export function modifiers(itemModspath, conditionalMods, talentMods, dataset, akey) {
 	itemModspath[akey].reduce((acc, akey) => {
 		if (akey.state !== 'Active') {
 			if (akey.basicisActive) {
 				switch (akey.state) {
 					case 'Conditional':
-						
-							dataset.conditional += `<div class="grid-conGrid" >
-					<input class="con1"  type="checkbox" 
-					id="floop${floop} - ${akey.name}" 
-					name="floop${floop} - ${akey.name}" 
-					value="${akey.value}" 
-					/><span class="con2" style="color: black"><strong>${akey.itemname}</strong></span><span class="con3" ><span style="color:rgba(5, 40, 116, 1);font-weight:bold">${
-								akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)
-							}</span> - ${akey.basicAction}</span></div>`;
-							floop++;
-						
+						conditionalMods.push({
+							id: `f_${conditionalMods.length}`,
+							name: akey.name,
+							label: `${akey.itemname} — ${akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)} - ${akey.basicAction}`,
+							value: akey.value,
+							kind: 'feature',
+						});
 						break;
 
 					case 'Chat':
-						
-							dataset.talent += `<strong style="color:black">${akey.itemname}</strong> - <span style="color:rgba(5, 40, 116, 1);font-weight:bold">${
-								akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)
-							}</span> - ${akey.basicAction}<br /><br />`;
-						
+						talentMods.push({
+							itemname: akey.itemname,
+							modtype: akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1),
+							action: akey.basicAction,
+						});
 						break;
 				}
 			} else if (akey.advisActive) {
 				switch (akey.state) {
 					case 'Conditional':
-						
-							dataset.conditional += `<div class="grid-conGrid" >
-					<input class="con1" type="checkbox" ;
-					id="floop${floop} - ${akey.name}" 
-					name="floop${floop} - ${akey.name}" 
-					value="${akey.value}" 
-					/><span class="con2" style="color: black"><strong>${akey.itemname}</strong></span><span class="con3" ><span style="color:rgba(5, 40, 116, 1);font-weight:bold">${
-								akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)
-							}</span> - ${akey.advAction}</span></div>`;
-							floop++;
-						
+						conditionalMods.push({
+							id: `f_${conditionalMods.length}`,
+							name: akey.name,
+							label: `${akey.itemname} — ${akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)} - ${akey.advAction}`,
+							value: akey.value,
+							kind: 'feature',
+						});
 						break;
 
 					case 'Chat':
-						
-							dataset.talent += `<strong style="color:black">${akey.itemname}</strong> - <span style="color:rgba(5, 40, 116, 1);font-weight:bold">${
-								akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)
-							}</span> - ${akey.advAction}<br /><br />`;
-						
+						talentMods.push({
+							itemname: akey.itemname,
+							modtype: akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1),
+							action: akey.advAction,
+						});
 						break;
 				}
 			} else if ((akey.itemtype === 'item' || akey.itemtype === 'animalquality' || akey.itemtype === 'crit') && !akey.stored) {
 				switch (akey.state) {
-					case 'Conditional':
-						{
-							const modLabel = akey.modtype
-								? `<span style="color:rgba(5, 40, 116, 1);font-weight:bold"> ${akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)}</span> - `
-								: '';
-							dataset.conditional += `<div class="grid-conGrid" >
-					<input class="con1" type="checkbox"
-					id="iloop${iloop} - ${akey.name}"
-					name="iloop${iloop} - ${akey.name}"
-					value="${akey.value}"
-					/><span class="con2" style="color: black"><strong>${akey.itemname}</strong></span><span class="con3" >${modLabel}${akey.itemDescription}</span></div>`;
-							iloop++;
-						}
+					case 'Conditional': {
+						const itemModType = akey.modtype
+							? `${akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)} - `
+							: '';
+						conditionalMods.push({
+							id: `i_${conditionalMods.length}`,
+							name: akey.name,
+							label: `${akey.itemname}${itemModType ? ` — ${itemModType}` : ''} ${akey.itemDescription}`,
+							value: akey.value,
+							kind: 'item',
+						});
 						break;
+					}
 					case 'onPC':
-						
-							if (dataset.myHorse === 'true') {
-								dataset.conditional += `<div class="grid-conGrid" >
-					<input class="con1" type="checkbox" 
-					id="iloop${iloop} - ${akey.name}" 
-					name="iloop${iloop} - ${akey.name}" 
-					value="${akey.value}" 
-					/><span class="con2" style="color: black"><strong>${akey.itemname}</strong></span><span class="con3" ><span style="color:rgba(5, 40, 116, 1);font-weight:bold"> ${
-									akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)
-								}</span> - ${akey.itemDescription}</span></div>`;
-								iloop++;
-							}
-						
+						if (dataset.myHorse === 'true') {
+							const onPcModType = akey.modtype
+								? `${akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)} - `
+								: '';
+							conditionalMods.push({
+								id: `i_${conditionalMods.length}`,
+								name: akey.name,
+								label: `${akey.itemname}${onPcModType ? ` — ${onPcModType}` : ''} ${akey.itemDescription}`,
+								value: akey.value,
+								kind: 'item',
+							});
+						}
 						break;
 
 					case 'Chat':
-							dataset.talent += `<strong style="color:black">${akey.itemname}</strong> - <span style="color:rgba(5, 40, 116, 1);font-weight:bold">${
-								akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)
-							}</span> - ${akey.itemDescription}<br /><br />`;
+						talentMods.push({
+							itemname: akey.itemname,
+							modtype: akey.modtype ? akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1) : null,
+							action: akey.itemDescription,
+						});
 						break;
 				}
 			}
 		} else return acc;
 	}, []);
-	return dataset;
 }
 
 export function parents(el, selector) {
