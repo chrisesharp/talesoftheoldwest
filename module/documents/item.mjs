@@ -68,12 +68,10 @@ export class totowItem extends Item {
 						if (rollData.action === 'single' && rollData.ammo >= 4) {
 							dataset.canFan = true;
 						}
-						console.log('Weapon Roll - shootin', dataset, dataset.mod);
 						return await shootin(dataset, rollData, item);
 					case 'fightin':
 						dataset.mod = rollData.actor.abilities[`${dataset.subtype}`].mod + rollData.attackbonus;
 						dataset.stunts = dataset.subtype;
-						console.log('Weapon Roll - Fightin', dataset, dataset.mod);
 						return await fightin(dataset, rollData, item);
 
 					default:

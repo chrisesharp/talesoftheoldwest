@@ -27,7 +27,7 @@ function registerHandlebarsHelpers() {
 	 * Repeat given markup with n times
 	 */
 	Handlebars.registerHelper('times', function (n, block) {
-		var result = '';
+		let result = '';
 		for (let i = 0; i < n; ++i) {
 			result += block.fn(i);
 		}
@@ -52,7 +52,7 @@ function registerHandlebarsHelpers() {
 		// exit now if text is undefined
 		if (typeof txt == 'undefined') return;
 		// the regular expresion
-		var regexp = /<[\/\w]+>/g;
+		const regexp = /<[\/\w]+>/g;
 		// replacing the text
 		return txt.replace(regexp, '');
 	});
@@ -62,8 +62,8 @@ function registerHandlebarsHelpers() {
 	});
 
 	Handlebars.registerHelper('totowConcat', function () {
-		var outStr = '';
-		for (var arg in arguments) {
+		let outStr = '';
+		for (const arg in arguments) {
 			if (typeof arguments[arg] != 'object') {
 				outStr += arguments[arg];
 			}

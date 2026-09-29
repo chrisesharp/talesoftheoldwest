@@ -17,5 +17,14 @@ export default class totowCrit extends totowItemBase {
 		return schema;
 	}
 
+	/** Correctly-spelled alias for the persisted `imediateeffect` DB field. */
+	get immediateeffect() {
+		return this.imediateeffect;
+	}
+
+	set immediateeffect(value) {
+		this.imediateeffect = value;
+	}
+
 	prepareDerivedData() {}
 }

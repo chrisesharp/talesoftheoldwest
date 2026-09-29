@@ -157,9 +157,7 @@ async function rollTrouble(results, ev, messageId, message, formData) {
 			break;
 	}
 
-	// console.log('Trouble Roll =>',roll);
 	const TroubleTableResult = await table.draw({ displayChat: false, recursive: true });
-	console.log('TroubleTableResult =>', TroubleTableResult);
 	// Prepare the data for the chat message
 	//
 

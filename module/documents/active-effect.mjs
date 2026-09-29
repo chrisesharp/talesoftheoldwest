@@ -24,7 +24,6 @@ export default class TOTOWActiveEffect extends foundry.documents.ActiveEffect {
 
   /** @inheritdoc */
   static async _fromStatusEffect(statusId, effectData, options) {
-    console.log(statusId);
     // if (effectData.rule) effectData.description = `@Embed[${effectData.rule} inline]`;
     if (CONFIG.TALESOFTHEOLDWEST.conditions[statusId]?.targeted) await TOTOWActiveEffect.targetedConditionPrompt(statusId, effectData);
 

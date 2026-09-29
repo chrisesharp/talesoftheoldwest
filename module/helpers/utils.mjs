@@ -69,7 +69,7 @@ export function findMods(i, itemMods) {
 		// conditional roll dialog, since mods.description is the generic item description.
 		const isCrit = i.type === 'crit';
 		const critDescription = isCrit
-			? stripHtml(i.system.imediateeffect || i.system.longtermeffect || i.name)
+			? stripHtml(i.system.immediateeffect || i.system.imediateeffect || i.system.longtermeffect || i.name)
 			: null;
 		for (let [, mods] of Object.entries(i.system.itemModifiers)) {
 			itemMods.push({

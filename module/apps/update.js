@@ -12,8 +12,8 @@ export default async function updateModule(moduleKey, moduleTitle, adventurePack
    * { assetType: 'actors', assetName: 'Hannah Singleton', action: 'delete' },
    * { assetType: 'actors', assetName: 'Hannah Singleton', action: 'add' },
    * { assetType: 'actors', assetName: 'Holroyd', action: 'update' },
-   * { assetType: 'items', assetName: 'Alien - Roll on selected Creature table V10: 'update' },
-   * { assetType: 'journal', assetName: 'Alien - Roll on selected Mother table V10', action: 'update' },
+   * { assetType: 'items', assetName: 'TOTOW - Roll on selected Critical Injury table', action: 'update' },
+   * { assetType: 'journal', assetName: 'TOTOW - Roll on selected Fate table', action: 'update' },
    * { assetType: 'scenes', assetName: 'Station Layout', action: 'update' },
    * { assetType: "tables", assetName: "THE DAMNED CARDS", action: "update" },
    *
@@ -79,7 +79,6 @@ async function ModuleUpdate(aPack, updateAssets) {
             try {
               const isThere = game[assetType].getName(assetName);
               if (isThere) {
-                console.log("It Exists");
                 await isThere.delete({ deleteSubfolders: true, deleteContents: true });
               }
             } catch (error) {
@@ -152,9 +151,7 @@ async function allDone(moduleKey, moduleTitle, updateNotes) {
     title: `${moduleTitle} Update`,
     content: `<p>The update has completed and the following have been updated:</p> <br> ${updateNotes}`,
     label: "Okay!",
-    callback: () => {
-      console.log("All Done");
-    },
+    callback: () => {},
   });
   logger.info(
     "Imported ",

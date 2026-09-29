@@ -172,5 +172,13 @@ export default class totowTownCharter extends totowActorBase {
     this.general.settlementponts.max = 10 - this.general.settlementponts.value;
   }
 
+  /**
+   * Getter alias for settlementponts to support correct spelling in new code
+   * while preserving backwards compatibility with existing persisted world data.
+   */
+  get settlementpoints() {
+    return this.general.settlementponts;
+  }
+
   getRollData() {}
 }

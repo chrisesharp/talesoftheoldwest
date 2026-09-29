@@ -19,6 +19,7 @@ import { totowDiceListeners, totowDiceButtons } from "./helpers/diceroll.mjs";
 import { initializeHandlebars } from "./helpers/handlebars.js";
 import { enrichTextEditors } from "./helpers/enricher.js";
 import { TOTOWMacros } from "./helpers/macro.js";
+import { TOTWBuyOffDialog, TOTWWhichTroubleDialog, TOTWManualTroubleDialog } from "./helpers/chatmodifier.mjs";
 
 const collections = foundry.documents.collections;
 
@@ -41,6 +42,9 @@ globalThis.talesoftheoldwest = {
     totowItemSheet,
     ModuleImport,
     TOTOWSystemImportFormWrapper,
+    TOTWBuyOffDialog,
+    TOTWWhichTroubleDialog,
+    TOTWManualTroubleDialog,
   },
   utils: {
     rollItemMacro,

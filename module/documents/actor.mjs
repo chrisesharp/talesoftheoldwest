@@ -120,7 +120,7 @@ export class totowActor extends Actor {
    * @param {boolean} [options.active]          Force the effect to be active or inactive regardless of its current state.
    * @param {boolean} [options.overlay=false]   Display the toggled effect as an overlay.
    * @param {string} [options.effectEnd]        Value for `system.end.type`.
-   * @returns {PromiseAlienRPGActiveEffect|boolean|undefined>}  A promise which resolves to one of the following values:
+   * @returns {Promise<ActiveEffect|boolean|undefined>}  A promise which resolves to one of the following values:
    *                                 - ActiveEffect if a new effect need to be created
    *                                 - true if was already an existing effect
    *                                 - false if an existing effect needed to be removed
@@ -348,6 +348,7 @@ export class totowActor extends Actor {
             "system.healingtime": testArray[7],
             "system.fatal": cFatal,
             "system.fatalmessage": fatal[0].replace(/(YES)\s/g, ""),
+            // Persisted DB key is 'imediateeffect'; totowCrit provides an 'immediateeffect' getter/setter alias.
             "system.imediateeffect": testArray[9],
             "system.longtermeffect": testArray[11],
           };

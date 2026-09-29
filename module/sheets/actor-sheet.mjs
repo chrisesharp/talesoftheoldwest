@@ -606,7 +606,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
 
   static async _onCompadresView(event) {
     event.preventDefault();
-    const compId = event.target.closest(".compardre").dataset.compid;
+    const compId = event.target.closest(".compadre, .compardre").dataset.compid;
     const actor = game.actors.get(compId);
     return actor.sheet.render(true);
   }
@@ -614,7 +614,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
   static async _onCompadresRemove(event) {
     event.preventDefault();
     const actorData = this.actor;
-    const compId = event.target.closest(".compardre").dataset.compid;
+    const compId = event.target.closest(".compadre, .compardre").dataset.compid;
     const details = await this.actor.removeCompadres(compId);
     let compadresNumber = actorData.system.compadres.compadresQty || 0;
     compadresNumber--;
@@ -772,15 +772,16 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     event.preventDefault(); // Don't open context menu
     event.stopPropagation(); // Don't trigger other events
     if (event.detail > 1) return; // Ignore repeated clicks
-    // const rollData = this.actor.getRollData();
+    const containerEl = target.closest(".remuda, .compadre, .compardre");
+    const actor = containerEl?.dataset.compid ? (game.actors.get(containerEl.dataset.compid) ?? this.actor) : this.actor;
     if (target.dataset.rollType === "attribute" || target.dataset.rollType === "ability") {
       if (event.button === 0) {
-        this.actor.diceRoll(this.actor, event, target);
+        actor.diceRoll(actor, event, target);
       } else {
-        this.actor.modRoll(this.actor, event, target);
+        actor.modRoll(actor, event, target);
       }
     } else {
-      this.actor.diceRoll(this.actor, event, target);
+      actor.diceRoll(actor, event, target);
     }
   }
 
@@ -843,6 +844,8 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     event.preventDefault(); // Don't open context menu
     event.stopPropagation(); // Don't trigger other events
     if (event.detail > 1) return; // Ignore repeated clicks
+    // Use the raw DB key 'settlementponts' (typo in persisted data) for reads and writes.
+    // The correctly-spelled alias 'settlementpoints' is available via the getter on towncharter.mjs.
     let sp = this.actor.system.general.settlementponts;
     if (event.button === 2) {
       // left click
@@ -865,8 +868,8 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     event.preventDefault(); // Don't open context menu
     event.stopPropagation(); // Don't trigger other events
     if (event.detail > 1) return; // Ignore repeated clicks
-    const remudaEl = target.closest(".remuda");
-    const actor = remudaEl ? (game.actors.get(remudaEl.dataset.compid) ?? this.actor) : this.actor;
+    const containerEl = target.closest(".remuda, .compadre, .compardre");
+    const actor = containerEl?.dataset.compid ? (game.actors.get(containerEl.dataset.compid) ?? this.actor) : this.actor;
     const damage = actor.system.damage[target.dataset.label];
     const attribute = actor.system.attributes[target.dataset.attribute];
     const field = `system.damage.${target.dataset.label}.value`;
@@ -879,7 +882,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
         if (damage.max != actor.system.attributes[target.dataset.attribute].max && !actor.system.conditions.broken) {
           await actor.removeCondition("broken");
         }
-        if (remudaEl) this.render();
+        if (containerEl) this.render();
         return;
       }
     } else {
@@ -889,7 +892,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
         if (actor.system.attributes[target.dataset.attribute].value === 0 && actor.system.conditions.broken) {
           await actor.addCondition("broken");
         }
-        if (remudaEl) this.render();
+        if (containerEl) this.render();
         return;
       }
     }
