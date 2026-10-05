@@ -16,7 +16,6 @@ export class COMMON {
 		name: NAME,
 		path: PATH,
 		title: TITLE,
-		// dndPath: `${PATH}/../../systems/dnd5e`,
 	};
 
 	static NAME = this.name;

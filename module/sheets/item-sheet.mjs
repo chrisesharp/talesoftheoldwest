@@ -1,4 +1,3 @@
-import { prepareActiveEffectCategories } from "../helpers/effects.mjs";
 import { logger } from "../helpers/logger.mjs";
 
 const { api, sheets } = foundry.applications;
@@ -122,60 +121,41 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
       systemFields: this.document.system.schema.fields,
       systemSource: this.item.system._source,
     };
-    // debugger;
-    switch (this.document.type) {
-      case "talent":
-        {
-          if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-            // TODO  find Sutable Talent icon.
 
-            this.document.update({ img: "systems/talesoftheoldwest/assets/icons/brain.webp" });
-          }
+    switch (this.document.type) {
+      case "talent":     
+        if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
+          this.document.update({ img: "systems/talesoftheoldwest/assets/icons/brain.webp" });
         }
         break;
       case "item":
-        {
-          if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-            // TODO  find Sutable default Item icon.
-
-            this.document.update({ img: "systems/talesoftheoldwest/assets/icons/saddle.webp" });
-          }
+        if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
+          this.document.update({ img: "systems/talesoftheoldwest/assets/icons/saddle.webp" });
         }
         break;
 
       case "weapon":
-        {
-          if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-            // TODO  find Sutable default weapon icon.
-
-            this.document.update({ img: "systems/talesoftheoldwest/assets/icons/manhattannavy.webp" });
-          }
+        if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
+          this.document.update({ img: "systems/talesoftheoldwest/assets/icons/manhattannavy.webp" });
         }
         break;
 
       case "crit":
-        {
-          if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-            // TODO  find Sutable Critical Injury icon.
-            this.document.update({ img: "systems/talesoftheoldwest/assets/icons/rattler.webp" });
-          }
+        if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
+          this.document.update({ img: "systems/talesoftheoldwest/assets/icons/rattler.webp" });
         }
         break;
 
       case "animalquality":
         switch (this.document.system.general.subtype) {
           case "quality":
-            {
-              if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-                this.document.update({ img: "systems/talesoftheoldwest/assets/icons/horse-head.webp" });
-              }
+            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
+              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/horse-head.webp" });
             }
             break;
           case "flaw":
-            {
-              if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-                this.document.update({ img: "systems/talesoftheoldwest/assets/icons/donkey.webp" });
-              }
+            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
+              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/donkey.webp" });
             }
             break;
         }
@@ -184,17 +164,13 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
       case "weaponquality":
         switch (this.document.system.feature) {
           case "quality":
-            {
-              if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-                this.document.update({ img: "systems/talesoftheoldwest/assets/icons/supersonic-bullet.webp" });
-              }
+            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
+              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/supersonic-bullet.webp" });
             }
             break;
           case "condition":
-            {
-              if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-                this.document.update({ img: "systems/talesoftheoldwest/assets/icons/broken-arrow.webp" });
-              }
+            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
+              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/broken-arrow.webp" });
             }
             break;
         }
@@ -202,50 +178,37 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
       case "amenities":
         switch (this.document.system.subtype) {
           case "Farming":
-            {
-              if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-                this.document.update({ img: "systems/talesoftheoldwest/assets/icons/plow.webp" });
-              }
+            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
+              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/plow.webp" });
             }
             break;
           case "Mercantile":
-            {
-              if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-                this.document.update({ img: "systems/talesoftheoldwest/assets/icons/merchantile.webp" });
-              }
+            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
+              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/merchantile.webp" });
             }
             break;
           case "Natural":
-            {
-              if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-                this.document.update({ img: "systems/talesoftheoldwest/assets/icons/mining.webp" });
-              }
+            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
+              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/mining.webp" });
             }
             break;
           case "Law":
-            {
-              if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-                this.document.update({ img: "systems/talesoftheoldwest/assets/icons/book-law.webp" });
-              }
+            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
+              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/book-law.webp" });
             }
             break;
           case "Civic":
-            {
-              if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-                this.document.update({ img: "systems/talesoftheoldwest/assets/icons/civic.webp" });
-              }
+            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
+              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/civic.webp" });
             }
             break;
           case "Welfare":
-            {
-              if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-                this.document.update({ img: "systems/talesoftheoldwest/assets/icons/welfare.webp" });
-              }
+            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
+              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/welfare.webp" });
             }
             break;
         }
         break;
-
       default:
         break;
     }
@@ -263,16 +226,11 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
       case "item":
       case "weapon":
       case "crit":
-        // Necessary for preserving active tab on re-render
         context.tab = context.tabs[partId];
         break;
 
       case "description":
-        // case 'amenities':
-        // case 'body':
         context.tab = context.tabs[partId];
-        // Enrich description info for display
-        // Enrichment turns text like `[[/r 1d20]]` into buttons
         context.enrichedDescription = await foundry.applications.ux.TextEditor.enrichHTML(this.item.system.description, {
           secrets: this.document.isOwner,
           rollData: this.item.getRollData(),
@@ -280,10 +238,7 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
         });
         break;
       case "basic":
-        // case 'body':
         context.tab = context.tabs[partId];
-        // Enrich description info for display
-        // Enrichment turns text like `[[/r 1d20]]` into buttons
         context.enrichedBasic = await foundry.applications.ux.TextEditor.enrichHTML(this.item.system.basicAction, {
           secrets: this.document.isOwner,
           rollData: this.item.getRollData(),
@@ -291,10 +246,7 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
         });
         break;
       case "advanced":
-        // case 'body':
         context.tab = context.tabs[partId];
-        // Enrich description info for display
-        // Enrichment turns text like `[[/r 1d20]]` into buttons
         context.enrichedAdvanced = await foundry.applications.ux.TextEditor.enrichHTML(this.item.system.advAction, {
           secrets: this.document.isOwner,
           rollData: this.item.getRollData(),
@@ -303,17 +255,10 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
         break;
       case "modifiers":
         context.tab = context.tabs[partId];
-        // Prepare active effects for easier access
-        // context.effects = prepareActiveEffectCategories(this.item.effects);
         break;
       case "qualities":
         context.tab = context.tabs[partId];
         break;
-      // case 'effects':
-      // 	context.tab = context.tabs[partId];
-      // 	// Prepare active effects for easier access
-      // 	context.effects = prepareActiveEffectCategories(this.item.effects);
-      // 	break;
     }
 
     return context;
@@ -326,19 +271,14 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
    * @protected
    */
   _getTabs(parts) {
-    // If you have sub-tabs this is necessary to change
     const tabGroup = "primary";
-    // Default tab for first time it's rendered this session
     if (!this.tabGroups[tabGroup]) this.tabGroups[tabGroup] = "description";
     return parts.reduce((tabs, partId) => {
       const tab = {
         cssClass: "",
         group: tabGroup,
-        // Matches tab property to
         id: "",
-        // FontAwesome Icon, if you so choose
         icon: "",
-        // Run through localization
         label: "TALESOFTHEOLDWEST.Item.Tabs.",
       };
       switch (partId) {
@@ -365,10 +305,6 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
           tab.id = "qualities";
           tab.label += "Qualities";
           break;
-        // case 'amenities':
-        // 	tab.id = 'amenities';
-        // 	tab.label += 'Amenities';
-        // 	break;
       }
       if (this.tabGroups[tabGroup] === tab.id) tab.cssClass = "active";
       tabs[partId] = tab;
@@ -385,9 +321,6 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
    */
   async _onRender(context, options) {
     await super._onRender(context, options);
-    // You may want to add other special handling here
-    // Foundry comes with a large number of utility classes, e.g. SearchFilter
-    // That you may want to implement yourself.
     const currency = this.element.querySelectorAll(".currency");
     for (const s of currency) {
       s.addEventListener("change", (event) => {
@@ -420,8 +353,6 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
     // To preserve order, make sure the new index is the highest
     const modifierId = Math.max(-1, ...Object.getOwnPropertyNames(itemModifiers)) + 1;
     let update = {};
-    let update2 = {};
-    // Using a default value of Strength and 1 in order NOT to create an empty modifier.
     update[`system.itemModifiers.${modifierId}`] = {
       name: game.i18n.localize("TALESOFTHEOLDWEST.Attributes.grit.lower"),
       value: Number(0),
@@ -878,13 +809,12 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
   static async _removeWeaponFeature(event, target) {
     event.preventDefault();
     const itemData = this.item;
-    const elem = target.currentTarget;
     const li = target.closest(".quality");
 
-    let temp = itemData.system.featureModifiers.filter((o) => o.id === li?.dataset?.itemId);
+    let temp = itemData.system.featureModifiers.find((o) => o.id === li?.dataset?.itemId);
 
-    for (const ikey in temp[0].itemModifiers) {
-      const mod = temp[0].itemModifiers[ikey];
+    for (const ikey in temp.itemModifiers) {
+      const mod = temp.itemModifiers[ikey];
       const modVal = Number(mod.value) || 0;
       switch (mod.name) {
         case "attackbonus":
@@ -980,7 +910,6 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
 
   _currencyField(event) {
     event.preventDefault();
-    const element = event.currentTarget;
     // format initial value
     onBlur({ target: event.currentTarget });
 

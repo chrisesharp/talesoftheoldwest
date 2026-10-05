@@ -33,8 +33,7 @@ TALESOFTHEOLDWEST.abilities = {
   performin: { name: "TALESOFTHEOLDWEST.Ability.Performin.long", atob: "docity" },
 };
 
-TALESOFTHEOLDWEST.animalabilities = {
-  // flight: { name: 'TALESOFTHEOLDWEST.Ability.Flight.long', atob: 'quick' },
+TALESOFTHEOLDWEST.animalabilities = {   d
   resilience: { name: "TALESOFTHEOLDWEST.Ability.Resilience.long", atob: "grit" },
   fightin: { name: "TALESOFTHEOLDWEST.Ability.Fightin.long", atob: "grit" },
   move: { name: "TALESOFTHEOLDWEST.Ability.Move.long", atob: "quick" },
@@ -148,8 +147,7 @@ TALESOFTHEOLDWEST.called_shots = {
 TALESOFTHEOLDWEST.target_cover = {
   none: { id: "none", label: "TALESOFTHEOLDWEST.Cover.none", value: "0" },
   partialcover: { id: "partialcover", label: "TALESOFTHEOLDWEST.Cover.partialcover", value: "-1" },
-  goodcover: { id: "goodcover", label: "TALESOFTHEOLDWEST.Cover.goodcover", value: "-2" },
-  // heavycover: { id: 'heavycover', label: 'TALESOFTHEOLDWEST.Cover.heavycover', value: '+1' },
+  goodcover: { id: "goodcover", label: "TALESOFTHEOLDWEST.Cover.goodcover", value: "-2" }, 
 };
 
 TALESOFTHEOLDWEST.weapon_feature_list = {
@@ -432,29 +430,5 @@ TALESOFTHEOLDWEST.conditions = {
     tableNumber: 0,
   },
 };
-
-// TALESOFTHEOLDWEST.statusEffects = [
-//   {
-//     id: "starving",
-//     name: "TALESOFTHEOLDWEST.Conditions.Starving",
-//     label: "TALESOFTHEOLDWEST.Conditions.Starving",
-//     img: "systems/talesoftheoldwest/assets/icons/starving.webp",
-//     statuses: ["starving"],
-//   },
-//   {
-//     id: "overwatch",
-//     name: "TALESOFTHEOLDWEST.Conditions.Overwatch",
-//     label: "TALESOFTHEOLDWEST.Conditions.Overwatch",
-//     img: "systems/talesoftheoldwest/assets/icons/overwatch.webp",
-//     statuses: ["overwatch"],
-//   },
-//   {
-//     id: "criticalinj",
-//     name: "TALESOFTHEOLDWEST.General.criticalInjury",
-//     label: "TALESOFTHEOLDWEST.General.criticalInjury",
-//     img: "icons/skills/wounds/injury-pain-body-orange.webp",
-//     statuses: ["criticalinj"],
-//   },
-// ];
 
 TALESOFTHEOLDWEST.physicalItems = [];

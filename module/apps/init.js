@@ -46,15 +46,10 @@ Hooks.once("init", () => {
 
 Hooks.on("ready", () => {
   if (!game.settings.get(moduleKey, "imported") && game.user.isGM && !game.folders.getName("TOTOW System")) {
-    FirstTimeSetup();
-    // ModuleImport();
+    await FirstTimeSetup();
     return;
-    // } else if (!game.settings.get(moduleKey, 'imported') && game.user.isGM && game.folders.getName('TOTOW System')) {
-    // 	migrateFolders();
-    // 	game.settings.set(moduleKey, 'imported', true);
-    // 	return;
   } else if (game.settings.get(moduleKey, "imported") && game.user.isGM && game.settings.get(moduleKey, "migrationVersion") < game.system.version) {
-    updateModule(moduleKey, moduleTitle, adventurePackName, adventurePack);
+    await updateModule(moduleKey, moduleTitle, adventurePackName, adventurePack);
   }
   logger.info(
     "Imported ",

@@ -3,7 +3,6 @@ import totowItemBase from './item-base.mjs';
 export default class totowCrit extends totowItemBase {
 	static defineSchema() {
 		const fields = foundry.data.fields;
-		const requiredInteger = { required: true, nullable: false, integer: true };
 		const schema = super.defineSchema();
 
 		schema.location = new fields.StringField({ required: true, blank: true });
@@ -25,6 +24,4 @@ export default class totowCrit extends totowItemBase {
 	set immediateeffect(value) {
 		this.imediateeffect = value;
 	}
-
-	prepareDerivedData() {}
 }

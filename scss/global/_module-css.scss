@@ -89,23 +89,6 @@
 	bottom: 30px;
 }
 
-// .talesoftheoldwest .content-link-I,
-// a.content-link {
-// 	color: hsl(39, 77%, 83%);
-// 	background: transparent;
-// 	font-size: 1.3em;
-// 	border: 0;
-// }
-// .talesoftheoldwest a.inline-link,
-// a.content-link {
-// 	background-color: transparent;
-// 	color: hsl(6deg 91.59% 29.26%);
-// 	font-size: 1.3em;
-// 	border: 0;
-// 	font-family: $font-primary;
-// 	font-style: italic;
-// }
-
 .talesoftheoldwest .inline-link2 .content-link,
 a.content-link {
 	background-color: transparent;
@@ -341,22 +324,12 @@ a.content-link {
 	margin-right: auto;
 	border: 0;
 	text-align: center;
-	/* font-family: "Esteban"; */
-	/* font-size: 18pt; */
 }
 
 .talesoftheoldwest .totowtablesmall tr:nth-child(even) {
 	background-color: transparent;
 }
 
-// .talesoftheoldwest .items-list.item ul li,
-// .talesoftheoldwest .items-list.item ol li {
-// 	font-family: typography.$font-primary;
-// 	font-weight: normal;
-// 	list-style-type: square;
-// 	padding-bottom: 9px;
-// 	font-size: 1em;
-// }
 .talesoftheoldwest ul li,
 .talesoftheoldwest ol li {
 	font-family: typography.$font-primary;
@@ -365,18 +338,10 @@ a.content-link {
 	padding-bottom: 9px;
 	font-size: 1.3em;
 }
-// ::marker {
-// 	font-size: 1.5em;
-// }
 
 .ulindent {
 	margin-left: 40px;
 }
-
-// .talesoftheoldwest :is(dir, menu, ol, ul) ul {
-// 	list-style-type: inherit;
-// 	/* font-size: 0.77em; */
-// }
 
 .talesoftheoldwest .nostyle li {
 	font-family: typography.$font-primary;
@@ -385,14 +350,6 @@ a.content-link {
 	padding-bottom: 9px;
 	font-size: 1.3em;
 }
-
-// .talesoftheoldwest .dimond li {
-// 	font-family: $font-primary;
-// 	font-weight: normal;
-// 	list-style-type: '◊';
-// 	padding-bottom: 2px;
-// 	font-size: 1.3em;
-// }
 
 .talesoftheoldwest .chapterHeading {
 	font-family: typography.$font-primary;

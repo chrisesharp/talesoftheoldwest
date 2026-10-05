@@ -11,6 +11,4 @@ export default class totowItem extends totowItemBase {
 
 		return schema;
 	}
-
-	prepareDerivedData() {}
 }

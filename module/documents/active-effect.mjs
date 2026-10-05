@@ -55,7 +55,6 @@ export default class TOTOWActiveEffect extends foundry.documents.ActiveEffect {
         });
       }
     } catch (error) {
-      console.warn("TargetedConditionPrompt error:", error);
       ui.notifications?.warn("TOTOW.ActiveEffect.TargetedConditionPrompt.Warning", { localize: true });
     }
   }

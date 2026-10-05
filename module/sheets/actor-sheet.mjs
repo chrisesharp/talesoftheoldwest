@@ -592,12 +592,11 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       if (this.actor.system.remuda.remudaMounted !== "false") {
         ui.notifications.error(game.i18n.localize("TALESOFTHEOLDWEST.General.ErrorRemudaAlreadyMounted"));
         return;
-      } // return
+      }
       await horse.actor.update({ "system.general.mounted": true });
       await this.actor.update({ "system.remuda.remudaMounted": compId });
     } else {
       // left click
-      // return
       await horse.actor.update({ "system.general.mounted": false });
       await this.actor.update({ "system.remuda.remudaMounted": "false" });
     }
@@ -724,28 +723,6 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     const effect = this._getEmbeddedDocument(target);
     await effect.update({ disabled: !effect.disabled });
   }
-  /**
-   * Determines effect parent to pass to helper
-   *
-   * @this totowActorSheet
-   * @param {PointerEvent} event   The originating click event
-   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
-   * @private
-   */
-  // static async _toggleCondition(event, target) {
-  //   event.preventDefault(); // Don't open context menu
-  //   event.stopPropagation(); // Don't trigger other events
-  //   if (event.detail > 1) return; // Ignore repeated clicks
-  //   let field = `system.conditions.${target.dataset.key}`;
-
-  //   if (await this.actor.hasCondition(target.dataset.key)) {
-  //     await this.actor.removeCondition(target.dataset.key);
-  //     await this.actor.update({ [field]: false });
-  //   } else {
-  //     await this.actor.addCondition(target.dataset.key);
-  //     await this.actor.update({ [field]: true });
-  //   }
-  // }
 
   /**
    * Creates or deletes a configured status effect.
@@ -925,11 +902,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     event.preventDefault(); // Don't open context menu
     event.stopPropagation(); // Don't trigger other events
     if (event.detail > 1) return; // Ignore repeated clicks
-    const dataset = target.dataset;
     const li = target.closest(".item");
-    // return game.items.get(li?.dataset?.itemId);
-
-    // let itemId = dataset.parentElement.dataset.itemId;
     let item = this.actor.items.get(li?.dataset?.itemId);
 
     if (event.button === 2) {
@@ -1113,13 +1086,9 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     const actor = game.actors.get(fred.id);
 
     if (actor.type === "npc") {
-      // When dropping an actor on a vehicle sheet.
-      // let crew = await fromUuid(data.uuid);
       if (data.type === "Actor") await this._dropCompadres(actor.id);
     }
     if (actor.type === "animal" && actor.system.general.subtype === "horse") {
-      // When dropping an actor on a vehicle sheet.
-      // let crew = await fromUuid(data.uuid);
       if (data.type === "Actor") await this._dropRemuda(actor.id);
     }
   }
@@ -1181,8 +1150,6 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       npc: ["item", "weapon", "talent", "crit"],
       animal: ["item", "weapon", "animalquality"],
       towncharter: ["amenities"],
-      // vehicles: ['item', 'weapon', 'armor'],
-      // territory: ['planet-system'],
     };
     let allowed = true;
     if (!alwaysAllowedItems.includes(type)) {
@@ -1280,7 +1247,6 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
   _currencyField(event) {
     event.preventDefault();
     const element = event.currentTarget;
-    // format initial value
     onBlur({ target: event.currentTarget });
 
     function localStringToNumber(s) {

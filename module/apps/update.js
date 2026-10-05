@@ -19,12 +19,7 @@ export default async function updateModule(moduleKey, moduleTitle, adventurePack
    *
    */
 
-  const updateAssets = [
-    // { assetType: "tables", assetName: "THE DAMNED CARDS", action: "update" },
-    // { assetType: "tables", assetName: "YOUR TOWN - PERSONAL FORTUNES", action: "update" },
-    // { assetType: "tables", assetName: "YOUR TOWN - TOWN FORTUNES", action: "update" },
-    // { assetType: "items", assetName: "Dead Eye", action: "update" },
-  ];
+  const updateAssets = [];
 
   const updateNotes = `
 		`;

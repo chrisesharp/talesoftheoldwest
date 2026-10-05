@@ -15,6 +15,4 @@ export default class totowTalent extends totowItemBase {
 
 		return schema;
 	}
-
-	prepareDerivedData() {}
 }

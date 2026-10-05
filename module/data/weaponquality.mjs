@@ -3,7 +3,6 @@ import totowItemBase from './item-base.mjs';
 export default class totowWeaponQuality extends totowItemBase {
 	static defineSchema() {
 		const fields = foundry.data.fields;
-		const requiredInteger = { required: true, nullable: false, integer: true };
 		const schema = super.defineSchema();
 
 		schema.feature = new fields.StringField({ required: true, blank: true });
@@ -13,6 +12,4 @@ export default class totowWeaponQuality extends totowItemBase {
 
 		return schema;
 	}
-
-	prepareDerivedData() {}
 }

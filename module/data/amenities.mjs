@@ -22,6 +22,4 @@ export default class totowAmenities extends totowItemBase {
 
 		return schema;
 	}
-
-	prepareDerivedData() {}
 }
