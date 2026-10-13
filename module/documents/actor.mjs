@@ -47,9 +47,9 @@ export class totowActor extends Actor {
    * is queried and has a roll executed directly from it).
    */
   prepareDerivedData() {
-    const actorData = this;
-    const systemData = actorData.system;
-    const flags = actorData.flags.talesoftheoldwest || {};
+    // const actorData = this;
+    // const systemData = actorData.system;
+    // const flags = actorData.flags.talesoftheoldwest || {};
   }
 
   /**
@@ -125,30 +125,23 @@ export class totowActor extends Actor {
     const status = CONFIG.statusEffects.find((e) => e.id === statusId);
     if (!status) throw new Error(`Invalid status ID "${statusId}" provided to Actor#toggleStatusEffect`);
     const existing = [];
-    const hitList = [];
-    // const lastRoll = this.system.general.panic.lastRoll
 
-    // Find the effect with the static _id of the status effect
     if (status._id) {
       const effect = this.effects.get(status._id);
       if (effect) existing.push(effect.id);
-    }
-    // If no static _id, find all single-status effects that have this status
-    else {
+    } else {
       for (const effect of this.effects) {
         const statuses = effect.statuses;
         if (statuses.size === 1 && statuses.has(status.id)) existing.push(effect.id);
       }
     }
 
-    // Remove the existing effects unless the status effect is forced active
     if (existing.length) {
       if (active) return true;
       await this.deleteEmbeddedDocuments("ActiveEffect", existing);
       return false;
     }
 
-    // Create a new effect unless the status effect is forced inactive
     if (!active && active !== undefined) return;
     const effect = await TOTOWActiveEffect.fromStatusEffect(statusId);
     if (overlay) effect.updateSource({ "flags.core.overlay": true });
@@ -165,8 +158,8 @@ export class totowActor extends Actor {
 
     let existing = await this.hasCondition(effect.id);
     if (!existing) {
-      effect.label = game.i18n.localize(effect.label).replace(/(^\w{1})|(\s+\w{1})/g, (letter) => letter.toUpperCase());
-      effect.name = game.i18n.localize(effect.name).replace(/(^\w{1})|(\s+\w{1})/g, (letter) => letter.toUpperCase());
+      effect.label = game.i18n.localize(effect.label).replace(/(^|\s)\w/g, (letter) => letter.toUpperCase());
+      effect.name = game.i18n.localize(effect.name).replace(/(^|\s)\w/g, (letter) => letter.toUpperCase());
       effect["statuses"] = effect.id;
       delete effect.id;
       return await this.createEmbeddedDocuments("ActiveEffect", [effect]);
@@ -205,18 +198,13 @@ export class totowActor extends Actor {
     let update = {};
     let noMods = "";
 
-    switch (type) {
-      case "pc":
-        // case 'npc':
-        atable = game.tables.getName(game.i18n.localize("TALESOFTHEOLDWEST.CriticalInjuries")) || game.tables.getName("Critical Injuries");
-        if (atable === null || atable === undefined) {
-          ui.notifications.warn(game.i18n.localize("TALESOFTHEOLDWEST.NoCharCrit"));
-          return;
-        }
-
-        break;
-      default:
-        return;
+    if (type !== "pc") {
+      return;
+    }
+    atable = game.tables.getName(game.i18n.localize("TALESOFTHEOLDWEST.CriticalInjuries")) || game.tables.getName("Critical Injuries");
+    if (atable === null || atable === undefined) {
+      ui.notifications.warn(game.i18n.localize("TALESOFTHEOLDWEST.NoCharCrit"));
+      return;
     }
 
     if (!manCrit) {
@@ -232,11 +220,10 @@ export class totowActor extends Actor {
       case "npc":
         {
           resultImage = diceRoll.results[0].img;
-          // Parse structured critical injury fields with robust regex matching
           const extractField = (label) => {
-            const pattern = new RegExp(`<strong>${label}</strong>:\\s*([\\s\\S]*?)(?=(?:<p><strong>|<\\/p>|$))`, "i");
+            const pattern = new RegExp(String.raw`<strong>${label}</strong>:\s*([\s\S]*?)(?=(?:<p><strong>|<\/p>|$))`, "i");
             const match = pattern.exec(messG);
-            return match ? match[1].replace(/<\/?[^>]+(>|$)/g, "").trim() : "";
+            return match ? match[1].replace(/<[^<>]*>/g, "").trim() : "";
           };
 
           const rawLocation = extractField("Location") || "Body";
@@ -266,7 +253,7 @@ export class totowActor extends Actor {
                 '<strong style="color: red;">' + fatal[0] + "</strong><br>" + game.i18n.localize("TALESOFTHEOLDWEST.Criticals.endOfTheTrail");
               testArray[11] = '<strong style="color: red;">' + testArray[11] + "</strong>";
             } else {
-              const fatalDiceMatch = rawFatal.match(/\[\[([0-9]+d[0-9]+)\]\]\s*(.*)/i);
+              const fatalDiceMatch = new RegExp(/\[\[(\d+d\d+)\]\]\s*(.*)/i).exec(rawFatal);
               if (fatalDiceMatch) {
                 rollFatal = fatalDiceMatch[1];
                 newFatalTime = fatalDiceMatch[2] || "";
@@ -297,13 +284,12 @@ export class totowActor extends Actor {
               }
             }
           } else {
-            cFatal = false;
             fatal = [game.i18n.localize("TALESOFTHEOLDWEST.General.no"), ""];
           }
 
           // Process Healing Time
           if (rawHealingTime && rawHealingTime !== "-" && !/instant/i.test(rawFatal)) {
-            const healDiceMatch = rawHealingTime.match(/\[\[([0-9]+d[0-9]+)\]\]\s*(.*)/i);
+            const healDiceMatch = new RegExp(/\[\[(\d+d\d+)\]\]\s*(.*)/i).exec(rawHealingTime);
             if (healDiceMatch) {
               rollheal = healDiceMatch[1];
               newHealTime = healDiceMatch[2] || "";
@@ -388,19 +374,8 @@ export class totowActor extends Actor {
     };
 
     // Apply the Active Effect
-
-    switch (type) {
-      case "pc":
-        // case 'npc':
-        if (actor.system.critInj.length === 1) {
-          this.toggleStatusEffect("criticalinj");
-        }
-        break;
-      // case 'creature':criticalinj
-      // 	break;
-
-      default:
-        break;
+    if (type === "pc" && actor.system.critInj.length === 1) {
+      await this.toggleStatusEffect("criticalinj");
     }
 
     ChatMessage.applyMode(chatData, game.settings.get("core", "rollMode"));
@@ -495,6 +470,7 @@ export class totowActor extends Actor {
             return item.roll(dataset);
           case "weapon":
             result = await item.roll(dataset, item);
+            break;
           default:
             break;
         }
@@ -502,7 +478,7 @@ export class totowActor extends Actor {
       if (result === "cancelled") {
         return;
       } else {
-        sendToChat(actor, event, target, result);
+        await sendToChat(actor, event, target, result);
       }
 
       async function processConditionals(rollType, dataset, rollData) {
@@ -540,7 +516,7 @@ export class totowActor extends Actor {
             .filter(([k]) => k.startsWith('mods.'))
             .reduce((sum, [, v]) => sum + (Number(v) || 0), 0);
 
-          dataset.mod = parseInt(dataset.mod || 0) + checkboxSum;
+          dataset.mod = Number.parseInt(dataset.mod || 0) + checkboxSum;
         }
 
         result = await rollAttrib(dataset, rollData, actor);

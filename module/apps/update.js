@@ -43,12 +43,13 @@ export default async function updateModule(moduleKey, moduleTitle, adventurePack
   await allDone(moduleKey, moduleTitle, updateNotes);
 }
 
-async function getUpdateIDs(aPack, updateAssets) {
+function getUpdateIDs(aPack, updateAssets) {
   for (let key in updateAssets) {
     if (updateAssets.hasOwnProperty(key)) {
       if (updateAssets[key].action === "update") {
-        const tempID = await game[updateAssets[key].assetType].getName(updateAssets[key].assetName).id;
-        const tempClass = await game[updateAssets[key].assetType].getName(updateAssets[key].assetName).documentName;
+        const asset = game[updateAssets[key].assetType]?.getName(updateAssets[key].assetName);
+        const tempID = asset?.id;
+        const tempClass = asset?.documentName;
         Object.assign(updateAssets[key], { assetID: tempID, assetClass: tempClass });
       } else {
         Object.assign(updateAssets[key], { assetClass: "new" });
@@ -61,6 +62,7 @@ async function getUpdateIDs(aPack, updateAssets) {
 async function ModuleUpdate(aPack, updateAssets) {
   const toUpdate = {};
   const toCreate = {};
+  const toDelete = [];
   let created = 0;
   let updated = 0;
 
@@ -71,13 +73,11 @@ async function ModuleUpdate(aPack, updateAssets) {
       if (assetClass === cls.documentName || assetClass === "new") {
         switch (action) {
           case "delete":
-            try {
+            {
               const isThere = game[assetType].getName(assetName);
               if (isThere) {
-                await isThere.delete({ deleteSubfolders: true, deleteContents: true });
+                toDelete.push({ doc: isThere, assetName });
               }
-            } catch (error) {
-              console.warn(`${assetName} already deleted`);
             }
             break;
           case "add":
@@ -116,14 +116,27 @@ async function ModuleUpdate(aPack, updateAssets) {
   }
 
   //
+  // Now delete any assets (collected above, run concurrently).
+  //
+  await Promise.all(
+    toDelete.map(({ doc, assetName }) =>
+      doc
+        .delete({ deleteSubfolders: true, deleteContents: true })
+        .catch(() => console.warn(`${assetName} already deleted`)),
+    ),
+  );
+
+  //
   // Now update any assets.
   //
   if (toUpdate) {
-    for (const [documentName, updateData] of Object.entries(toUpdate)) {
-      const cls = getDocumentClass(documentName);
-      await cls.updateDocuments(updateData, { diff: false, recursive: false, noHook: true });
-      updated++;
-    }
+    const updateEntries = Object.entries(toUpdate);
+    await Promise.all(
+      updateEntries.map(([documentName, updateData]) =>
+        getDocumentClass(documentName).updateDocuments(updateData, { diff: false, recursive: false, noHook: true }),
+      ),
+    );
+    updated += updateEntries.length;
   }
 
   //
@@ -131,11 +144,13 @@ async function ModuleUpdate(aPack, updateAssets) {
   //
 
   if (toCreate) {
-    for (const [documentName, createData] of Object.entries(toCreate)) {
-      const cls = getDocumentClass(documentName);
-      await cls.createDocuments(createData, { keepId: true, keepEmbeddedId: true, renderSheet: false });
-      created++;
-    }
+    const createEntries = Object.entries(toCreate);
+    await Promise.all(
+      createEntries.map(([documentName, createData]) =>
+        getDocumentClass(documentName).createDocuments(createData, { keepId: true, keepEmbeddedId: true, renderSheet: false }),
+      ),
+    );
+    created += createEntries.length;
   }
   logger.info(`${moduleKey} Updated ${updated} Asset, Created ${created} Asset`);
 }

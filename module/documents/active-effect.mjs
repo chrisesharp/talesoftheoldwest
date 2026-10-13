@@ -40,7 +40,7 @@ export default class TOTOWActiveEffect extends foundry.documents.ActiveEffect {
    */
   static async targetedConditionPrompt(statusId, effectData) {
     try {
-      if (typeof TargetedConditionPrompt === "undefined") {
+      if (TargetedConditionPrompt === undefined) {
         console.warn(`TargetedConditionPrompt is not available for condition ${statusId}.`);
         return;
       }
@@ -205,7 +205,7 @@ export default class TOTOWActiveEffect extends foundry.documents.ActiveEffect {
       rollData.effect.statuses[status] = 1;
     }
 
-    if (this.system.modifyRollData instanceof Function) {
+    if (typeof this.system.modifyRollData === 'function') {
       this.system.modifyRollData(rollData);
     }
 
@@ -216,7 +216,7 @@ export default class TOTOWActiveEffect extends foundry.documents.ActiveEffect {
 
   /** @inheritdoc */
   apply(actor, change) {
-    if (this.system.apply instanceof Function) return this.system.apply(actor, change);
+    if (typeof this.system.apply === 'function') return this.system.apply(actor, change);
     return super.apply(actor, change);
   }
 }

@@ -8,7 +8,6 @@ export default class totowWeaponQuality extends totowItemBase {
 		schema.feature = new fields.StringField({ required: true, blank: true });
 		schema.weapontype = new fields.StringField({ required: true, blank: true, initial: 'ranged' });
 		schema.onweapon = new fields.StringField({ required: true, blank: true, initial: 'any' });
-		// schema.impact = new fields.HTMLField();
 
 		return schema;
 	}

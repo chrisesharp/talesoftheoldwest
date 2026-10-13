@@ -179,6 +179,4 @@ export default class totowTownCharter extends totowActorBase {
   get settlementpoints() {
     return this.general.settlementponts;
   }
-
-  getRollData() {}
 }

@@ -263,6 +263,4 @@ export default class totowPC extends totowActorBase {
 			this.abilities[s].mod = Number(skl.value) + Number(attrBase) + Number(sklMod[s] ?? 0);
 		}
 	}
-
-	getRollData() {}
 }

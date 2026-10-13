@@ -13,8 +13,8 @@ export class TOTOWSystemImportFormWrapper extends foundry.applications.api.Appli
   static DEFAULT_OPTIONS = {
     tag: "form",
   };
-  render() {
-    ReImport();
+  async render() {
+    await ReImport();
   }
 }
 
@@ -139,11 +139,17 @@ export async function ReImport() {
   //
 
   if (toCreate) {
-    for (const [documentName, createData] of Object.entries(toCreate)) {
-      const cls = getDocumentClass(documentName);
-      await cls.createDocuments(createData, { keepId: true, keepEmbeddedId: true, renderSheet: false });
-      created++;
-    }
+    const entries = Object.entries(toCreate);
+    // Create each document type in order: each step waits for the previous one to finish.
+    await entries.reduce(
+      (previous, [documentName, createData]) =>
+        previous.then(() => {
+          const cls = getDocumentClass(documentName);
+          return cls.createDocuments(createData, { keepId: true, keepEmbeddedId: true, renderSheet: false });
+        }),
+      Promise.resolve(),
+    );
+    created += entries.length;
   }
   ui.notifications.warn(`Re-Import Completed Created ${created} Assets`);
 
@@ -151,16 +157,16 @@ export async function ReImport() {
 }
 
 async function createThumbs(adventure) {
-  let updates = [];
-  for (let scene of adventure.scenes) {
-    let sceneId = scene._id;
-    let sceneImported = game.scenes.get(sceneId);
-    const { thumb } = await sceneImported.createThumbnail();
-    updates.push({
-      _id: scene.id,
-      thumb,
-    });
-  }
+  const updates = await Promise.all(
+    adventure.scenes.map(async (scene) => {
+      const sceneImported = game.scenes.get(scene._id);
+      const { thumb } = await sceneImported.createThumbnail();
+      return {
+        _id: scene.id,
+        thumb,
+      };
+    }),
+  );
   Scene.updateDocuments(updates);
 }
 
