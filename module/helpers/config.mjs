@@ -33,7 +33,7 @@ TALESOFTHEOLDWEST.abilities = {
   performin: { name: "TALESOFTHEOLDWEST.Ability.Performin.long", atob: "docity" },
 };
 
-TALESOFTHEOLDWEST.animalabilities = {   d
+TALESOFTHEOLDWEST.animalabilities = {
   resilience: { name: "TALESOFTHEOLDWEST.Ability.Resilience.long", atob: "grit" },
   fightin: { name: "TALESOFTHEOLDWEST.Ability.Fightin.long", atob: "grit" },
   move: { name: "TALESOFTHEOLDWEST.Ability.Move.long", atob: "quick" },

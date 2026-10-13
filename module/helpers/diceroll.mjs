@@ -1,4 +1,4 @@
-import { TOTWWhichTroubleDialog, TOTWBuyOffDialog, TOTWManualTroubleDialog, updateChatMessage } from './chatmodifier.mjs'; d
+import { TOTWWhichTroubleDialog, TOTWBuyOffDialog, TOTWManualTroubleDialog, updateChatMessage } from './chatmodifier.mjs';
 
 /**
  * @typedef {Object} TOTWRollState

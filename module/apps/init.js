@@ -44,7 +44,7 @@ Hooks.once("init", () => {
   });
 });
 
-Hooks.on("ready", () => {
+Hooks.on("ready", async () => {
   if (!game.settings.get(moduleKey, "imported") && game.user.isGM && !game.folders.getName("TOTOW System")) {
     await FirstTimeSetup();
     return;
