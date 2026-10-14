@@ -1,6 +1,7 @@
 {
 	"name": "talesoftheoldwest",
 	"version": "3.0.0",
+	"type": "module",
 	"description": "CSS compiler for the totow system",
 	"scripts": {
 		"build": "gulp build",
