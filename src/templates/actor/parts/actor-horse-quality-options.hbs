@@ -2,9 +2,11 @@
 	<div class='heading QualSplit11'>{{toUpperCase (localize 'TALESOFTHEOLDWEST.Item.General.quality')}}</div>
 	<div style=' overflow:auto'>
 		<ol class='items-list'>
-			<li class='item grid-short-quality items-header'>
+			<li class='item items-header'>
 				<div class='item-name SQol1'>{{toUpperCase (localize 'TALESOFTHEOLDWEST.General.name')}}</div>
 			</li>
+		</ol>
+		<ol class='items-list'>
 			{{#each actor.items as |item id|}}
 				{{#if (eq item.system.general.subtype 'quality')}}
 					<li class='item grid-short-quality' data-item-id='{{item._id}}' data-drag='true' data-document-class='Item'>
@@ -23,7 +25,7 @@
 	<div class='heading QualSplit12'>{{toUpperCase (localize 'TALESOFTHEOLDWEST.Item.General.flaws')}}</div>
 	<div style=' overflow:auto'>
 		<ol class='items-list'>
-			<li class='item grid-short-quality items-header'>
+			<li class='item items-header'>
 				<div class='item-name SQol1'>{{toUpperCase (localize 'TALESOFTHEOLDWEST.General.name')}}</div>
 			</li>
 			{{#each actor.items as |item id|}}

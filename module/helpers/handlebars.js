@@ -2,7 +2,7 @@ import { preloadHandlebarsTemplates } from "./templates.mjs";
 
 export const initializeHandlebars = () => {
 	registerHandlebarsHelpers();
-	preloadHandlebarsTemplates();
+	void preloadHandlebarsTemplates();
 };
 
 function registerHandlebarsHelpers() {
@@ -39,8 +39,8 @@ function registerHandlebarsHelpers() {
 	});
 
 	Handlebars.registerHelper('removeMarkup', function (text) {
-		const markup = /<(.*?)>/gi;
-		return new Handlebars.SafeString(text.replace(markup, ''));
+		const doc = new DOMParser().parseFromString(text, 'text/html');
+		return new Handlebars.SafeString(doc.body.textContent ?? '');
 	});
 
 	Handlebars.registerHelper('ifSetting', function (v1, options) {
@@ -49,12 +49,9 @@ function registerHandlebarsHelpers() {
 	});
 
 	Handlebars.registerHelper('striptags', function (txt) {
-		// exit now if text is undefined
-		if (typeof txt == 'undefined') return;
-		// the regular expresion
-		const regexp = /<[\/\w]+>/g;
-		// replacing the text
-		return txt.replace(regexp, '');
+		if (txt === undefined) return;
+		const doc = new DOMParser().parseFromString(txt, 'text/html');
+		return doc.body.textContent ?? '';
 	});
 
 	Handlebars.registerHelper('addstats', function (v1, v2) {

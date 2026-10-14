@@ -421,7 +421,8 @@ export class totowActor extends Actor {
     const rollData = this.getRollData();
     const dataset = target.dataset;
     dataset.myHorse = "false";
-    // const targetActor = actor.getRollData();
+    dataset.shootmodifiermod = "0";
+
     if (actor.type === "pc") {
       dataset.faithpoints = actor.system.general.faithpoints.value;
       dataset.canPush = actor.system.general.canPush;
@@ -466,7 +467,6 @@ export class totowActor extends Actor {
         const item = actor.items.get(itemId);
         switch (dataset.rollType) {
           case "item":
-            // case 'talent':
             return item.roll(dataset);
           case "weapon":
             result = await item.roll(dataset, item);
@@ -544,6 +544,7 @@ export class totowActor extends Actor {
         }
         const msg = await ChatMessage.create(chatData);
         result.result.messageNo = msg.id;
+        await msg.setFlag("talesoftheoldwest", "modifiers", result.result.modifiers.mod);
         await msg.setFlag("talesoftheoldwest", "results", result);
         await msg.setFlag("talesoftheoldwest", "isType", actor.type);
 

@@ -1,5 +1,4 @@
 import { prepareActiveEffectCategories } from "../helpers/effects.mjs";
-import { rollAttrib } from "../helpers/diceroll.mjs";
 import { logger } from "../helpers/logger.mjs";
 import TOTOWActiveEffect from "../documents/active-effect.mjs";
 import { findMods } from "../helpers/utils.mjs";
@@ -127,6 +126,10 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       template: "systems/talesoftheoldwest/templates/actor/parts/actor-horse-saddlebag.hbs",
       scrollable: [""],
     },
+    horseitems: {
+      template: "systems/talesoftheoldwest/templates/actor/parts/horse-items-inline.hbs",
+      scrollable: [""],
+    },
     actorhorsequality: {
       template: "systems/talesoftheoldwest/templates/actor/parts/actor-horse-quality-options.hbs",
       scrollable: [""],
@@ -194,11 +197,10 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     } else {
       if (context.actor.type === "pc") {
         this._prepareCompadres(context);
-        this._prepareRemuda(context);
-        // context.statuses = await this._prepareStatusEffects();
-        context.effects = await this._prepareActiveEffectCategories();
+        await this._prepareRemuda(context);
       }
       context.statuses = await this._prepareStatusEffects();
+      context.effects = await this._prepareActiveEffectCategories();
       this._prepareItems(context);
     }
     logger.debug("Actor Sheet derived data:", context);
@@ -330,7 +332,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     const itemMods = [];
     const amenities = [];
     // Iterate through items, allocating to containers
-    for (let i of this.document.items) {
+    for (const i of this.document.items) {
       switch (i.type) {
         case "item":
           gear.push(i);
@@ -364,9 +366,9 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     }
     if (context.actor.type === "pc") {
       if (context.system.remuda.remudaMounted !== "false") {
-        for (let [key, modItems] of Object.entries(context.system.remuda.details)) {
+        for (const modItems of Object.values(context.system.remuda.details)) {
           if (modItems.actor.system.general.mounted === true) {
-            for (let i of modItems.actor.items) {
+            for (const i of modItems.actor.items) {
               findMods(i, itemMods);
             }
           }
@@ -430,9 +432,26 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
   async _prepareStatusEffects() {
     /** @type {Record<string, StatusInfo>} */
     const statusInfo = {};
-    for (const status of CONFIG.statusEffects) {
-      // Only display if it would show in the token HUD *and* it has an assigned _id
-      if (!status._id || !TOTOWActiveEffect.validHud(status, this.actor)) continue;
+    const validStatuses = CONFIG.statusEffects.filter(
+      (status) => status._id && TOTOWActiveEffect.validHud(status, this.actor)
+    );
+
+    // Resolve all UUID lookups in parallel, outside the loop.
+    const pages = await Promise.all(
+      validStatuses.map((status) => (status.rule ? fromUuid(status.rule) : Promise.resolve(null)))
+    );
+
+    // Resolve all tooltip enrichments in parallel.
+    const tooltips = await Promise.all(
+      validStatuses.map((status, i) => {
+        const page = pages[i];
+        if (!page) return Promise.resolve(null);
+        return enrichHTML(page.text.content, { relativeTo: this.actor });
+      })
+    );
+
+    for (let i = 0; i < validStatuses.length; i++) {
+      const status = validStatuses[i];
       statusInfo[status.id] = {
         _id: status._id,
         name: status.name,
@@ -442,11 +461,8 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
         resp: status.resp,
         tableNumber: status.tableNumber,
       };
-      if (status.rule) {
-        const page = await fromUuid(status.rule);
-        statusInfo[status.id].tooltip = await enrichHTML(page.text.content, {
-          relativeTo: this.actor,
-        });
+      if (tooltips[i] !== null) {
+        statusInfo[status.id].tooltip = tooltips[i];
       }
     }
 
@@ -903,7 +919,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     event.stopPropagation(); // Don't trigger other events
     if (event.detail > 1) return; // Ignore repeated clicks
     const li = target.closest(".item");
-    let item = this.actor.items.get(li?.dataset?.itemId);
+    const item = this.actor.items.get(li?.dataset?.itemId);
 
     if (event.button === 2) {
       // right click
@@ -940,9 +956,9 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
 
   async _inlineedit(event) {
     event.preventDefault();
-    let itemId = event.target.parentElement.dataset.itemId;
-    let item = this.actor.items.get(itemId);
-    let temp = event.target.dataset.mod;
+    const itemId = event.target.parentElement.dataset.itemId;
+    const item = this.actor.items.get(itemId);
+    const temp = event.target.dataset.mod;
 
     return await item.update({ [temp]: event.target.value }, {});
   }

@@ -44,7 +44,7 @@ export default class TOTOWActiveEffect extends foundry.documents.ActiveEffect {
         console.warn(`TargetedConditionPrompt is not available for condition ${statusId}.`);
         return;
       }
-      let imposingActorUuid = await TargetedConditionPrompt.create({ context: { statusId } });
+      const imposingActorUuid = await TargetedConditionPrompt.create({ context: { statusId } });
 
       if (imposingActorUuid && foundry.utils.parseUuid(imposingActorUuid)) {
         effectData.changes = effectData.changes ?? [];
@@ -54,7 +54,8 @@ export default class TOTOWActiveEffect extends foundry.documents.ActiveEffect {
           value: imposingActorUuid,
         });
       }
-    } catch (error) {
+    } catch (_error) { 
+      console.log("TOTOW.ActiveEffect.TargetedConditionPrompt.Warning", _error);
       ui.notifications?.warn("TOTOW.ActiveEffect.TargetedConditionPrompt.Warning", { localize: true });
     }
   }

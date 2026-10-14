@@ -11,7 +11,6 @@ const NAME = 'talesoftheoldwest';
 const TITLE = 'Tales of the Old West';
 const PATH = `systems/${NAME}`;
 export class COMMON {
-	/** CONSTANTS **/
 	static DATA = {
 		name: NAME,
 		path: PATH,
@@ -19,23 +18,9 @@ export class COMMON {
 	};
 
 	static NAME = this.name;
-	/** \CONSTANTS **/
 
-	/* pre-setup steps */
-	static build() {}
+	static register() {}
 
-	static register() {
-		COMMON.globals();
-	}
-
-	static globals() {
-		/* register our namespace */
-		// globalThis.game.talesoftheoldwest = {
-		//   debug: {},
-		// };
-	}
-
-	/** HELPER FUNCTIONS **/
 	static firstGM() {
 		return game.users.find((u) => u.isGM && u.active);
 	}

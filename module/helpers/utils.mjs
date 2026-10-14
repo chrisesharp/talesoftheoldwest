@@ -11,7 +11,7 @@ export const getID = function () {
 	// Math.random should be unique because of its seeding algorithm.
 	// Convert it to base 36 (numbers + letters), and grab the first 9 characters
 	// after the decimal.
-	return '_' + Math.random().toString(36).substr(2, 9);
+	return '_' + Math.random().toString(36).slice(2, 11);
 };
 
 /**
@@ -269,10 +269,11 @@ export function modifiers(itemModspath, conditionalMods, talentMods, dataset, ak
 						const itemModType = akey.modtype
 							? `${akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)} - `
 							: '';
+						const itemModSeparator = itemModType ? ` — ${itemModType}` : '';
 						conditionalMods.push({
 							id: `i_${conditionalMods.length}`,
 							name: akey.name,
-							label: `${akey.itemname}${itemModType ? ` — ${itemModType}` : ''} ${akey.itemDescription}`,
+							label: `${akey.itemname}${itemModSeparator} ${akey.itemDescription}`,
 							value: akey.value,
 							kind: 'item',
 						});
@@ -283,10 +284,11 @@ export function modifiers(itemModspath, conditionalMods, talentMods, dataset, ak
 							const onPcModType = akey.modtype
 								? `${akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)} - `
 								: '';
+							const pcModSeparator = onPcModType ? ` — ${onPcModType}` : '';
 							conditionalMods.push({
 								id: `i_${conditionalMods.length}`,
 								name: akey.name,
-								label: `${akey.itemname}${onPcModType ? ` — ${onPcModType}` : ''} ${akey.itemDescription}`,
+								label: `${akey.itemname}${pcModSeparator} ${akey.itemDescription}`,
 								value: akey.value,
 								kind: 'item',
 							});
@@ -308,8 +310,10 @@ export function modifiers(itemModspath, conditionalMods, talentMods, dataset, ak
 
 export function parents(el, selector) {
 	const myParents = [];
-	while ((el = el.parentNode) && el !== document) {
+	el = el.parentNode;
+	while (el && el !== document) {
 		if (!selector || el.matches(selector)) myParents.push(el);
+		el = el.parentNode;
 	}
 	return myParents;
 }
@@ -338,7 +342,7 @@ export function collapseSection(element) {
 	});
 
 	// mark the section as "currently collapsed"
-	element.setAttribute('data-collapsed', 'true');
+	element.dataset.collapsed = 'true';
 }
 
 export function expandSection(element) {
@@ -358,5 +362,5 @@ export function expandSection(element) {
 	});
 
 	// mark the section as "currently not collapsed"
-	element.setAttribute('data-collapsed', 'false');
+	element.dataset.collapsed = 'false';
 }

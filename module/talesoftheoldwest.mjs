@@ -14,7 +14,7 @@ import { totowTroubleDie, totowNormalDie } from "./helpers/totowTroubleDice.js";
 import { ModuleImport, TOTOWSystemImportFormWrapper } from "./apps/init.js";
 import { COMMON } from "./helpers/common.mjs";
 import { logger } from "./helpers/logger.mjs";
-import registerSettings from "./helpers/settings.mjs";
+import { registerSettings } from "./helpers/settings.mjs";
 import { totowDiceListeners, totowDiceButtons } from "./helpers/diceroll.mjs";
 import { initializeHandlebars } from "./helpers/handlebars.js";
 import { enrichTextEditors } from "./helpers/enricher.js";

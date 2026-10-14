@@ -150,7 +150,7 @@ async function rollTrouble(results, tableChoice, messageId, message, formData) {
 		trouble = Number(rd.trouble);
 	}
 
-	if (formData && formData.manMod !== undefined) {
+	if (formData?.manMod !== undefined) {
 		const parsed = Number(formData.manMod);
 		trouble = Math.min(Math.max(Number.isFinite(parsed) && parsed > 0 ? parsed : 1, 1), 4);
 	}

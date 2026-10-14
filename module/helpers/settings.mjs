@@ -1,6 +1,4 @@
-export default function () {
-	// Register system settings
-
+export function registerSettings () {
 	game.settings.register('talesoftheoldwest', 'systemMigrationVersion', {
 		name: 'System Migration Version',
 		scope: 'world',

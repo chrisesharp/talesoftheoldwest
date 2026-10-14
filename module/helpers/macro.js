@@ -57,13 +57,15 @@ export class TOTOWMacros {
 						const elements = button.form.elements;
 						const tableId = elements.tableSelect.value;
 						const table = game.tables.get(tableId);
-						const drawNumber = Number.parseInt(elements.inputNbr.value || 0);
+						const drawNumber = Number.parseInt(elements.inputNbr.value || '0', 10);
 						const formula = table.formula;
-						const modifier = Number.parseInt(elements.inputMod.value || '0');
-						for (let i = 0; i < drawNumber; i++) {
-							const roll = await new Roll(formula + ' + ' + modifier).evaluate();
-							await table.draw({ roll: roll });
-						}
+						const modifier = Number.parseInt(elements.inputMod.value || '0', 10);
+						const rolls = await Promise.all(
+							Array.from({ length: Math.max(0, drawNumber) }, () =>
+								new Roll(`${formula} + ${modifier}`).evaluate()
+							)
+						);
+						await Promise.all(rolls.map((roll) => table.draw({ roll })));
 					},
 				},
 				{

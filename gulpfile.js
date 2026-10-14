@@ -1,6 +1,9 @@
 import fs from 'fs-extra';
 import gulp from 'gulp';
-import sass from 'gulp-dart-sass';
+import gulpSass from 'gulp-sass';
+import * as dartSass from 'sass';
+const sass = gulpSass(dartSass);
+import autoprefixer from 'gulp-autoprefixer';
 import path from 'node:path';
 import buffer from 'vinyl-buffer';
 import source from 'vinyl-source-stream';
@@ -48,6 +51,7 @@ function buildStyles() {
   return gulp
     .src(`${stylesDirectory}/${name}.${stylesExtension}`)
     .pipe(sass().on('error', sass.logError))
+    .pipe(autoprefixer())
     .pipe(gulp.dest(`${distDirectory}/css`));
 }
 

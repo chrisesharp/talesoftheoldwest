@@ -29,7 +29,6 @@ function _switchMods(qualityMod, mods) {
 		case 'makin':
 		case 'doctorin':
 		case 'booklearnin':
-			// case 'flight':
 			qualityMod += Number(mods.value);
 			break;
 		default:
