@@ -1,3 +1,4 @@
+import { calculateMods } from '../helpers/utils.mjs';
 import totowActorBase from './actor-base.mjs';
 
 export default class totowNPC extends totowActorBase {
@@ -91,16 +92,7 @@ export default class totowNPC extends totowActorBase {
 		const sklMod = {};
 
 		if (this.parent?.items?.size) {
-			for (const item of this.parent.items) {
-				if (!item.system?.itemModifiers || item.system.stored) continue;
-				for (const mod of Object.values(item.system.itemModifiers)) {
-					if (mod.state !== 'Active') continue;
-					const val = Number(mod.value) || 0;
-					const target = mod.name?.toLowerCase();
-					if (target in attrMod) attrMod[target] += val;
-					else sklMod[target] = (sklMod[target] ?? 0) + val;
-				}
-			}
+			calculateMods(this.parent.items, attrMod, sklMod, 'Active');
 		}
 
 		for (const [a, abl] of Object.entries(this.attributes)) {

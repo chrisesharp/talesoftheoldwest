@@ -191,37 +191,38 @@ export class totowItem extends Item {
 	async roll(dataset, item) {
 		const rollData = this.getRollData();
 		let qualityMod = 0;
-		if (dataset.rollType === 'weapon') {
-			if (item.system.featureModifiers.length > 0) {
-				for (const feature of Object.values(item.system.featureModifiers)) {
-					for (const mods of Object.values(feature.itemModifiers)) {
-						if (mods.state === 'Active') {
-							qualityMod = _switchMods(qualityMod, mods);
-						}
+
+		if (dataset.rollType !== 'weapon') return;
+
+		if (item.system.featureModifiers.length > 0) {
+			for (const feature of Object.values(item.system.featureModifiers)) {
+				for (const mods of Object.values(feature.itemModifiers)) {
+					if (mods.state === 'Active') {
+						qualityMod = _switchMods(qualityMod, mods);
 					}
 				}
 			}
-			// TODO  if item knife or tomahawk check if it's being thrown or used in melee.
-			//  tested an it can be spoofed by:
-			// set dataset.subtype to 'fightin' and dataset.itemammo to 1
+		}
+		// TODO  if item knife or tomahawk check if it's being thrown or used in melee.
+		//  tested an it can be spoofed by:
+		// set dataset.subtype to 'fightin' and dataset.itemammo to 1
 
-			switch (dataset.subtype) {
-				case 'shootin':
-					dataset.mod = rollData.actor.abilities[`${dataset.subtype}`].mod + rollData.attackbonus;
-					dataset.stunts = dataset.subtype;
+		switch (dataset.subtype) {
+			case 'shootin':
+				dataset.mod = rollData.actor.abilities[`${dataset.subtype}`].mod + rollData.attackbonus;
+				dataset.stunts = dataset.subtype;
 
-					if (rollData.action === 'single' && rollData.ammo >= 4) {
-						dataset.canFan = true;
-					}
-					return await _shootin(dataset, rollData, item);
-				case 'fightin':
-					dataset.mod = rollData.actor.abilities[`${dataset.subtype}`].mod + rollData.attackbonus;
-					dataset.stunts = dataset.subtype;
-					return await _fightin(dataset, rollData, item);
+				if (rollData.action === 'single' && rollData.ammo >= 4) {
+					dataset.canFan = true;
+				}
+				return await _shootin(dataset, rollData, item);
+			case 'fightin':
+				dataset.mod = rollData.actor.abilities[`${dataset.subtype}`].mod + rollData.attackbonus;
+				dataset.stunts = dataset.subtype;
+				return await _fightin(dataset, rollData, item);
 
-				default:
-					break;
-			}
+			default:
+				break;
 		}
 	}
 }

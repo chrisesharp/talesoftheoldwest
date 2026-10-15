@@ -5,11 +5,9 @@ import * as dartSass from 'sass';
 const sass = gulpSass(dartSass);
 import autoprefixer from 'gulp-autoprefixer';
 import path from 'node:path';
-import buffer from 'vinyl-buffer';
-import source from 'vinyl-source-stream';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import rollupStream from '@rollup/stream';
+import { rollup } from 'rollup';
 import rollupConfig from './rollup.config.js';
 import { compilePack } from '@foundryvtt/foundryvtt-cli';
 
@@ -34,14 +32,11 @@ let cache;
 /**
  * Build the distributable JavaScript code
  */
-function buildCode() {
-  return rollupStream({ ...rollupConfig, cache })
-    .on('bundle', (bundle) => {
-      cache = bundle;
-    })
-    .pipe(source(`${name}.mjs`))
-    .pipe(buffer())
-    .pipe(gulp.dest(`${distDirectory}/module`));
+async function buildCode() {
+  const bundle = await rollup({ ...rollupConfig, cache });
+  cache = bundle.cache;
+  await bundle.write(rollupConfig.output);
+  await bundle.close();
 }
 
 /**

@@ -157,19 +157,14 @@ export default class totowPC extends totowActorBase {
 		} else {
 			this.conditions.broken = false;
 		}
-		// Rem the Try/Catch back in when the table data is included in the Core Rules Module and we have a registered setting.
-		// try {
-		// 	if (game.settings.get('talesoftheoldwest.corerules', 'imported')) {
+
 		const x = this.general.publicspirit.value;
 		const y = this.general.morals.value;
 		const key = REPUTATION_KEYS[x - 1]?.[y - 1];
 		this.general.reputation = key
 			? game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation[key].label)
 			: '';
-		// 	}
-		// } catch (error) {}
 
-		// --- Attribute and ability mod calculation from active items ---
 		const attrMod = { grit: 0, quick: 0, cunning: 0, docity: 0 };
 		const sklMod = {};
 

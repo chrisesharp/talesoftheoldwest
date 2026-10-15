@@ -10,7 +10,13 @@
 			"type": "chrome",
 			"url": "http://localhost:30000",
 			"webRoot": "${workspaceFolder}/dist",
-			"resolveSourceMapLocations": ["${workspaceFolder}/**/*.mjs", "!/node_modules/**"]
+			// Foundry serves the system at /systems/talesoftheoldwest/ (a symlink to ./dist).
+			// The sourcemap's sources (../../module/...) resolve to /systems/module/..., which is ./module.
+			"pathMapping": {
+				"/systems/talesoftheoldwest/": "${workspaceFolder}/dist/",
+				"/systems/module/": "${workspaceFolder}/module/"
+			},
+			"resolveSourceMapLocations": ["**", "!**/node_modules/**"]
 		}
 	]
 }

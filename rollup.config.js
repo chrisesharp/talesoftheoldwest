@@ -5,6 +5,7 @@ export default {
   input: ['module/talesoftheoldwest.mjs'],
   output: {
     dir: 'dist/module',
+    entryFileNames: 'talesoftheoldwest.mjs',
     format: 'es',
     sourcemap: true,
   },

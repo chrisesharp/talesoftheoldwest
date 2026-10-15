@@ -1,4 +1,5 @@
 import totowActorBase from './actor-base.mjs';
+import { calculateMods } from '../helpers/utils.mjs'
 
 export default class totowANIMAL extends totowActorBase {
 	static defineSchema() {
@@ -105,8 +106,6 @@ export default class totowANIMAL extends totowActorBase {
 
 		for (const key in this.abilities) {
 			this.abilities[key].attr = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.animalabilities[key].atob) ?? key;
-
-			// Handle ability label localization.
 			this.abilities[key].label = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.animalabilities[key].name) ?? key;
 			this.abilities[key].upper = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.animalabilities[key].name).toUpperCase() ?? key;
 		}
@@ -125,16 +124,7 @@ export default class totowANIMAL extends totowActorBase {
 		const sklMod = {};
 
 		if (this.parent?.items?.size) {
-			for (const item of this.parent.items) {
-				if (!item.system?.itemModifiers || item.system.stored) continue;
-				for (const mod of Object.values(item.system.itemModifiers)) {
-					if (mod.state !== 'onAnimal') continue;
-					const val = Number(mod.value) || 0;
-					const target = mod.name?.toLowerCase();
-					if (target in attrMod) attrMod[target] += val;
-					else if (!mod.feature) sklMod[target] = (sklMod[target] ?? 0) + val;
-				}
-			}
+			calculateMods(this.parent.items, attrMod, sklMod, 'onAnimal');
 		}
 
 		for (const [a, abl] of Object.entries(this.attributes)) {
@@ -145,6 +135,7 @@ export default class totowANIMAL extends totowActorBase {
 			this.abilities[s].mod = Number(skl.value) + Number(attrBase) + Number(sklMod[s] ?? 0);
 		}
 	}
+
 	getRollData() {
 		const data = {};
 

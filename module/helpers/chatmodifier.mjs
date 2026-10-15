@@ -49,11 +49,10 @@ export class TOTWBuyOffDialog extends HandlebarsApplicationMixin(ApplicationV2) 
 }
 
 export class TOTWWhichTroubleDialog extends HandlebarsApplicationMixin(ApplicationV2) {
-	constructor(results, messageId, message, options = {}) {
+	constructor(chatMessage, rollState, options = {}) {
 		super(options);
-		this.origRollData = results;
-		this.messageId = messageId;
-		this.message = message;
+		this.chatMessage = chatMessage;
+		this.origRollData = rollState;
 	}
 
 	/** @override */
@@ -86,7 +85,7 @@ export class TOTWWhichTroubleDialog extends HandlebarsApplicationMixin(Applicati
 	/** @this {TOTWWhichTroubleDialog} */
 	static async #onRollTrouble(event, target) {
 		const tableChoice = Number(target.dataset.value);
-		await rollTrouble(this.origRollData, tableChoice, this.messageId, this.message, undefined);
+		await rollTrouble(this.origRollData, tableChoice, this.chatMessage, undefined);
 		this.close();
 	}
 }
@@ -117,32 +116,38 @@ export class TOTWManualTroubleDialog extends TOTWWhichTroubleDialog {
 		const form = target.closest('form') ?? target.closest('.application');
 		const manModInput = form?.querySelector('[name="manMod"]');
 		const formData = manModInput ? { manMod: manModInput.value } : undefined;
-		await rollTrouble(this.origRollData, tableChoice, this.messageId, this.message, formData);
+		await rollTrouble(this.origRollData, tableChoice, this.chatMessage, formData);
 		this.close();
 	}
 }
 
 async function buyOff(chatMessage, origRollData, troubleMod) {
-	const rd = Array.isArray(origRollData) ? origRollData[1] : origRollData.result;
+	const rollState = Array.isArray(origRollData)
+		? { roll: origRollData[0], result: origRollData[1] }
+		: origRollData;
+	const rd = rollState.result;
 
-	// remove a faith point from the actor
+	// deduct faith points from actor
 	const myActor = game.actors.get(rd.myActor);
-	await myActor.update({ 'system.general.faithpoints.value': myActor.system.general.faithpoints.value - troubleMod });
-
-	rd.trouble -= troubleMod;
+	const newFaith = Math.max(0, myActor.system.general.faithpoints.value - troubleMod);
+	await myActor.update({ 'system.general.faithpoints.value': newFaith });
+	rd.trouble = Math.max(0, rd.trouble - troubleMod);
 	rd.troubleRest += troubleMod;
 	rd.troubleBlank += troubleMod;
-	rd.faithpoints = myActor.system.general.faithpoints.value;
-	rd.buyoff -= troubleMod > 0 ? 1 : 0;
-	await updateChatMessage(chatMessage, null, origRollData);
+	rd.faithpoints = newFaith;
+	rd.buyoff = false;
+	await updateChatMessage(chatMessage, null, rollState);
 }
 
-async function rollTrouble(results, tableChoice, messageId, message, formData) {
+async function rollTrouble(results, tableChoice, chatMessage, formData) {
 	let table = '';
 	let displayText = '';
 	let rollAgainst = '';
 	const troubleTable = Number(tableChoice);
-	const rd = Array.isArray(results) ? results[1] : results.result;
+	const rollState = Array.isArray(results)
+		? { roll: results[0], result: results[1] }
+		: results;
+	const rd = rollState.result;
 	let trouble = 0;
 	if (Number(rd.trouble) > 4) {
 		trouble = 4;
@@ -188,8 +193,8 @@ async function rollTrouble(results, tableChoice, messageId, message, formData) {
 			break;
 	}
 
-	const actorName = game.messages.get(message).speaker.alias;
-	const actorId = game.messages.get(message).speaker.actor;
+	const actorName = chatMessage.speaker.alias;
+	const actorId = chatMessage.speaker.actor;
 	const htmlData = {
 		actorname: actorName,
 		actorId: actorId,
@@ -210,16 +215,12 @@ async function rollTrouble(results, tableChoice, messageId, message, formData) {
 		sound: CONFIG.sounds.dice,
 	};
 
-	// remove the Roll Trouble Button
+	// Mark trouble as rolled and update the original chat card
 	rd.totalTrouble = 'rolledTrouble';
+	await updateChatMessage(chatMessage, null, rollState);
 
-	let aMessage = game.messages.get(rd.messageNo);
-	aMessage.setFlag('talesoftheoldwest', 'results', results);
-	messageId.target.remove();
 	ChatMessage.applyMode(chatData, game.settings.get('core', 'rollMode'));
 	return ChatMessage.create(chatData);
-	// return;
-
 }
 async function checkTables(type, trouble) {
 	let tTable = `(${trouble}) TROUBLE OUTCOME TABLE - ${type}`;
@@ -232,13 +233,16 @@ async function checkTables(type, trouble) {
 }
 
 export async function updateChatMessage(chatMessage, result, newRoleData) {
-	const rd = Array.isArray(newRoleData) ? newRoleData[1] : newRoleData.result;
-	return foundry.applications.handlebars.renderTemplate('systems/talesoftheoldwest/templates/chat/roll.hbs', rd).then((html) => {
-		chatMessage['content'] = html;
-		return chatMessage
-			.update({
-				content: html,
-				['flags.data']: { results: newRoleData.results },
-			});
+	const rollState = Array.isArray(newRoleData)
+		? { roll: newRoleData[0], result: newRoleData[1] }
+		: newRoleData;
+	const rd = rollState.result;
+	const html = await foundry.applications.handlebars.renderTemplate(
+		'systems/talesoftheoldwest/templates/chat/roll.hbs',
+		rd,
+	);
+	return chatMessage.update({
+		content: html,
+		'flags.talesoftheoldwest.results': rollState,
 	});
 }

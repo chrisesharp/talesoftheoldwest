@@ -364,3 +364,16 @@ export function expandSection(element) {
 	// mark the section as "currently not collapsed"
 	element.dataset.collapsed = 'false';
 }
+
+export function calculateMods(items, attrMod, sklMod, state) {
+	for (const item of items) {
+		if (!item.system?.itemModifiers || item.system.stored) continue;
+		for (const mod of Object.values(item.system.itemModifiers)) {
+			if (mod.state !== state) continue;
+			const val = Number(mod.value) || 0;
+			const target = mod.name?.toLowerCase();
+			if (target in attrMod) attrMod[target] += val;
+			else if (!mod.feature) sklMod[target] = (sklMod[target] ?? 0) + val;
+		}
+	}
+}
