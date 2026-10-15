@@ -26,6 +26,55 @@ const CRIT_MODIFIERS = {
 };
 
 /**
+ * Presents the conditional-modifiers dialog and accumulates any checked mod values into `dataset.mod`.
+ * Returns the roll result, or the string `"cancelled"` if the user dismissed the dialog.
+ *
+ * @param {string} rollType  - "Attributes" or "Abilities"
+ * @param {object} dataset   - The element dataset for the roll (mutated in-place for `mod`).
+ * @param {object} rollData  - Actor roll data from `getRollData()`.
+ * @param {Actor}  actor     - The owning actor.
+ * @returns {Promise<object|"cancelled">}
+ */
+async function processConditionals(rollType, dataset, rollData, actor) {
+  const config = CONFIG.TALESOFTHEOLDWEST;
+  const { conditionalMods, talentMods } = await argpUtils.prepModOutput(rollType, rollData, dataset);
+  if (conditionalMods?.length || talentMods?.length) {
+    const content = await foundry.applications.handlebars.renderTemplate(
+      "systems/talesoftheoldwest/templates/dialog/conditional-modifiers.html",
+      { config, dataset, conditionalMods, talentMods }
+    );
+    const response = await foundry.applications.api.DialogV2.wait({
+      window: { title: "TALESOFTHEOLDWEST.Item.General.roll-modifiers" },
+      content,
+      rejectClose: false,
+      buttons: [
+        {
+          label: "TALESOFTHEOLDWEST.dialog.roll",
+          callback: (event, button) => new foundry.applications.ux.FormDataExtended(button.form).object,
+        },
+        {
+          label: "TALESOFTHEOLDWEST.dialog.cancel",
+          action: "cancel",
+        },
+      ],
+    });
+
+    if (!response || response === "cancel") return "cancelled";
+
+    // Accumulate checked conditional modifiers (mods.* flat keys from structured partial).
+    // FormDataExtended stores dot-notation names as flat string keys, not nested objects,
+    // so `response["mods.f_0"]` exists but `response.mods` is undefined.
+    const checkboxSum = Object.entries(response)
+      .filter(([k]) => k.startsWith('mods.'))
+      .reduce((sum, [, v]) => sum + (Number(v) || 0), 0);
+
+    dataset.mod = Number.parseInt(dataset.mod || 0) + checkboxSum;
+  }
+
+  return rollAttrib(dataset, rollData, actor);
+}
+
+/**
  * Extend the base Actor document by defining a custom roll data structure which is ideal for the Simple system.
  * @extends {Actor}
  */
@@ -86,7 +135,6 @@ export class totowActor extends Actor {
       "prototypeToken.name": `${data.name}`,
       "prototypeToken.bar1": { attribute: "header.health" },
       "prototypeToken.bar2": { attribute: "None" },
-      // 'prototypeToken.vision': true,
       "prototypeToken.actorLink": true,
       "prototypeToken.sight.enabled": "true",
       "prototypeToken.sight.range": "12",
@@ -101,10 +149,8 @@ export class totowActor extends Actor {
         tokenProto["prototypeToken.sight.enabled"] = false;
         break;
     }
-    // }
 
     this.updateSource(tokenProto);
-    // this.updateSource(createData);
   }
 
   /**
@@ -113,7 +159,6 @@ export class totowActor extends Actor {
    * @param {object} [options={}]   Additional options which modify how the effect is created.
    * @param {boolean} [options.active]          Force the effect to be active or inactive regardless of its current state.
    * @param {boolean} [options.overlay=false]   Display the toggled effect as an overlay.
-   * @param {string} [options.effectEnd]        Value for `system.end.type`.
    * @returns {Promise<ActiveEffect|boolean|undefined>}  A promise which resolves to one of the following values:
    *                                 - ActiveEffect if a new effect need to be created
    *                                 - true if was already an existing effect
@@ -121,7 +166,7 @@ export class totowActor extends Actor {
    *                                 - undefined if no changes need to be made.
    * @override Implementation copied from core.
    */
-  async toggleStatusEffect(statusId, { active, overlay = false, effectEnd = "" } = {}) {
+  async toggleStatusEffect(statusId, { active, overlay = false } = {}) {
     const status = CONFIG.statusEffects.find((e) => e.id === statusId);
     if (!status) throw new Error(`Invalid status ID "${statusId}" provided to Actor#toggleStatusEffect`);
     const existing = [];
@@ -130,10 +175,11 @@ export class totowActor extends Actor {
       const effect = this.effects.get(status._id);
       if (effect) existing.push(effect.id);
     } else {
-      for (const effect of this.effects) {
-        const statuses = effect.statuses;
-        if (statuses.size === 1 && statuses.has(status.id)) existing.push(effect.id);
-      }
+      existing.push(
+        ...this.effects
+          .filter((effect) => effect.statuses.size === 1 && effect.statuses.has(status.id))
+          .map((effect) => effect.id)
+      );
     }
 
     if (existing.length) {
@@ -142,10 +188,9 @@ export class totowActor extends Actor {
       return false;
     }
 
-    if (!active && active !== undefined) return;
+    if (active === false) return;
     const effect = await TOTOWActiveEffect.fromStatusEffect(statusId);
     if (overlay) effect.updateSource({ "flags.core.overlay": true });
-    if (effectEnd) effect.updateSource({ "system.end.type": effectEnd });
     return TOTOWActiveEffect.create(effect, { parent: this, keepId: true });
   }
 
@@ -184,182 +229,24 @@ export class totowActor extends Actor {
   }
 
   async rollCrit(actor, type, dataset, manCrit) {
-    let cFatal = false;
-    let fatal = [];
-    let rollFatal = "";
-    let newFatalTime = "";
-    let atable = "";
-    let testArray = "";
-    let rollheal = "";
-    let newHealTime = "";
-    let htmlData = "";
-    let resultImage = "";
-    let diceRoll = "";
-    let update = {};
-    let noMods = "";
-
     if (type !== "pc") {
       return;
     }
-    atable = game.tables.getName(game.i18n.localize("TALESOFTHEOLDWEST.CriticalInjuries")) || game.tables.getName("Critical Injuries");
-    if (atable === null || atable === undefined) {
+    const critTable = game.tables.getName(game.i18n.localize("TALESOFTHEOLDWEST.CriticalInjuries")) || game.tables.getName("Critical Injuries");
+    if (critTable == null) {
       ui.notifications.warn(game.i18n.localize("TALESOFTHEOLDWEST.NoCharCrit"));
       return;
     }
 
+    let diceRoll;
     if (!manCrit) {
-      diceRoll = await atable.draw({ displayChat: false });
+      diceRoll = await critTable.draw({ displayChat: false });
     } else {
-      const formula = manCrit;
-      const roll = await new Roll(formula).evaluate();
-      diceRoll = await atable.draw({ roll: roll, displayChat: false });
+      const roll = await new Roll(manCrit).evaluate();
+      diceRoll = await critTable.draw({ roll: roll, displayChat: false });
     }
-    let messG = diceRoll.results[0].description;
-    switch (type) {
-      case "pc":
-      case "npc":
-        {
-          resultImage = diceRoll.results[0].img;
-          const extractField = (label) => {
-            const pattern = new RegExp(String.raw`<strong>${label}</strong>:\s*([\s\S]*?)(?=(?:<p><strong>|<\/p>|$))`, "i");
-            const match = pattern.exec(messG);
-            return match ? match[1].replace(/<[^<>]*>/g, "").trim() : "";
-          };
 
-          const rawLocation = extractField("Location") || "Body";
-          const rawInjury = extractField("Injury") || "Critical Injury";
-          const rawFatal = extractField("Fatal") || "No";
-          let rawHealingTime = extractField("Healing Time") || "-";
-          const rawImmediate = extractField("Immediate Effect") || "None";
-          let rawLongTerm = extractField("Long-Term Effect") || extractField("Long Term Effect") || "None";
-
-          // Retain testArray structure for backwards-compatibility with downstream variable usage
-          testArray = [
-            "Location", rawLocation,
-            "Injury", rawInjury,
-            "Fatal", rawFatal,
-            "Healing Time", rawHealingTime,
-            "Immediate Effect", rawImmediate,
-            "Long-Term Effect", rawLongTerm,
-          ];
-
-          // Process Fatal
-          const isFatalYes = /^yes/i.test(rawFatal);
-          if (isFatalYes) {
-            cFatal = true;
-            if (/instant/i.test(rawFatal)) {
-              fatal = ["YES", "Instant"];
-              fatal[0] =
-                '<strong style="color: red;">' + fatal[0] + "</strong><br>" + game.i18n.localize("TALESOFTHEOLDWEST.Criticals.endOfTheTrail");
-              testArray[11] = '<strong style="color: red;">' + testArray[11] + "</strong>";
-            } else {
-              const fatalDiceMatch = new RegExp(/\[\[(\d+d\d+)\]\]\s*(.*)/i).exec(rawFatal);
-              if (fatalDiceMatch) {
-                rollFatal = fatalDiceMatch[1];
-                newFatalTime = fatalDiceMatch[2] || "";
-                const evalRoll = (await new Roll(`${rollFatal}`).evaluate()).result;
-                fatal = ["YES", `${evalRoll} ${newFatalTime}`.trim()];
-              } else {
-                fatal = ["YES", rawFatal];
-              }
-
-              const hasPenalty = /[-−]1/i.test(rawFatal);
-              if (hasPenalty) {
-                fatal[0] =
-                  '<strong style="color: red;">' +
-                  game.i18n.localize("TALESOFTHEOLDWEST.General.yes").toUpperCase() +
-                  "</strong><br>" +
-                  game.i18n.localize("TALESOFTHEOLDWEST.Criticals.rollResilience") +
-                  fatal[1] +
-                  "<br> -1 to <strong>" +
-                  game.i18n.localize("TALESOFTHEOLDWEST.Ability.Doctorin.long") +
-                  "</strong> roll.";
-              } else {
-                fatal[0] =
-                  '<strong style="color: red;">' +
-                  game.i18n.localize("TALESOFTHEOLDWEST.General.yes").toUpperCase() +
-                  "</strong><br>" +
-                  game.i18n.localize("TALESOFTHEOLDWEST.Criticals.rollResilience") +
-                  fatal[1];
-              }
-            }
-          } else {
-            fatal = [game.i18n.localize("TALESOFTHEOLDWEST.General.no"), ""];
-          }
-
-          // Process Healing Time
-          if (rawHealingTime && rawHealingTime !== "-" && !/instant/i.test(rawFatal)) {
-            const healDiceMatch = new RegExp(/\[\[(\d+d\d+)\]\]\s*(.*)/i).exec(rawHealingTime);
-            if (healDiceMatch) {
-              rollheal = healDiceMatch[1];
-              newHealTime = healDiceMatch[2] || "";
-              testArray[7] = (await new Roll(`${rollheal}`).evaluate()).result + " " + newHealTime;
-            } else {
-              testArray[7] = rawHealingTime;
-            }
-          } else {
-            testArray[7] = game.i18n.localize("TALESOFTHEOLDWEST.ItemModifierSelect.none");
-          }
-
-          // Setup Modifiers
-          const critMods = CRIT_MODIFIERS[diceRoll.roll._total];
-          if (critMods) {
-            critMods.forEach((mod, i) => {
-              update[`system.itemModifiers.[${i}]`] = {
-                name: game.i18n.localize(mod.name),
-                value: mod.value,
-                state: mod.state,
-              };
-            });
-          } else {
-            noMods = true;
-          }
-
-          //
-          // Now create the item on the sheet
-          //
-
-          let rollData = {
-            type: "crit",
-            img: resultImage,
-            name: `#${diceRoll.roll._total} ${testArray[1]} - ${testArray[3]}`,
-            "system.location": testArray[1].toLowerCase().replace(/\s/g, ""),
-            "system.injury": testArray[3],
-            "system.healingtime": testArray[7],
-            "system.fatal": cFatal,
-            "system.fatalmessage": fatal[0].replace(/(YES)\s/g, ""),
-            // Persisted DB key is 'imediateeffect'; totowCrit provides an 'immediateeffect' getter/setter alias.
-            "system.imediateeffect": testArray[9],
-            "system.longtermeffect": testArray[11],
-          };
-
-          const theItem = await this.createEmbeddedDocuments("Item", [rollData]);
-
-          //
-          // Now add the Modifiers if there are any
-          //
-          if (!noMods) {
-            await theItem[0].update(update);
-          }
-
-          //)
-          // Prepare the data for the chat message
-          //
-
-          htmlData = {
-            actorname: actor.name,
-            img: resultImage,
-            name: `#${diceRoll.roll._total} ${testArray[1]}`,
-            injury: testArray[3],
-            fatal: fatal[0],
-            healingtime: testArray[7],
-            imediateeffect: testArray[9],
-            longtermeffect: testArray[11],
-            manCrit: manCrit,
-          };
-        }
-        break;
-    }
+    const htmlData = await this.determineCritResults(diceRoll, manCrit);
 
     // Now push the correct chat message
     const html = await foundry.applications.handlebars.renderTemplate(`systems/talesoftheoldwest/templates/chat/crit-roll-${actor.type}.hbs`, htmlData);
@@ -374,12 +261,138 @@ export class totowActor extends Actor {
     };
 
     // Apply the Active Effect
-    if (type === "pc" && actor.system.critInj.length === 1) {
+    if (actor.system.critInj.length === 1) {
       await this.toggleStatusEffect("criticalinj");
     }
 
     ChatMessage.applyMode(chatData, game.settings.get("core", "rollMode"));
     return ChatMessage.create(chatData);
+  }
+
+  async determineCritResults(diceRoll, manCrit) {
+    const resultImage = diceRoll.results[0].img;
+    const extractField = (label) => {
+      const pattern = new RegExp(String.raw`<strong>${label}</strong>:\s*([\s\S]*?)(?=(?:<p><strong>|<\/p>|$))`, "i");
+      const match = pattern.exec(diceRoll.results[0].description);
+      return match ? match[1].replace(/<[^<>]*>/g, "").trim() : "";
+    };
+
+    const location = extractField("Location") || "Body";
+    const injury = extractField("Injury") || "Critical Injury";
+    const rawFatal = extractField("Fatal") || "No";
+    const rawHealingTime = extractField("Healing Time") || "-";
+    const immediateEffect = extractField("Immediate Effect") || "None";
+    const rawLongTerm = extractField("Long-Term Effect") || extractField("Long Term Effect") || "None";
+    let healingTime;
+
+    // Process Fatal
+    const { isFatal, fatal, longTermEffect } = await this.determineFatal(rawFatal, rawLongTerm);
+
+    // Process Healing Time
+    if (rawHealingTime && rawHealingTime !== "-" && !/instant/i.test(rawFatal)) {
+      const healDiceMatch = new RegExp(/\[\[(\d+d\d+)\]\]\s*(.*)/i).exec(rawHealingTime);
+      if (healDiceMatch) {
+        const rollHeal = healDiceMatch[1];
+        const newHealTime = healDiceMatch[2] || "";
+        healingTime = (await new Roll(`${rollHeal}`).evaluate()).result + " " + newHealTime;
+      } else {
+        healingTime = rawHealingTime;
+      }
+    } else {
+      healingTime = game.i18n.localize("TALESOFTHEOLDWEST.ItemModifierSelect.none");
+    }
+
+    // Setup Modifiers
+    let update = {};
+    const critMods = CRIT_MODIFIERS[diceRoll.roll._total];
+    if (critMods) {
+      critMods.forEach((mod, i) => {
+        update[`system.itemModifiers.[${i}]`] = {
+          name: game.i18n.localize(mod.name),
+          value: mod.value,
+          state: mod.state,
+        };
+      });
+    }
+
+    //
+    // Now create the Crit item on the sheet
+    //
+
+    const rollData = {
+      type: "crit",
+      img: resultImage,
+      name: `#${diceRoll.roll._total} ${location} - ${injury}`,
+      "system.location": location.toLowerCase().replace(/\s/g, ""),
+      "system.injury": injury,
+      "system.healingtime": healingTime,
+      "system.fatal": isFatal,
+      "system.fatalmessage": fatal[0].replace(/(YES)\s/g, ""),
+      // Persisted DB key is 'imediateeffect'; totowCrit provides an 'immediateeffect' getter/setter alias.
+      "system.imediateeffect": immediateEffect,
+      "system.longtermeffect": longTermEffect,
+    };
+
+    const theItem = await this.createEmbeddedDocuments("Item", [rollData]);
+
+    if (critMods) {
+      await theItem[0].update(update);
+    }
+
+    return {
+      actorname: this.name,
+      img: resultImage,
+      name: `#${diceRoll.roll._total} ${location}`,
+      injury,
+      fatal: fatal[0],
+      healingtime: healingTime,
+      imediateeffect: immediateEffect,
+      longtermeffect: longTermEffect,
+      manCrit,
+    };
+  }
+
+  async determineFatal(rawFatal, longTermEffect) {
+    const isFatal = /^yes/i.test(rawFatal);
+    let fatal = [game.i18n.localize("TALESOFTHEOLDWEST.General.no"), ""];
+    if (isFatal) {
+      if (/instant/i.test(rawFatal)) {
+        fatal = ["YES", "Instant"];
+        fatal[0] = '<strong style="color: red;">' + fatal[0] + "</strong><br>" + game.i18n.localize("TALESOFTHEOLDWEST.Criticals.endOfTheTrail");
+        longTermEffect = '<strong style="color: red;">' + longTermEffect + "</strong>";
+      } else {
+        const fatalDiceMatch = new RegExp(/\[\[(\d+d\d+)\]\]\s*(.*)/i).exec(rawFatal);
+        if (fatalDiceMatch) {
+          const rollFatal = fatalDiceMatch[1];
+          const newFatalTime = fatalDiceMatch[2] || "";
+          const evalRoll = (await new Roll(`${rollFatal}`).evaluate()).result;
+          fatal = ["YES", `${evalRoll} ${newFatalTime}`.trim()];
+        } else {
+          fatal = ["YES", rawFatal];
+        }
+
+        const hasPenalty = /[-−]1/i.test(rawFatal);
+        if (hasPenalty) {
+          fatal[0] =
+            '<strong style="color: red;">' +
+            game.i18n.localize("TALESOFTHEOLDWEST.General.yes").toUpperCase() +
+            "</strong><br>" +
+            game.i18n.localize("TALESOFTHEOLDWEST.Criticals.rollResilience") +
+            fatal[1] +
+            "<br> -1 to <strong>" +
+            game.i18n.localize("TALESOFTHEOLDWEST.Ability.Doctorin.long") +
+            "</strong> roll.";
+        } else {
+          fatal[0] =
+            '<strong style="color: red;">' +
+            game.i18n.localize("TALESOFTHEOLDWEST.General.yes").toUpperCase() +
+            "</strong><br>" +
+            game.i18n.localize("TALESOFTHEOLDWEST.Criticals.rollResilience") +
+            fatal[1];
+        }
+      }
+    }
+    return { isFatal, fatal, longTermEffect };
   }
 
   async rollCritMan(actor, type, dataset) {
@@ -413,13 +426,13 @@ export class totowActor extends Actor {
   }
 
   async diceRoll(actor, event, target) {
-    let config = CONFIG.TALESOFTHEOLDWEST;
-
     event.preventDefault(); // Don't open context menu
     event.stopPropagation(); // Don't trigger other events
     if (event.detail > 1) return; // Ignore repeated clicks
     const rollData = this.getRollData();
     const dataset = target.dataset;
+
+    if (!dataset.rollType) return;
     dataset.myHorse = "false";
     dataset.shootmodifiermod = "0";
 
@@ -435,123 +448,76 @@ export class totowActor extends Actor {
     let result = "";
 
     // Handle item rolls.
-    if (dataset.rollType) {
-      if (dataset.rollType === "attribute" || dataset.rollType === "ability") {
-        switch (dataset.rollType) {
-          case "attribute":
-            result = await processConditionals("Attributes", dataset, rollData);
-            break;
-          case "ability":
-            if (dataset.label === game.i18n.localize("TALESOFTHEOLDWEST.Ability.Animalhandlin.long") && actor.type == "pc") {
-              if (actor.system.remuda.remudaMounted !== "false") {
-                let horse = await this.getRemuda(actor.system.remuda.remudaMounted);
-                const content = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/dialog/riding-my-horse.hbs", horse);
-                const response = await foundry.applications.api.DialogV2.confirm({
-                  window: { title: "TALESOFTHEOLDWEST.dialog.Ride-My-Horse-Dialog" },
-                  content,
-                  modal: true,
-                });
-                if (response === true) {
-                  dataset.myHorse = "true";
-                  dataset.mod = Number(dataset.mod) + Number(horse.actor.system.general.ridingmodifier.value);
-                }
-              }
-            }
-            result = await processConditionals("Abilities", dataset, rollData);
-            break;
-          default:
-            break;
-        }
-      } else {
+    switch (dataset.rollType) {
+      case "attribute":
+        result = await processConditionals("Attributes", dataset, rollData, actor);
+        break;
+      case "ability":
+        await this.checkIfRiding(dataset, actor);
+        result = await processConditionals("Abilities", dataset, rollData, actor);
+        break;
+      case "item":
+      case "weapon": {
         const itemId = target.dataset.itemId;
         const item = actor.items.get(itemId);
-        switch (dataset.rollType) {
-          case "item":
-            return item.roll(dataset);
-          case "weapon":
-            result = await item.roll(dataset, item);
-            break;
-          default:
-            break;
+        if (dataset.rollType === "item") {
+          return item.roll(dataset);
         }
+        result = await item.roll(dataset, item);
+        break;
       }
-      if (result === "cancelled") {
-        return;
-      } else {
-        await sendToChat(actor, event, target, result);
-      }
+      default:
+        break;
+    }
+    if (result !== "cancelled") {
+      await this._sendToChat(actor, event, target, result);
+      this.render();
+    }
+  }
 
-      async function processConditionals(rollType, dataset, rollData) {
-        let response = "";
-        const { conditionalMods, talentMods } = await argpUtils.prepModOutput(rollType, rollData, dataset);
-        if (conditionalMods?.length || talentMods?.length) {
-          const content = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/dialog/conditional-modifiers.html", {
-            config,
-            dataset,
-            conditionalMods,
-            talentMods,
-          });
-          response = await foundry.applications.api.DialogV2.wait({
-            window: { title: "TALESOFTHEOLDWEST.Item.General.roll-modifiers" },
-            content,
-            rejectClose: false,
-            buttons: [
-              {
-                label: "TALESOFTHEOLDWEST.dialog.roll",
-                callback: (event, button) => new foundry.applications.ux.FormDataExtended(button.form).object,
-              },
-              {
-                label: "TALESOFTHEOLDWEST.dialog.cancel",
-                action: "cancel",
-              },
-            ],
-          });
-
-          if (!response || response === "cancel") return "cancelled";
-
-          // Accumulate checked conditional modifiers (mods.* flat keys from structured partial).
-          // FormDataExtended stores dot-notation names as flat string keys, not nested objects,
-          // so `response["mods.f_0"]` exists but `response.mods` is undefined.
-          const checkboxSum = Object.entries(response)
-            .filter(([k]) => k.startsWith('mods.'))
-            .reduce((sum, [, v]) => sum + (Number(v) || 0), 0);
-
-          dataset.mod = Number.parseInt(dataset.mod || 0) + checkboxSum;
+  async checkIfRiding(dataset, actor) {
+    if (dataset.label === game.i18n.localize("TALESOFTHEOLDWEST.Ability.Animalhandlin.long") && actor.type == "pc") {
+      if (actor.system.remuda.remudaMounted !== "false") {
+        let horse = await this.getRemuda(actor.system.remuda.remudaMounted);
+        const content = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/dialog/riding-my-horse.hbs", horse);
+        const response = await foundry.applications.api.DialogV2.confirm({
+          window: { title: "TALESOFTHEOLDWEST.dialog.Ride-My-Horse-Dialog" },
+          content,
+          modal: true,
+        });
+        if (response === true) {
+          dataset.myHorse = "true";
+          dataset.mod = Number(dataset.mod) + Number(horse.actor.system.general.ridingmodifier.value);
         }
-
-        result = await rollAttrib(dataset, rollData, actor);
-        return result;
-      }
-
-      async function sendToChat(actor, event, target, result) {
-        const html = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/chat/roll.hbs", result.result);
-        let chatData = {
-          user: game.user.id,
-          speaker: ChatMessage.getSpeaker({
-            alias: actor.name,
-            actor: actor.id,
-          }),
-          rolls: [result.roll],
-          rollMode: game.settings.get("core", "rollMode"),
-          content: html,
-          sound: CONFIG.sounds.dice,
-          // flags: {talesoftheoldwest:	[{'isType': actor.type}]}
-        };
-        if (["gmroll", "blindroll"].includes(chatData.rollMode)) {
-          chatData.whisper = ChatMessage.getWhisperRecipients("GM");
-        } else if (chatData.rollMode === "selfroll") {
-          chatData.whisper = [game.user];
-        }
-        const msg = await ChatMessage.create(chatData);
-        result.result.messageNo = msg.id;
-        await msg.setFlag("talesoftheoldwest", "modifiers", result.result.modifiers.mod);
-        await msg.setFlag("talesoftheoldwest", "results", result);
-        await msg.setFlag("talesoftheoldwest", "isType", actor.type);
-
-        return result;
       }
     }
-    this.render();
+  }
+
+  async _sendToChat(actor, event, target, result) {
+    const html = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/chat/roll.hbs", result.result);
+    let chatData = {
+      user: game.user.id,
+      speaker: ChatMessage.getSpeaker({
+        alias: actor.name,
+        actor: actor.id,
+      }),
+      rolls: [result.roll],
+      rollMode: game.settings.get("core", "rollMode"),
+      content: html,
+      sound: CONFIG.sounds.dice,
+    };
+    if (["gmroll", "blindroll"].includes(chatData.rollMode)) {
+      chatData.whisper = ChatMessage.getWhisperRecipients("GM");
+    } else if (chatData.rollMode === "selfroll") {
+      chatData.whisper = [game.user];
+    }
+    const msg = await ChatMessage.create(chatData);
+    result.result.messageNo = msg.id;
+    await msg.setFlag("talesoftheoldwest", "modifiers", result.result.modifiers.mod);
+    await msg.setFlag("talesoftheoldwest", "results", result);
+    await msg.setFlag("talesoftheoldwest", "isType", actor.type);
+
+    return result;
   }
 
   async modRoll(actor, event, target) {

@@ -32,7 +32,6 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       toggleEffect: this._toggleEffect,
       roll: { handler: this._onRoll, buttons: [0, 2] },
       toggleCondition: this._toggleStatus,
-      // toggleCondition: { handler: this._toggleCondition, buttons: [0, 2] },
       rollCrit: { handler: this._rollCrit, buttons: [0, 2] },
       changeFaith: { handler: this._changeFaith, buttons: [0, 2] },
       changeXp: { handler: this._changeXp, buttons: [0, 2] },
