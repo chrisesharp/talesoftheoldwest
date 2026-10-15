@@ -139,8 +139,6 @@ export default class totowPC extends totowActorBase {
 
 		for (const key in this.abilities) {
 			this.abilities[key].attr = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.abilities[key].atob) ?? key;
-
-			// Handle ability label localization.
 			this.abilities[key].label = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.abilities[key].name) ?? key;
 			this.abilities[key].upper = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.abilities[key].name).toUpperCase() ?? key;
 		}
@@ -152,11 +150,8 @@ export default class totowPC extends totowActorBase {
 		this.damage.shakes.max = this.attributes.quick.max - this.damage.shakes.value;
 		this.damage.vexes.max = this.attributes.cunning.max - this.damage.vexes.value;
 		this.damage.doubts.max = this.attributes.docity.max - this.damage.doubts.value;
-		if (!this.damage.hurts.max || !this.damage.shakes.max || !this.damage.vexes.max || !this.damage.doubts.max) {
-			this.conditions.broken = true;
-		} else {
-			this.conditions.broken = false;
-		}
+
+		this.conditions.broken = this.isBroken();
 
 		const x = this.general.publicspirit.value;
 		const y = this.general.morals.value;
@@ -169,83 +164,7 @@ export default class totowPC extends totowActorBase {
 		const sklMod = {};
 
 		if (this.parent?.items?.size) {
-			const rawMods = [];
-			for (const item of this.parent.items) {
-				findMods(item, rawMods);
-			}
-			const itemMods = Object.groupBy(rawMods, ({ name }) => name);
-
-			for (const [attrib, modItems] of Object.entries(itemMods)) {
-				for (const subAttar of modItems) {
-					if (subAttar.state === 'Active') {
-						if ((subAttar.itemtype === 'item' || subAttar.itemtype === 'crit') && !subAttar.stored
-							|| (subAttar.state === 'onPC' && subAttar.itemtype !== 'talent' && subAttar.itemtype !== 'weapon' && !subAttar.stored)) {
-							switch (attrib) {
-								case 'docity':
-								case 'quick':
-								case 'cunning':
-								case 'grit':
-									attrMod[attrib] += Number(subAttar.value);
-									break;
-								default:
-									if (!subAttar.feature) {
-										sklMod[attrib] = (sklMod[attrib] ?? 0) + Number(subAttar.value);
-									}
-									break;
-							}
-						} else if (subAttar.itemtype === 'weapon' && !subAttar.stored) {
-							switch (subAttar.modtype) {
-								case 'docity':
-								case 'quick':
-								case 'cunning':
-								case 'grit':
-									attrMod[subAttar.modtype] += Number(subAttar.value);
-									break;
-								default:
-									sklMod[subAttar.modtype] = (sklMod[subAttar.modtype] ?? 0) + Number(subAttar.value);
-									break;
-							}
-						} else if (subAttar.itemtype === 'talent') {
-							switch (subAttar.modtype) {
-								case 'basic':
-									if (subAttar.basicAction) {
-										switch (attrib) {
-											case 'docity':
-											case 'quick':
-											case 'cunning':
-											case 'grit':
-												attrMod[attrib] += Number(subAttar.value);
-												break;
-											default:
-												if (!subAttar.feature) {
-													sklMod[attrib] = (sklMod[attrib] ?? 0) + Number(subAttar.value);
-												}
-												break;
-										}
-									}
-									break;
-								case 'advanced':
-									if (subAttar.advisActive) {
-										switch (attrib) {
-											case 'docity':
-											case 'quick':
-											case 'cunning':
-											case 'grit':
-												attrMod[attrib] += Number(subAttar.value);
-												break;
-											default:
-												if (!subAttar.feature) {
-													sklMod[attrib] = (sklMod[attrib] ?? 0) + Number(subAttar.value);
-												}
-												break;
-										}
-									}
-									break;
-							}
-						}
-					}
-				}
-			}
+			this.findItemMods(attrMod, sklMod);
 		}
 
 		for (const [a, abl] of Object.entries(this.attributes)) {
@@ -256,6 +175,55 @@ export default class totowPC extends totowActorBase {
 			const conSkl = skl.attr;
 			const attrBase = this.attributes[conSkl]?.mod ?? Number(this.attributes[conSkl]?.value || 0);
 			this.abilities[s].mod = Number(skl.value) + Number(attrBase) + Number(sklMod[s] ?? 0);
+		}
+	}
+
+	isBroken() {
+		return !this.damage.hurts.max || !this.damage.shakes.max || !this.damage.vexes.max || !this.damage.doubts.max;
+	}
+
+	findItemMods(attrMod, sklMod) {
+		const rawMods = [];
+		for (const item of this.parent.items) {
+			findMods(item, rawMods);
+		}
+		const itemMods = Object.groupBy(rawMods, ({ name }) => name);
+		for (const [attrib, modItems] of Object.entries(itemMods)) {
+			for (const subAttar of modItems.filter((a) => a.state === 'Active')) {
+				if (subAttar.itemtype === 'weapon' && this.#isApplicable(subAttar)) {
+					this.#applyMod(subAttar.modtype, subAttar.value, attrMod, sklMod);
+				} else if (subAttar.itemtype === 'talent' && this.#isActive(subAttar)) {
+					this.#applyMod(attrib, subAttar.value, attrMod, sklMod, subAttar.feature);
+				} else if (this.#isApplicable(subAttar)) {
+					this.#applyMod(attrib, subAttar.value, attrMod, sklMod, subAttar.feature);
+				}
+			}
+		}
+	}
+
+	#isApplicable(subAttar) {
+		// A modifier applies if not in storage.
+		return !subAttar.stored;
+	}
+
+	#isActive(subAttar) {
+		return (subAttar.modtype === 'basic'    && subAttar.basicAction) ||
+					(subAttar.modtype === 'advanced' && subAttar.advisActive);
+	}
+
+	#applyMod(key, value, attrMod, sklMod, isFeature = false) {
+		switch (key) {
+			case 'docity':
+			case 'quick':
+			case 'cunning':
+			case 'grit':
+				attrMod[key] += Number(value);
+				break;
+			default:
+				if (!isFeature) {
+					sklMod[key] = (sklMod[key] ?? 0) + Number(value);
+				}
+				break;
 		}
 	}
 }
