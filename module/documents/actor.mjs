@@ -3,6 +3,7 @@ import * as argpUtils from "../helpers/utils.mjs";
 import TOTOWActiveEffect from "../documents/active-effect.mjs";
 
 /** Maps a critical injury roll total to the modifiers it applies. */
+// Needs extra logic for 43, 45, 46 where damage is taken on actions 
 const CRIT_MODIFIERS = {
   11: [{ name: 'TALESOFTHEOLDWEST.Ability.Move.listName',        value: '-1', state: 'Active' },
        { name: 'TALESOFTHEOLDWEST.Ability.Fightin.listName',     value: '-1', state: 'Active' }],
