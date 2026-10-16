@@ -28,6 +28,30 @@ export function formatCurrencyInput(e) {
 			: "0.00";
 }
 
+export const stripHtml = (s) => (s ? s.replace(/<[^>]*>?/gm, "") : "");
+
+/**
+ * Construct a normalized modifier entry from a raw modifier descriptor and its parent item.
+ *
+ * @param {object} mod         - Raw modifier object from system.itemModifiers.
+ * @param {Item}   i           - Parent item.
+ * @param {object} [overrides] - Property overrides or extra tier metadata.
+ * @returns {object}
+ */
+export function createMod(mod, i, overrides = {}) {
+	return {
+		name: mod.name,
+		itemname: i.name,
+		itemtype: i.type,
+		modtype: mod.modtype ?? null,
+		state: mod.state,
+		itemDescription: mod.description,
+		value: mod.value,
+		stored: i.system?.stored ?? false,
+		...overrides,
+	};
+}
+
 /**
  * Scan a single item's itemModifiers (and featureModifiers) and push
  * normalised modifier objects into the provided itemMods array.
@@ -37,91 +61,59 @@ export function formatCurrencyInput(e) {
  * @param {Array} itemMods  The accumulator array to push into.
  */
 export function findMods(i, itemMods) {
-	if (!i.system.itemModifiers) return;
+	const system = i?.system;
+	if (!system?.itemModifiers) return;
 
-	const stripHtml = (s) => (s ? s.replace(/<[^>]*>?/gm, "") : "");
+	const { type: itemtype } = i;
+	const { basicisActive = false, advisActive = false } = system;
+	const basicAction = stripHtml(system.basicAction);
+	const advAction = stripHtml(system.advAction);
 
-	if (i.type === "talent") {
-		if (i.system.basicisActive) {
-			for (let [, mods] of Object.entries(i.system.itemModifiers)) {
-				if (mods.modtype === "basic") {
-					itemMods.push({
-						name: mods.name,
-						itemname: i.name,
-						itemtype: i.type,
-						modtype: mods.modtype,
-						state: mods.state,
-						itemDescription: mods.description,
-						value: mods.value,
-						stored: i.system.stored,
-						basicisActive: i.system.basicisActive ?? false,
-						basicAction: stripHtml(i.system.basicAction),
-					});
-				}
+	// 1. Process direct itemModifiers
+	for (const mod of Object.values(system.itemModifiers)) {
+		processItemMods(mod);
+	}
+
+	// 2. Process nested featureModifiers
+	if (system.featureModifiers) {
+		for (const feature of Object.values(system.featureModifiers).filter((f) => f.itemModifiers)) {
+			for (const mod of Object.values(feature.itemModifiers)) {
+				itemMods.push(createMod(mod, i, {
+					name: feature.name,
+					modtype: mod.name,
+					itemDescription: feature.description,
+					feature: feature.feature ?? false,
+					basicisActive,
+					advisActive,
+					basicAction,
+					advAction,
+				}));
 			}
-		}
-		if (i.system.advisActive) {
-			for (let [, mods] of Object.entries(i.system.itemModifiers)) {
-				if (mods.modtype === "advanced") {
-					itemMods.push({
-						name: mods.name,
-						itemname: i.name,
-						itemtype: i.type,
-						modtype: mods.modtype,
-						state: mods.state,
-						itemDescription: mods.description,
-						value: mods.value,
-						stored: i.system.stored,
-						advisActive: i.system.advisActive ?? false,
-						advAction: stripHtml(i.system.advAction),
-					});
-				}
-			}
-		}
-	} else {
-		// For crit items, use the immediate effect text as the description shown in the
-		// conditional roll dialog, since mods.description is the generic item description.
-		const isCrit = i.type === 'crit';
-		const critDescription = isCrit
-			? stripHtml(i.system.immediateeffect || i.system.imediateeffect || i.system.longtermeffect || i.name)
-			: null;
-		for (let [, mods] of Object.entries(i.system.itemModifiers)) {
-			itemMods.push({
-				name: mods.name,
-				itemname: i.name,
-				itemtype: i.type,
-				modtype: isCrit ? null : mods.modtype,
-				state: mods.state,
-				itemDescription: isCrit ? critDescription : mods.description,
-				value: mods.value,
-				stored: i.system.stored,
-				basicisActive: i.system.basicisActive ?? false,
-				advisActive: i.system.advisActive ?? false,
-				basicAction: stripHtml(i.system.basicAction),
-				advAction: stripHtml(i.system.advAction),
-			});
 		}
 	}
 
-	if (i.system.featureModifiers) {
-		for (let [, feature] of Object.entries(i.system.featureModifiers)) {
-			for (let [, mods] of Object.entries(feature.itemModifiers)) {
-				itemMods.push({
-					name: feature.name,
-					itemname: i.name,
-					itemtype: i.type,
-					feature: feature.feature ?? false,
-					modtype: mods.name,
-					state: mods.state,
-					itemDescription: feature.description,
-					value: mods.value,
-					stored: i.system.stored,
-					basicisActive: i.system.basicisActive ?? false,
-					advisActive: i.system.advisActive ?? false,
-					basicAction: stripHtml(i.system.basicAction),
-					advAction: stripHtml(i.system.advAction),
-				});
+	function processItemMods(mod) {
+		if (itemtype === "talent") {
+			if (mod.modtype === "basic" && basicisActive) {
+				itemMods.push(createMod(mod, i, { basicisActive: true, basicAction }));
+			} else if (mod.modtype === "advanced" && advisActive) {
+				itemMods.push(createMod(mod, i, { advisActive: true, advAction }));
 			}
+		} else {
+			const isCrit = itemtype === "crit";
+			// Preserves legacy DB key 'imediateeffect' alongside getter 'immediateeffect'
+			const itemDescription = isCrit
+				? stripHtml(system.immediateeffect || system.imediateeffect || system.longtermeffect || i.name)
+				: mod.description;
+
+			itemMods.push(createMod(mod, i, {
+				modtype: isCrit ? null : mod.modtype,
+				itemDescription,
+				basicisActive,
+				advisActive,
+				basicAction,
+				advAction,
+			}));
 		}
 	}
 }
@@ -133,6 +125,94 @@ export async function prepModOutput(rollType, rollData, dataset) {
 	const talentMods      = [];
 	const feature = game.i18n.localize('TALESOFTHEOLDWEST.Item.General.feature');
 	if (rollType === 'Items') {
+		prepFeatureMods();
+
+		prepItemMods();
+
+		switch (dataset.subtype) {
+			case 'shootin':
+				prepShootinMods();
+				break;
+			case 'fightin':
+				prepFightinMods();
+				break;
+		}
+	} else {
+		// it's an Attribute or Ability; dataset.key is the raw key (e.g. "quick" or "move").
+		const resolvedKey = dataset.key?.trim() ?? '';
+		// dataset.attr is the parent attribute for an ability roll (e.g. "quick" for "move").
+		// Crit modifiers are keyed by attribute, so we match on either the ability key
+		// itself OR its parent attribute so that e.g. a "quick" crit modifier surfaces
+		// when rolling "move", "shootin", "operate", etc.
+		const attrKey = dataset.attr?.trim() ?? '';
+		for (const akey in rollData.itemMods) {
+			if (akey === resolvedKey || (attrKey && akey === attrKey)) {
+				modifiers(rollData.itemMods, conditionalMods, talentMods, dataset, akey);
+			}
+		}
+	}
+	// Return the arrays as a plain object — do NOT assign to dataset (a
+	// DOMStringMap) which would coerce the arrays to "[object Object]" strings.
+	return { conditionalMods, talentMods };
+
+	function prepFightinMods() {
+		for (const akey in rollData.actor.itemMods) {
+			switch (akey) {
+				case 'fightin':
+					modifiers(rollData.actor.itemMods, conditionalMods, talentMods, dataset, akey);
+					break;
+				case 'grit':
+					modifiers(rollData.actor.itemMods, conditionalMods, talentMods, dataset, akey);
+					break;
+
+				default:
+					break;
+			}
+		}
+	}
+
+	function prepShootinMods() {
+		for (const akey in rollData.actor.itemMods) {
+			switch (akey) {
+				case 'shootin':
+					rollData.expertFanning = rollData.actor.itemMods[akey].some((a) => a.itemname === 'Expert Fanning' && a.basicisActive);
+					modifiers(rollData.actor.itemMods, conditionalMods, talentMods, dataset, akey);
+					break;
+				case 'quick':
+					modifiers(rollData.actor.itemMods, conditionalMods, talentMods, dataset, akey);
+					break;
+
+				default:
+					break;
+			}
+		}
+	}
+
+	function prepItemMods() {
+		for (const ikey in rollData.itemModifiers) {
+			switch (rollData.itemModifiers[ikey].state) {
+				case 'Conditional':
+					conditionalMods.push({
+						id: `i_${conditionalMods.length}`,
+						name: rollData.itemModifiers[ikey].name,
+						label: rollData.itemModifiers[ikey].itemDescription,
+						value: rollData.itemModifiers[ikey].value,
+						kind: 'item',
+					});
+					break;
+
+				case 'Chat':
+					talentMods.push({
+						itemname: rollData.itemModifiers[ikey].name,
+						modtype: null,
+						action: rollData.itemModifiers[ikey].itemDescription,
+					});
+					break;
+			}
+		}
+	}
+
+	function prepFeatureMods() {
 		for (const fkey in rollData.featureModifiers) {
 			for (const ikey in rollData.featureModifiers[fkey].itemModifiers) {
 				switch (rollData.featureModifiers[fkey].itemModifiers[ikey].state) {
@@ -156,82 +236,7 @@ export async function prepModOutput(rollType, rollData, dataset) {
 				}
 			}
 		}
-
-		for (const ikey in rollData.itemModifiers) {
-			switch (rollData.itemModifiers[ikey].state) {
-				case 'Conditional':
-					conditionalMods.push({
-						id: `i_${conditionalMods.length}`,
-						name: rollData.itemModifiers[ikey].name,
-						label: rollData.itemModifiers[ikey].itemDescription,
-						value: rollData.itemModifiers[ikey].value,
-						kind: 'item',
-					});
-					break;
-
-				case 'Chat':
-					talentMods.push({
-						itemname: rollData.itemModifiers[ikey].name,
-						modtype: null,
-						action: rollData.itemModifiers[ikey].itemDescription,
-					});
-					break;
-			}
-		}
-		switch (dataset.subtype) {
-			case 'shootin':
-				for (const akey in rollData.actor.itemMods) {
-					switch (akey) {
-						case 'shootin':
-							rollData.expertFanning = rollData.actor.itemMods[akey].find((a) => a.itemname === 'Expert Fanning')?.basicisActive;
-							modifiers(rollData.actor.itemMods, conditionalMods, talentMods, dataset, akey);
-							break;
-						case 'quick':
-							modifiers(rollData.actor.itemMods, conditionalMods, talentMods, dataset, akey);
-							break;
-
-						default:
-							break;
-					}
-				}
-				break;
-			case 'fightin':
-				for (const akey in rollData.actor.itemMods) {
-					switch (akey) {
-						case 'fightin':
-							modifiers(rollData.actor.itemMods, conditionalMods, talentMods, dataset, akey);
-							break;
-						case 'grit':
-							modifiers(rollData.actor.itemMods, conditionalMods, talentMods, dataset, akey);
-							break;
-
-						default:
-							break;
-					}
-				}
-				break;
-		}
-	} else {
-		// it's an Attribute or Ability.
-		// dataset.key may be a raw key ("move") or an un-evaluated i18n string
-		// ("TALESOFTHEOLDWEST.Attributes.quick.listName") due to a Handlebars
-		// quoting bug in the attribute template. Normalise by resolving via i18n if needed.
-		const rawKey = dataset.key?.trim() ?? '';
-		const resolvedKey = rawKey.startsWith('TALESOFTHEOLDWEST.') ? game.i18n.localize(rawKey) : rawKey;
-		// dataset.attr is the parent attribute for an ability roll (e.g. "quick" for "move").
-		// Crit modifiers are keyed by attribute, so we match on either the ability key
-		// itself OR its parent attribute so that e.g. a "quick" crit modifier surfaces
-		// when rolling "move", "shootin", "operate", etc.
-		const attrKey = dataset.attr?.trim() ?? '';
-		for (const akey in rollData.itemMods) {
-			if (akey === resolvedKey || (attrKey && akey === attrKey)) {
-				modifiers(rollData.itemMods, conditionalMods, talentMods, dataset, akey);
-			}
-		}
 	}
-	// Return the arrays as a plain object — do NOT assign to dataset (a
-	// DOMStringMap) which would coerce the arrays to "[object Object]" strings.
-	return { conditionalMods, talentMods };
 }
 
 export function modifiers(itemModspath, conditionalMods, talentMods, dataset, akey) {

@@ -111,24 +111,17 @@ Hooks.once("init", function () {
   });
 
 
-  // CONFIG.statusEffects = CONFIG.TALESOFTHEOLDWEST.conditions.filter((effect) => !toRemove.includes(effect.id));
   // Status Effect Transfer
   for (const [id, value] of Object.entries(TALESOFTHEOLDWEST.conditions)) {
     CONFIG.statusEffects.push({ id, _id: id.padEnd(16, "0"), ...value, tableNumber: value.tableNumber });
   }
-
-  // for (const [id, value] of Object.entries(TALESOFTHEOLDWEST.conditions)) {
-  //   CONFIG.statusEffects.push({ id, _id: id.padEnd(16, "0"), ...value });
-  // }
-  // CONFIG.statusEffects.push(...TALESOFTHEOLDWEST.conditions);
-
   initializeHandlebars();
 
   registerSettings();
   enrichTextEditors();
 
-  Hooks.on("renderChatMessageHTML", (msg, html, msgContent) => {
-    totowDiceButtons(msg, html, msgContent);
+  Hooks.on("renderChatMessageHTML", async (msg, html, msgContent) => {
+    await totowDiceButtons(msg, html, msgContent);
 
     // Do not display "Blind" chat cards to non-gm
     if (html.querySelector("blind") && !game.user.isGM) {
@@ -174,7 +167,7 @@ Hooks.once("ready", async () => {
 // V13 spinner
 Hooks.on("renderGamePause", (_app, html, options) => {
   document.getElementById("pause").innerHTML =
-    `<img src=\"systems/talesoftheoldwest/assets/icons/snake.webp\" class=\"fa-spin\"><figcaption>"SIT A SPELL"</figcaption>`;
+    `<img src="systems/talesoftheoldwest/assets/icons/snake.webp" class="fa-spin"><figcaption>"SIT A SPELL"</figcaption>`;
 });
 
 // ***************************
@@ -262,7 +255,7 @@ function rollItemMacro(itemUuid) {
   // Load the item from the uuid.
   Item.fromDropData(dropData).then((item) => {
     // Determine if the item loaded and if it's an owned item.
-    if (!item || !item.parent) {
+    if (!item?.parent) {
       const itemName = item?.name ?? itemUuid;
       return ui.notifications.warn(`Could not find item ${itemName}. You may need to delete and recreate this macro.`);
     }
