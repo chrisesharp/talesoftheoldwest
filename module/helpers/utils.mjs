@@ -30,6 +30,32 @@ export function formatCurrencyInput(e) {
 
 export const stripHtml = (s) => (s ? s.replace(/<[^>]*>?/gm, "") : "");
 
+const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+
+function buildLabel(mod, action) {
+	if (action) {
+		return `${mod.itemname} — ${capitalize(mod.modtype)} - ${action}`;
+	}
+	const typePart = mod.modtype ? `${capitalize(mod.modtype)} - ` : '';
+	const sep      = typePart ? ` — ${typePart}` : '';
+	return `${mod.itemname}${sep}${mod.itemDescription}`;
+}
+
+function getActiveTalent(mod) {
+	if (mod.basicisActive) return { action: mod.basicAction };
+	if (mod.advisActive)   return { action: mod.advAction };
+	return null;
+}
+
+function pushConditional(conditionalMods, kind, mod, label) {
+	const prefix = kind === 'feature' ? 'f' : 'i';
+	conditionalMods.push({ id: `${prefix}_${conditionalMods.length}`, name: mod.name, label, value: mod.value, kind });
+}
+
+function pushTalent(talentMods, mod, action) {
+	talentMods.push({ itemname: mod.itemname, modtype: capitalize(mod.modtype), action });
+}
+
 /**
  * Construct a normalized modifier entry from a raw modifier descriptor and its parent item.
  *
@@ -239,92 +265,27 @@ export async function prepModOutput(rollType, rollData, dataset) {
 	}
 }
 
+const ITEM_TYPES = new Set(['item', 'animalquality', 'crit']);
+
 export function modifiers(itemModspath, conditionalMods, talentMods, dataset, akey) {
-	itemModspath[akey].reduce((acc, akey) => {
-		if (akey.state !== 'Active') {
-			if (akey.basicisActive) {
-				switch (akey.state) {
-					case 'Conditional':
-						conditionalMods.push({
-							id: `f_${conditionalMods.length}`,
-							name: akey.name,
-							label: `${akey.itemname} — ${akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)} - ${akey.basicAction}`,
-							value: akey.value,
-							kind: 'feature',
-						});
-						break;
+	for (const mod of itemModspath[akey]) {
+		if (mod.state === 'Active') continue;
 
-					case 'Chat':
-						talentMods.push({
-							itemname: akey.itemname,
-							modtype: akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1),
-							action: akey.basicAction,
-						});
-						break;
-				}
-			} else if (akey.advisActive) {
-				switch (akey.state) {
-					case 'Conditional':
-						conditionalMods.push({
-							id: `f_${conditionalMods.length}`,
-							name: akey.name,
-							label: `${akey.itemname} — ${akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)} - ${akey.advAction}`,
-							value: akey.value,
-							kind: 'feature',
-						});
-						break;
+		const talent = getActiveTalent(mod);
+		if (talent) {
+			if (mod.state === 'Conditional') pushConditional(conditionalMods, 'feature', mod, buildLabel(mod, talent.action));
+			else if (mod.state === 'Chat')   pushTalent(talentMods, mod, talent.action);
+			continue;
+		}
 
-					case 'Chat':
-						talentMods.push({
-							itemname: akey.itemname,
-							modtype: akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1),
-							action: akey.advAction,
-						});
-						break;
-				}
-			} else if ((akey.itemtype === 'item' || akey.itemtype === 'animalquality' || akey.itemtype === 'crit') && !akey.stored) {
-				switch (akey.state) {
-					case 'Conditional': {
-						const itemModType = akey.modtype
-							? `${akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)} - `
-							: '';
-						const itemModSeparator = itemModType ? ` — ${itemModType}` : '';
-						conditionalMods.push({
-							id: `i_${conditionalMods.length}`,
-							name: akey.name,
-							label: `${akey.itemname}${itemModSeparator} ${akey.itemDescription}`,
-							value: akey.value,
-							kind: 'item',
-						});
-						break;
-					}
-					case 'onPC':
-						if (dataset.myHorse === 'true') {
-							const onPcModType = akey.modtype
-								? `${akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1)} - `
-								: '';
-							const pcModSeparator = onPcModType ? ` — ${onPcModType}` : '';
-							conditionalMods.push({
-								id: `i_${conditionalMods.length}`,
-								name: akey.name,
-								label: `${akey.itemname}${pcModSeparator} ${akey.itemDescription}`,
-								value: akey.value,
-								kind: 'item',
-							});
-						}
-						break;
+		if (!ITEM_TYPES.has(mod.itemtype) || mod.stored) continue;
 
-					case 'Chat':
-						talentMods.push({
-							itemname: akey.itemname,
-							modtype: akey.modtype ? akey.modtype.charAt(0).toUpperCase() + akey.modtype.slice(1) : null,
-							action: akey.itemDescription,
-						});
-						break;
-				}
-			}
-		} else return acc;
-	}, []);
+		if (mod.state === 'Conditional' || (mod.state === 'onPC' && dataset.myHorse === 'true')) {
+			pushConditional(conditionalMods, 'item', mod, buildLabel(mod));
+		} else if (mod.state === 'Chat') {
+			pushTalent(talentMods, mod, mod.itemDescription);
+		}
+	}
 }
 
 export function parents(el, selector) {
