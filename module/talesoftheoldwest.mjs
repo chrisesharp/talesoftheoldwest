@@ -138,6 +138,31 @@ Hooks.once("init", function () {
   });
 });
 
+/**
+ * PC sheets display linked horses (remuda) and compadres by reading the linked
+ * actors at render time. Re-render any open PC sheet that references an actor
+ * (or an item/effect owned by that actor) when it changes.
+ */
+function refreshLinkingSheets(actor) {
+  if (!actor || actor.type === "pc" || actor.type === "towncharter") return;
+  for (const app of foundry.applications.instances.values()) {
+    const pc = app.document;
+    if (pc?.documentName !== "Actor" || pc.type !== "pc" || !app.rendered) continue;
+    const linked =
+      pc.system.remuda.details.some((o) => o.id === actor.id) || pc.system.compadres.details.some((o) => o.id === actor.id);
+    if (linked) app.render();
+  }
+}
+
+Hooks.on("updateActor", (actor) => refreshLinkingSheets(actor));
+for (const doc of ["Item", "ActiveEffect"]) {
+  for (const op of ["create", "update", "delete"]) {
+    Hooks.on(`${op}${doc}`, (document) => {
+      if (document.parent?.documentName === "Actor") refreshLinkingSheets(document.parent);
+    });
+  }
+}
+
 /* -------------------------------------------- */
 /*  Ready Hook                                  */
 /* -------------------------------------------- */
