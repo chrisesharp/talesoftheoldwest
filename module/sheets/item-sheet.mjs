@@ -1,8 +1,35 @@
 import { logger } from "../helpers/logger.mjs";
+import { formatCurrencyInput } from "../helpers/utils.mjs";
 
 const { api, sheets } = foundry.applications;
 // V13
 // const DragDrop = foundry.applications.ux.DragDrop;
+
+/**
+ * Resolve the icon path for an item from the TALESOFTHEOLDWEST.icons map.
+ * String values are used directly as the img. Nested objects are traversed by
+ * using each object key as an index into the document's system data until a
+ * leaf string is reached, avoiding nested conditionals.
+ * @param {Object|string} iconMap - value of CONFIG.TALESOFTHEOLDWEST.icons[type]
+ * @param {Object} system - the item document's system data
+ * @returns {string|undefined}
+ */
+const resolveIcon = (iconMap, system) => {
+  let node = iconMap;
+  let sys = system;
+  while (typeof node !== "string") {
+    const key = Object.keys(node)[0];
+    const sysVal = sys[key];
+    if (typeof sysVal === "object" && sysVal !== null) {
+      node = node[key];
+      sys = sysVal;
+    } else {
+      node = node[key][sysVal];
+    }
+  }
+  return node;
+};
+
 /**
  * Extend the basic ItemSheet with some very simple modifications
  * @extends {ItemSheetV2}
@@ -74,11 +101,9 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
   /** @override */
   _configureRenderOptions(options) {
     super._configureRenderOptions(options);
-    // Not all parts always render
     options.parts = ["header", "tabs", "description"];
-    // Don't show the other tabs if only limited view
     if (this.document.limited) return;
-    // Control which parts show based on document subtype
+
     switch (this.document.type) {
       case "talent":
         options.parts.push("basic", "advanced");
@@ -102,19 +127,14 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
   /** @override */
   async _prepareContext(options) {
     const context = {
-      // Validates both permissions and compendium status
       editable: this.isEditable,
       owner: this.document.isOwner,
       limited: this.document.limited,
       isGM: game.user.isGM,
-      // Add the item document.
       item: this.item,
-      // Adding system and flags for easier access
       system: this.item.system,
       flags: this.item.flags,
-      // Adding a pointer to CONFIG.TALESOFTHEOLDWEST
       config: CONFIG.TALESOFTHEOLDWEST,
-      // You can factor out context construction to helper functions
       tabs: this._getTabs(options.parts),
       // Necessary for formInput and formFields helpers
       fields: this.document.schema.fields,
@@ -122,95 +142,10 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
       systemSource: this.item.system._source,
     };
 
-    switch (this.document.type) {
-      case "talent":     
-        if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-          this.document.update({ img: "systems/talesoftheoldwest/assets/icons/brain.webp" });
-        }
-        break;
-      case "item":
-        if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-          this.document.update({ img: "systems/talesoftheoldwest/assets/icons/saddle.webp" });
-        }
-        break;
-
-      case "weapon":
-        if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-          this.document.update({ img: "systems/talesoftheoldwest/assets/icons/manhattannavy.webp" });
-        }
-        break;
-
-      case "crit":
-        if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-          this.document.update({ img: "systems/talesoftheoldwest/assets/icons/rattler.webp" });
-        }
-        break;
-
-      case "animalquality":
-        switch (this.document.system.general.subtype) {
-          case "quality":
-            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/horse-head.webp" });
-            }
-            break;
-          case "flaw":
-            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/donkey.webp" });
-            }
-            break;
-        }
-        break;
-
-      case "weaponquality":
-        switch (this.document.system.feature) {
-          case "quality":
-            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/supersonic-bullet.webp" });
-            }
-            break;
-          case "condition":
-            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/broken-arrow.webp" });
-            }
-            break;
-        }
-        break;
-      case "amenities":
-        switch (this.document.system.subtype) {
-          case "Farming":
-            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/plow.webp" });
-            }
-            break;
-          case "Mercantile":
-            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/merchantile.webp" });
-            }
-            break;
-          case "Natural":
-            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/mining.webp" });
-            }
-            break;
-          case "Law":
-            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/book-law.webp" });
-            }
-            break;
-          case "Civic":
-            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/civic.webp" });
-            }
-            break;
-          case "Welfare":
-            if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
-              this.document.update({ img: "systems/talesoftheoldwest/assets/icons/welfare.webp" });
-            }
-            break;
-        }
-        break;
-      default:
-        break;
+    if (this.document.img == "icons/svg/item-bag.svg" && this.document.img != this.img) {
+      const iconMap = CONFIG.TALESOFTHEOLDWEST.icons[this.document.type];
+      const img = resolveIcon(iconMap, this.document.system);
+      this.document.update({ img: img });
     }
 
     logger.debug("Item Sheet derived data:", context);
@@ -575,8 +510,8 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
    * @type {foundry.applications.ux.DragDrop}
    * @protected
    */
-  get _dragDrop() {
-    return this.#dragDrop ??= new foundry.applications.ux.DragDrop.implementation({
+   get _dragDrop() {
+    this.#dragDrop ??= new foundry.applications.ux.DragDrop.implementation({
       dragSelector: "[data-drag]",
       permissions: {
         dragstart: this._canDragStart.bind(this),
@@ -588,6 +523,7 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
         drop: this._onDrop.bind(this),
       },
     });
+    return this.#dragDrop;
   }
 
   /** @type {foundry.applications.ux.DragDrop|null} */
@@ -728,6 +664,39 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
   /* ------------------------------------------- */
 
   /**
+   * Accumulates item modifier values onto the given target and issues a single update.
+   * @param {object} target - The item document to update.
+   * @param {object[]} itemModifiers - Array of modifier objects with `name` and `value`.
+   * @param {number} sign - `1` to add modifiers, `-1` to remove them.
+   */
+  static async _applyItemModifiers(target, itemModifiers, sign) {
+    const modUpdates = {};
+    for (const ikey in itemModifiers) {
+      const mod = itemModifiers[ikey];
+      const modVal = (Number(mod.value) || 0) * sign;
+      switch (mod.name) {
+        case "attackbonus":
+          modUpdates["system.attackbonus"] = (Number(modUpdates["system.attackbonus"] ?? target.system.attackbonus) || 0) + modVal;
+          break;
+        case "drawbonus":
+          modUpdates["system.bonusdraw"] = (Number(modUpdates["system.bonusdraw"] ?? target.system.bonusdraw) || 0) + modVal;
+          break;
+        case "damage":
+          modUpdates["system.damage"] = (Number(modUpdates["system.damage"] ?? target.system.damage) || 0) + modVal;
+          break;
+        case "crit":
+          modUpdates["system.crit"] = (Number(modUpdates["system.crit"] ?? target.system.crit) || 0) + modVal;
+          break;
+      }
+    }
+    if (Object.keys(modUpdates).length > 0) {
+      await target.update(modUpdates);
+    }
+  }
+
+  /* ------------------------------------------- */
+
+  /**
    * @returns {WeaponFeature}
    */
   async addWeaponFeature(dropItem, target) {
@@ -772,32 +741,11 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
 
     await target.update({ "system.featureModifiers": system.featureModifiers, "system.conditionNames": update });
 
-    for (const ikey in target.system.featureModifiers[fkey - 1].itemModifiers) {
-      const mod = target.system.featureModifiers[fkey - 1].itemModifiers[ikey];
-      const modVal = Number(mod.value) || 0;
-      switch (mod.name) {
-        case "attackbonus":
-          await target.update({
-            "system.attackbonus": (Number(target.system.attackbonus) || 0) + modVal,
-          });
-          break;
-        case "drawbonus":
-          await target.update({
-            "system.bonusdraw": (Number(target.system.bonusdraw) || 0) + modVal,
-          });
-          break;
-        case "damage":
-          await target.update({
-            "system.damage": (Number(target.system.damage) || 0) + modVal,
-          });
-          break;
-        case "crit":
-          await target.update({
-            "system.crit": (Number(target.system.crit) || 0) + modVal,
-          });
-          break;
-      }
-    }
+    await totowItemSheet._applyItemModifiers(
+      target,
+      target.system.featureModifiers[fkey - 1].itemModifiers,
+      1,
+    );
     return weaponFeature;
   }
 
@@ -813,32 +761,7 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
 
     let temp = itemData.system.featureModifiers.find((o) => o.id === li?.dataset?.itemId);
 
-    for (const ikey in temp.itemModifiers) {
-      const mod = temp.itemModifiers[ikey];
-      const modVal = Number(mod.value) || 0;
-      switch (mod.name) {
-        case "attackbonus":
-          await itemData.update({
-            "system.attackbonus": (Number(itemData.system.attackbonus) || 0) - modVal,
-          });
-          break;
-        case "drawbonus":
-          await itemData.update({
-            "system.bonusdraw": (Number(itemData.system.bonusdraw) || 0) - modVal,
-          });
-          break;
-        case "damage":
-          await itemData.update({
-            "system.damage": (Number(itemData.system.damage) || 0) - modVal,
-          });
-          break;
-        case "crit":
-          await itemData.update({
-            "system.crit": (Number(itemData.system.crit) || 0) - modVal,
-          });
-          break;
-      }
-    }
+    await totowItemSheet._applyItemModifiers(itemData, temp.itemModifiers, -1);
 
     let featureModifiers = itemData.system.featureModifiers.filter((o) => o.id !== li?.dataset?.itemId);
     await itemData.update({ "system.featureModifiers": featureModifiers });
@@ -911,19 +834,6 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
   _currencyField(event) {
     event.preventDefault();
     // format initial value
-    onBlur({ target: event.currentTarget });
-
-    function localStringToNumber(s) {
-      return Number(String(s).replace(/[^0-9.-]+/g, ""));
-    }
-    function onBlur(e) {
-      let value = localStringToNumber(e.target.value);
-      if (game.settings.get("talesoftheoldwest", "dollar"))
-        e.target.value = value ? Intl.NumberFormat("en-EN", { style: "currency", currency: "USD" }).format(value) : "$0.00";
-      else
-        e.target.value = value
-          ? Intl.NumberFormat("en-EN", { style: "decimal", useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
-          : "0.00";
-    }
+    formatCurrencyInput({ target: event.currentTarget });
   }
 }

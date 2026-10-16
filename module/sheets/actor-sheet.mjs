@@ -1,7 +1,7 @@
 import { prepareActiveEffectCategories } from "../helpers/effects.mjs";
 import { logger } from "../helpers/logger.mjs";
 import TOTOWActiveEffect from "../documents/active-effect.mjs";
-import { findMods } from "../helpers/utils.mjs";
+import { findMods, formatCurrencyInput } from "../helpers/utils.mjs";
 
 const { api, sheets } = foundry.applications;
 
@@ -318,10 +318,6 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
    * @param {object} context The context object to mutate
    */
   _prepareItems(context) {
-    // Initialize containers.
-    // You can just use `this.document.itemTypes` instead
-    // if you don't need to subdivide a given type like
-    // this sheet does with spells
     const gear = [];
     const allGear = [];
     const weapon = [];
@@ -360,21 +356,16 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
         default:
           break;
       }
-
       allGear.push(i);
     }
-    if (context.actor.type === "pc") {
-      if (context.system.remuda.remudaMounted !== "false") {
-        for (const modItems of Object.values(context.system.remuda.details)) {
-          if (modItems.actor.system.general.mounted === true) {
-            for (const i of modItems.actor.items) {
-              findMods(i, itemMods);
-            }
-          }
+    if (context.actor.type === "pc" && context.system.remuda.remudaMounted !== "false") {
+      for (const modItems of Object.values(context.system.remuda.details).filter(m => m.actor.system.general.mounted === true)) {
+        for (const i of modItems.actor.items) {
+          findMods(i, itemMods);
         }
       }
     }
-    // Sort then assign
+
     context.allGear = allGear.toSorted((a, b) => (a.sort || 0) - (b.sort || 0));
     context.gear = gear.toSorted((a, b) => (a.sort || 0) - (b.sort || 0));
     context.weapon = weapon.toSorted((a, b) => (a.sort || 0) - (b.sort || 0));
@@ -560,9 +551,9 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
 
     const ammo = document.getElementById("actorWeaponList");
     if (!ammo) return;
-    ammo.addEventListener("change", (event) => {
+    ammo.addEventListener("change", async (event) => {
       if (event.target.classList.contains("inline-edit")) {
-        this._inlineedit(event);
+        await this._inlineedit(event);
       }
     });
     logger.debug("Actor Sheet derived data:", context);
@@ -867,26 +858,33 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     const field = `system.damage.${target.dataset.label}.value`;
     const aField = `system.attributes.${target.dataset.attribute}.value`;
 
+    const attrKey = target.dataset.attribute;
     if (event.button === 2) {
       // right click
-      if (damage.value) {
-        await actor.update({ [field]: damage.value - 1, [aField]: attribute.value + 1 });
-        if (damage.max != actor.system.attributes[target.dataset.attribute].max && !actor.system.conditions.broken) {
-          await actor.removeCondition("broken");
-        }
-        if (containerEl) this.render();
-        return;
-      }
+      return this.removeDamage(actor, attribute, damage, field, aField, containerEl, attrKey);
     } else {
       // left click
-      if (damage.max) {
-        await actor.update({ [field]: damage.value + 1, [aField]: attribute.value - 1 });
-        if (actor.system.attributes[target.dataset.attribute].value === 0 && actor.system.conditions.broken) {
-          await actor.addCondition("broken");
-        }
-        if (containerEl) this.render();
-        return;
+      return this.addDamage(actor, attribute, damage, field, aField, containerEl, attrKey);
+    }
+  }
+
+  async removeDamage(actor, attribute, damage, field, aField, containerEl, attrKey) {
+    if (damage.value) {
+      await actor.update({ [field]: damage.value - 1, [aField]: attribute.value + 1 });
+      if (damage.max != actor.system.attributes[attrKey].max && !actor.system.conditions.broken) {
+        await actor.removeCondition("broken");
       }
+      if (containerEl) this.render();
+    }
+  }
+
+  async addDamage(actor, attribute, damage, field, aField, containerEl, attrKey) {
+    if (damage.max) {
+      await actor.update({ [field]: damage.value + 1, [aField]: attribute.value - 1 });
+      if (actor.system.attributes[attrKey].value === 0 && actor.system.conditions.broken) {
+        await actor.addCondition("broken");
+      }
+      if (containerEl) this.render();
     }
   }
 
@@ -968,7 +966,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
    * @protected
    */
   get _dragDrop() {
-    return this.#dragDrop ??= new foundry.applications.ux.DragDrop.implementation({
+    this.#dragDrop ??= new foundry.applications.ux.DragDrop.implementation({
       dragSelector: "[data-drag]",
       permissions: {
         dragstart: this._canDragStart.bind(this),
@@ -980,6 +978,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
         drop: this._onDrop.bind(this),
       },
     });
+    return this.#dragDrop;
   }
 
   /** @type {foundry.applications.ux.DragDrop|null} */
@@ -1079,9 +1078,11 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     }, {});
 
     // Effects-on-items updates
-    for (const [itemId, updates] of Object.entries(grandchildUpdateData)) {
-      await this.actor.items.get(itemId).updateEmbeddedDocuments("ActiveEffect", updates);
-    }
+    await Promise.all(
+      Object.entries(grandchildUpdateData).map(([itemId, updates]) =>
+        this.actor.items.get(itemId).updateEmbeddedDocuments("ActiveEffect", updates)
+      )
+    );
 
     // Update on the main actor
     return this.actor.updateEmbeddedDocuments("ActiveEffect", directUpdates);
@@ -1183,7 +1184,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       return false;
     }
 
-    itemData = itemData instanceof Array ? itemData : [itemData];
+    itemData = Array.isArray(itemData) ? itemData : [itemData];
     return this.actor.createEmbeddedDocuments("Item", itemData);
   }
 
@@ -1261,21 +1262,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
 
   _currencyField(event) {
     event.preventDefault();
-    const element = event.currentTarget;
-    onBlur({ target: event.currentTarget });
-
-    function localStringToNumber(s) {
-      return Number(String(s).replace(/[^0-9.-]+/g, ""));
-    }
-    function onBlur(e) {
-      let value = localStringToNumber(e.target.value);
-      if (game.settings.get("talesoftheoldwest", "dollar"))
-        e.target.value = value ? Intl.NumberFormat("en-EN", { style: "currency", currency: "USD" }).format(value) : "$0.00";
-      else
-        e.target.value = value
-          ? Intl.NumberFormat("en-EN", { style: "decimal", useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
-          : "0.00";
-    }
+    formatCurrencyInput({ target: event.currentTarget });
   }
 
   async _dropCompadres(actorId) {

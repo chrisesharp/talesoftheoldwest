@@ -432,3 +432,34 @@ TALESOFTHEOLDWEST.conditions = {
 };
 
 TALESOFTHEOLDWEST.physicalItems = [];
+
+TALESOFTHEOLDWEST.icons = {
+  talent: "systems/talesoftheoldwest/assets/icons/brain.webp",
+  item: "systems/talesoftheoldwest/assets/icons/saddle.webp",
+  weapon: "systems/talesoftheoldwest/assets/icons/manhattannavy.webp",
+  crit: "systems/talesoftheoldwest/assets/icons/rattler.webp",
+  animalquality: { 
+    general: {
+      subtype: {
+        quality: "systems/talesoftheoldwest/assets/icons/horse-head.webp",
+        flaw: "systems/talesoftheoldwest/assets/icons/donkey.webp",
+      }
+    }
+  },
+  weaponquality: {
+    feature: {
+      quality: "systems/talesoftheoldwest/assets/icons/supersonic-bullet.webp",
+      condition: "systems/talesoftheoldwest/assets/icons/broken-arrow.webp",
+    }
+  },
+  amenities: { 
+    subtype: {
+      Farming: "systems/talesoftheoldwest/assets/icons/plow.webp",
+      Mercantile: "systems/talesoftheoldwest/assets/icons/mercantile.webp",
+      Natural: "systems/talesoftheoldwest/assets/icons/mining.webp",
+      Law: "systems/talesoftheoldwest/assets/icons/book-law.webp",
+      Civic: "systems/talesoftheoldwest/assets/icons/civic.webp",
+      Welfare: "systems/talesoftheoldwest/assets/icons/welfare.webp",
+    }
+  },
+}

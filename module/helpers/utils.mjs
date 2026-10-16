@@ -14,6 +14,20 @@ export const getID = function () {
 	return '_' + Math.random().toString(36).slice(2, 11);
 };
 
+export function localStringToNumber(s) {
+	return Number(String(s).replace(/[^0-9.-]+/g, ""));
+}
+
+export function formatCurrencyInput(e) {
+	const value = localStringToNumber(e.target.value);
+	if (game.settings.get("talesoftheoldwest", "dollar"))
+		e.target.value = value ? Intl.NumberFormat("en-EN", { style: "currency", currency: "USD" }).format(value) : "$0.00";
+	else
+		e.target.value = value
+			? Intl.NumberFormat("en-EN", { style: "decimal", useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
+			: "0.00";
+}
+
 /**
  * Scan a single item's itemModifiers (and featureModifiers) and push
  * normalised modifier objects into the provided itemMods array.
