@@ -298,14 +298,14 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
     await item.update(update);
   }
   static async _addTalentModifier(event, target) {
-    let update = {};
     const item = totowItemSheet._resolveActionItem(target);
 
-    const itemModifiers = item.system.itemModifiers || {};
+    // Duplicate the existing modifiers so we can safely mutate the object.
+    const itemModifiers = foundry.utils.duplicate(item.system.itemModifiers || {});
     // To preserve order, make sure the new index is the highest
-    const modifierId = Math.max(-1, ...Object.getOwnPropertyNames(itemModifiers)) + 1 || 0;
+    const modifierId = Math.max(-1, ...Object.keys(itemModifiers).map(Number)) + 1;
     if (item.type === "talent") {
-      update[`system.itemModifiers.${modifierId}`] = {
+      itemModifiers[modifierId] = {
         name: game.i18n.localize("TALESOFTHEOLDWEST.Attributes.grit.lower"),
         value: Number(0),
         state: "Conditional",
@@ -316,7 +316,7 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
         advAction: item.system.advAction.replace(/<[^>]*>?/gm, ""),
       };
     } else {
-      update[`system.itemModifiers.${modifierId}`] = {
+      itemModifiers[modifierId] = {
         name: game.i18n.localize("TALESOFTHEOLDWEST.Attributes.grit.lower"),
         value: Number(0),
         state: "Conditional",
@@ -326,8 +326,10 @@ export class totowItemSheet extends api.HandlebarsApplicationMixin(sheets.ItemSh
       };
     }
 
-    // await item.update(update).render(true);
-    await item.update(update);
+    // Null-then-replace avoids Foundry ObjectField merge issues and eliminates
+    // the submitOnChange race that would otherwise overwrite the new entry.
+    await item.update({ "system.itemModifiers": null });
+    await item.update({ "system.itemModifiers": itemModifiers });
   }
 
   /**

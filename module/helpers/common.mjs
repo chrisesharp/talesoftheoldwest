@@ -19,7 +19,9 @@ export class COMMON {
 
 	static NAME = this.name;
 
-	static register() {}
+	static register() {
+		// hang over from inherited code
+	}
 
 	static firstGM() {
 		return game.users.find((u) => u.isGM && u.active);
