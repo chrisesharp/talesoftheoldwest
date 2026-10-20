@@ -1,5 +1,4 @@
-import totowActorBase from './actor-base.mjs';
-import { calculateMods } from '../helpers/utils.mjs';
+import totowCreatureBase from './creature-base.mjs';
 
 /**
  * Row = publicspirit (1–6), Column = morals (1–6).
@@ -14,25 +13,14 @@ const REPUTATION_KEYS = [
 	['sixone',   'sixtwo',   'sixthree',   'sixfour',   'sixfive',   'sixsix'  ],
 ];
 
-export default class totowPC extends totowActorBase {
+export default class totowPC extends totowCreatureBase {
 	static LOCALIZATION_PREFIXES = [...super.LOCALIZATION_PREFIXES, 'TALESOFTHEOLDWEST.Actor.PC'];
 
 	static defineSchema() {
 		const fields = foundry.data.fields;
 		const requiredInteger = { required: true, nullable: false, integer: true };
 		const schema = super.defineSchema();
-		// Iterate over attribute names and create a new SchemaField for each.
-		schema.attributes = new fields.SchemaField(
-			Object.keys(CONFIG.TALESOFTHEOLDWEST.attributes).reduce((obj, attribute) => {
-				obj[attribute] = new fields.SchemaField({
-					value: new fields.NumberField({ ...requiredInteger, initial: 1, min: 0, max: 5 }),
-					mod: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0 }),
-					max: new fields.NumberField({ ...requiredInteger, initial: 1, min: 0 }),
-					label: new fields.StringField({ required: true, blank: true }),
-				});
-				return obj;
-			}, {})
-		);
+
 		schema.general = new fields.SchemaField({
 			archetype: new fields.StringField({ required: true, blank: true }),
 			groupconcept: new fields.StringField({ required: true, blank: true }),
@@ -66,51 +54,6 @@ export default class totowPC extends totowActorBase {
 			}),
 			canPush: new fields.StringField({ required: true, initial: 'push' }),
 		});
-		// Iterate over ability names and create a new SchemaField for each.
-		schema.abilities = new fields.SchemaField(
-			Object.keys(CONFIG.TALESOFTHEOLDWEST.abilities).reduce((obj, ability) => {
-				obj[ability] = new fields.SchemaField({
-					value: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0, max: 5 }),
-					mod: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0 }),
-					total: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0 }),
-					label: new fields.StringField({ required: true, blank: true }),
-					upper: new fields.StringField({ required: true, blank: true }),
-					attr: new fields.StringField({ required: true, blank: true }),
-				});
-				return obj;
-			}, {})
-		);
-
-		schema.conditions = new fields.SchemaField({
-			starving: new fields.BooleanField({ initial: false }),
-			dehydrated: new fields.BooleanField({ initial: false }),
-			exhausted: new fields.BooleanField({ initial: false }),
-			freezing: new fields.BooleanField({ initial: false }),
-			encumbered: new fields.BooleanField({ initial: false }),
-			overwatch: new fields.BooleanField({ initial: false }),
-			heatstroke: new fields.BooleanField({ initial: false }),
-			broken: new fields.BooleanField({ initial: false }),
-		});
-
-		schema.damage = new fields.SchemaField({
-			hurts: new fields.SchemaField({
-				value: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0, max: 5 }),
-				max: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0, max: 5 }),
-			}),
-			shakes: new fields.SchemaField({
-				value: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0, max: 5 }),
-				max: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0, max: 5 }),
-			}),
-			vexes: new fields.SchemaField({
-				value: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0, max: 15 }),
-				max: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0, max: 5 }),
-			}),
-			doubts: new fields.SchemaField({
-				value: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0, max: 5 }),
-				max: new fields.NumberField({ ...requiredInteger, initial: 0, min: 0, max: 5 }),
-			}),
-		});
-
 		schema.compadres = new fields.SchemaField({
 			details: new fields.ArrayField(
 				new fields.SchemaField({
@@ -133,25 +76,10 @@ export default class totowPC extends totowActorBase {
 	}
 
 	prepareDerivedData() {
-		for (const akey in this.attributes) {
-			this.attributes[akey].label = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.attributes[akey].name) ?? akey;
-		}
-
-		for (const key in this.abilities) {
-			this.abilities[key].attr = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.abilities[key].atob) ?? key;
-			this.abilities[key].label = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.abilities[key].name) ?? key;
-			this.abilities[key].upper = game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.abilities[key].name).toUpperCase() ?? key;
-		}
+		super.prepareDerivedData();
 
 		this.general.faithpoints.max = 10 - this.general.faithpoints.value;
 		this.general.xp.max = 10 - this.general.xp.value;
-
-		this.damage.hurts.max = this.attributes.grit.max - this.damage.hurts.value;
-		this.damage.shakes.max = this.attributes.quick.max - this.damage.shakes.value;
-		this.damage.vexes.max = this.attributes.cunning.max - this.damage.vexes.value;
-		this.damage.doubts.max = this.attributes.docity.max - this.damage.doubts.value;
-
-		this.conditions.broken = this.isBroken();
 
 		const x = this.general.publicspirit.value;
 		const y = this.general.morals.value;
@@ -159,27 +87,5 @@ export default class totowPC extends totowActorBase {
 		this.general.reputation = key
 			? game.i18n.localize(CONFIG.TALESOFTHEOLDWEST.Reputation[key].label)
 			: '';
-
-		const attrMod = { grit: 0, quick: 0, cunning: 0, docity: 0 };
-		const sklMod = {};
-
-		if (this.parent?.items?.size) {
-			calculateMods(this.parent.items, attrMod, sklMod, 'Active');
-		}
-
-		for (const [a, abl] of Object.entries(this.attributes)) {
-			this.attributes[a].mod = Number(abl.value) + Number(attrMod[a] ?? 0);
-		}
-
-		for (const [s, skl] of Object.entries(this.abilities)) {
-			const conSkl = skl.attr;
-			const attrBase = this.attributes[conSkl]?.mod ?? Number(this.attributes[conSkl]?.value || 0);
-			this.abilities[s].mod = Number(skl.value) + Number(attrBase) + Number(sklMod[s] ?? 0);
-		}
 	}
-
-	isBroken() {
-		return !this.damage.hurts.max || !this.damage.shakes.max || !this.damage.vexes.max || !this.damage.doubts.max;
-	}
-
 }

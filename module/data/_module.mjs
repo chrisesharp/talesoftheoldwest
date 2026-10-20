@@ -1,5 +1,6 @@
 // Export Actors
 export { default as totowActorBase } from './actor-base.mjs';
+export { default as totowCreatureBase } from './creature-base.mjs';
 export { default as totowCharacter } from './pc.mjs';
 export { default as totowNPC } from './npc.mjs';
 export { default as totowANIMAL } from './animal.mjs';
