@@ -511,17 +511,11 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
         expanded: false,
       };
 
-      // if (this._expandedDocumentDescriptions.has(e.id)) {
-      //   effectContext.expanded = true;
-      //   effectContext.enrichedDescription = await e.system.toEmbed({});
-      // }
-
       if (!e.active) categories.inactive.effects.push(effectContext);
       else if (e.isTemporary) categories.temporary.effects.push(effectContext);
       else categories.passive.effects.push(effectContext);
     }
 
-    // Sort each category
     for (const c of Object.values(categories)) {
       c.effects.sort((a, b) => (a.sort || 0) - (b.sort || 0));
     }
@@ -549,13 +543,14 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       });
     }
 
-    const ammo = document.getElementById("actorWeaponList");
-    if (!ammo) return;
-    ammo.addEventListener("change", async (event) => {
-      if (event.target.classList.contains("inline-edit")) {
-        await this._inlineedit(event);
-      }
-    });
+    const ammoLists = this.element.querySelectorAll("#actorWeaponList");
+    for (const ammo of ammoLists) {
+      ammo.addEventListener("change", async (event) => {
+        if (event.target.classList.contains("inline-edit")) {
+          await this._inlineedit(event);
+        }
+      });
+    }
     logger.debug("Actor Sheet derived data:", context);
   }
 
@@ -785,22 +780,9 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     event.preventDefault(); // Don't open context menu
     event.stopPropagation(); // Don't trigger other events
     if (event.detail > 1) return; // Ignore repeated clicks
-    let faithpoints = this.actor.system.general.faithpoints;
-    if (event.button === 2) {
-      // left click
-      if (faithpoints.value > 0) {
-        if (faithpoints.value === 0) {
-          return;
-        }
-        return await this.actor.update({ ["system.general.faithpoints.value"]: faithpoints.value - 1 });
-      }
-    } else {
-      // right click
-      if (faithpoints.value >= 10) {
-        return;
-      }
-      return await this.actor.update({ ["system.general.faithpoints.value"]: faithpoints.value + 1 });
-    }
+    const delta = (event.button === 2) ? -1 : 1;
+    const faithpoints = Math.min(10, Math.max(0, this.actor.system.general.faithpoints.value + delta));
+    return await this.actor.update({ ["system.general.faithpoints.value"]: faithpoints });
   }
   static async _changeXp(event, target) {
     event.preventDefault(); // Don't open context menu
@@ -953,8 +935,11 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
 
   async _inlineedit(event) {
     event.preventDefault();
-    const itemId = event.target.parentElement.dataset.itemId;
-    const item = this.actor.items.get(itemId);
+    const li = event.target.closest("[data-item-id]");
+    const itemId = li.dataset.itemId;
+    const actorId = li.dataset.actorId;
+    const actor = actorId ? game.actors.get(actorId) : this.actor;
+    const item = actor.items.get(itemId);
     const temp = event.target.dataset.mod;
 
     return await item.update({ [temp]: event.target.value }, {});
