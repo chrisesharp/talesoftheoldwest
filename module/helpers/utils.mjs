@@ -345,15 +345,34 @@ export function expandSection(element) {
 	element.dataset.collapsed = 'false';
 }
 
+function isPassiveMod(item, mod, state) {
+	if (mod.state !== state) return false;
+	if (item.type !== 'talent') return true;
+	const { basicisActive, advisActive } = item.system;
+	return (mod.modtype === 'basic' && basicisActive) || (mod.modtype === 'advanced' && advisActive);
+}
+
+/**
+ * Accumulate passive attribute and ability modifiers from an actor's items.
+ * Weapons are skipped (their modifiers only apply when that weapon is rolled),
+ * as are stored items. Talent modifiers count only while the matching
+ * basic/advanced mode is switched on.
+ *
+ * @param {Iterable<Item>} items  The actor's items.
+ * @param {object} attrMod        Accumulator keyed by attribute name.
+ * @param {object} sklMod         Accumulator keyed by ability name.
+ * @param {string} state          Modifier state to apply (e.g. 'Active', 'onAnimal').
+ */
 export function calculateMods(items, attrMod, sklMod, state) {
 	for (const item of items) {
-		if (!item.system?.itemModifiers || item.system.stored) continue;
-		for (const mod of Object.values(item.system.itemModifiers)) {
-			if (mod.state !== state) continue;
+		const system = item.system;
+		if (item.type === 'weapon' || !system?.itemModifiers || system.stored) continue;
+		for (const mod of Object.values(system.itemModifiers)) {
+			if (!isPassiveMod(item, mod, state)) continue;
 			const val = Number(mod.value) || 0;
 			const target = mod.name?.toLowerCase();
 			if (target in attrMod) attrMod[target] += val;
-			else if (!mod.feature) sklMod[target] = (sklMod[target] ?? 0) + val;
+			else sklMod[target] = (sklMod[target] ?? 0) + val;
 		}
 	}
 }

@@ -2,39 +2,19 @@ import { rollAttrib } from '../helpers/diceroll.mjs';
 import * as argpUtils from '../helpers/utils.mjs';
 
 /**
- * Accumulate numeric quality modifier from a modifier entry.
- * @param {number} qualityMod
- * @param {object} mods
+ * Sum the Active feature modifiers on a weapon that target the ability being rolled.
+ * @param {Item} item        The weapon being rolled.
+ * @param {string} ability   The ability key being rolled (e.g. 'shootin').
  * @returns {number}
  */
-function _switchMods(qualityMod, mods) {
-	switch (mods.name) {
-		case 'docity':
-		case 'quick':
-		case 'cunning':
-		case 'grit':
-		case 'labor':
-		case 'presence':
-		case 'fightin':
-		case 'resilience':
-		case 'move':
-		case 'operate':
-		case 'shootin':
-		case 'lightfingered':
-		case 'hawkeye':
-		case 'nature':
-		case 'insight':
-		case 'animalhandlin':
-		case 'performin':
-		case 'makin':
-		case 'doctorin':
-		case 'booklearnin':
-			qualityMod += Number(mods.value);
-			break;
-		default:
-			break;
+function _weaponFeatureMod(item, ability) {
+	let total = 0;
+	for (const feature of Object.values(item.system.featureModifiers ?? {})) {
+		for (const mod of Object.values(feature.itemModifiers ?? {})) {
+			if (mod.state === 'Active' && mod.name === ability) total += Number(mod.value) || 0;
+		}
 	}
-	return qualityMod;
+	return total;
 }
 
 /**
@@ -190,26 +170,16 @@ export class totowItem extends Item {
 	 */
 	async roll(dataset, item) {
 		const rollData = this.getRollData();
-		let qualityMod = 0;
-
 		if (dataset.rollType !== 'weapon') return;
 
-		if (item.system.featureModifiers.length > 0) {
-			for (const feature of Object.values(item.system.featureModifiers)) {
-				for (const mods of Object.values(feature.itemModifiers)) {
-					if (mods.state === 'Active') {
-						qualityMod = _switchMods(qualityMod, mods);
-					}
-				}
-			}
-		}
+		const qualityMod = _weaponFeatureMod(item, dataset.subtype);
 		// TODO  if item knife or tomahawk check if it's being thrown or used in melee.
 		//  tested an it can be spoofed by:
 		// set dataset.subtype to 'fightin' and dataset.itemammo to 1
 
 		switch (dataset.subtype) {
 			case 'shootin':
-				dataset.mod = rollData.actor.abilities[`${dataset.subtype}`].mod + rollData.attackbonus;
+				dataset.mod = rollData.actor.abilities[`${dataset.subtype}`].mod + rollData.attackbonus + qualityMod;
 				dataset.stunts = dataset.subtype;
 
 				if (rollData.action === 'single' && rollData.ammo >= 4) {
@@ -217,7 +187,7 @@ export class totowItem extends Item {
 				}
 				return await _shootin(dataset, rollData, item);
 			case 'fightin':
-				dataset.mod = rollData.actor.abilities[`${dataset.subtype}`].mod + rollData.attackbonus;
+				dataset.mod = rollData.actor.abilities[`${dataset.subtype}`].mod + rollData.attackbonus + qualityMod;
 				dataset.stunts = dataset.subtype;
 				return await _fightin(dataset, rollData, item);
 

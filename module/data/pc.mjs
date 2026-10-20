@@ -1,5 +1,5 @@
 import totowActorBase from './actor-base.mjs';
-import { findMods } from '../helpers/utils.mjs';
+import { calculateMods } from '../helpers/utils.mjs';
 
 /**
  * Row = publicspirit (1–6), Column = morals (1–6).
@@ -164,7 +164,7 @@ export default class totowPC extends totowActorBase {
 		const sklMod = {};
 
 		if (this.parent?.items?.size) {
-			this.findItemMods(attrMod, sklMod);
+			calculateMods(this.parent.items, attrMod, sklMod, 'Active');
 		}
 
 		for (const [a, abl] of Object.entries(this.attributes)) {
@@ -182,48 +182,4 @@ export default class totowPC extends totowActorBase {
 		return !this.damage.hurts.max || !this.damage.shakes.max || !this.damage.vexes.max || !this.damage.doubts.max;
 	}
 
-	findItemMods(attrMod, sklMod) {
-		const rawMods = [];
-		for (const item of this.parent.items) {
-			findMods(item, rawMods);
-		}
-		const itemMods = Object.groupBy(rawMods, ({ name }) => name);
-		for (const [attrib, modItems] of Object.entries(itemMods)) {
-			for (const subAttar of modItems.filter((a) => a.state === 'Active')) {
-				if (subAttar.itemtype === 'weapon' && this.#isApplicable(subAttar)) {
-					this.#applyMod(subAttar.modtype, subAttar.value, attrMod, sklMod);
-				} else if (subAttar.itemtype === 'talent' && this.#isActive(subAttar)) {
-					this.#applyMod(attrib, subAttar.value, attrMod, sklMod, subAttar.feature);
-				} else if (this.#isApplicable(subAttar)) {
-					this.#applyMod(attrib, subAttar.value, attrMod, sklMod, subAttar.feature);
-				}
-			}
-		}
-	}
-
-	#isApplicable(subAttar) {
-		// A modifier applies if not in storage.
-		return !subAttar.stored;
-	}
-
-	#isActive(subAttar) {
-		return (subAttar.modtype === 'basic'    && subAttar.basicAction) ||
-					(subAttar.modtype === 'advanced' && subAttar.advisActive);
-	}
-
-	#applyMod(key, value, attrMod, sklMod, isFeature = false) {
-		switch (key) {
-			case 'docity':
-			case 'quick':
-			case 'cunning':
-			case 'grit':
-				attrMod[key] += Number(value);
-				break;
-			default:
-				if (!isFeature) {
-					sklMod[key] = (sklMod[key] ?? 0) + Number(value);
-				}
-				break;
-		}
-	}
 }
