@@ -34,7 +34,6 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       toggleCondition: this._toggleStatus,
       rollCrit: { handler: this._rollCrit, buttons: [0, 2] },
       changeFaith: { handler: this._changeFaith, buttons: [0, 2] },
-      changeXp: { handler: this._changeXp, buttons: [0, 2] },
       changeDamage: { handler: this._changeDamage, buttons: [0, 2] },
       changeAspect: { handler: this._changeaspect, buttons: [0, 2] },
       changeSP: { handler: this._changeSP, buttons: [0, 2] },
@@ -784,27 +783,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     const faithpoints = Math.min(10, Math.max(0, this.actor.system.general.faithpoints.value + delta));
     return await this.actor.update({ ["system.general.faithpoints.value"]: faithpoints });
   }
-  static async _changeXp(event, target) {
-    event.preventDefault(); // Don't open context menu
-    event.stopPropagation(); // Don't trigger other events
-    if (event.detail > 1) return; // Ignore repeated clicks
-    let xp = this.actor.system.general.xp;
-    if (event.button === 2) {
-      // left click
-      if (xp.value > 0) {
-        if (xp.value === 0) {
-          return;
-        }
-        return await this.actor.update({ ["system.general.xp.value"]: xp.value - 1 });
-      }
-    } else {
-      // right click
-      if (xp.value >= 10) {
-        return;
-      }
-      return await this.actor.update({ ["system.general.xp.value"]: xp.value + 1 });
-    }
-  }
+
   static async _changeSP(event, target) {
     event.preventDefault(); // Don't open context menu
     event.stopPropagation(); // Don't trigger other events
