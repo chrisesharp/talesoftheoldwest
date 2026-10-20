@@ -30,11 +30,11 @@
 		</select>
 	</div>
 	{{#if dataset.canFan}}
-		<div class='form-group' style='padding: 1em 1em 0em 1em'>
-			<label class='resource-label' style='color: black'>{{capitalise (localize 'TALESOFTHEOLDWEST.Item.General.isFanning')}}</label>
-			<input class='isFanning' type='checkbox' id='isFanning' name='isFanning' />
-			<label style='color: black'>{{capitalise (localize 'TALESOFTHEOLDWEST.Item.General.NoTargets')}}</label>
-			<input class='statnum' type='number' id='numberOfTargets' name='numberOfTargets' value='1' data-dtype='Number' type='number' />
+		<div style='padding: 1em 1em 0em 1em; display: flex; align-items: center; gap: 8px;'>
+			<label class='resource-label' style='color: black; flex: 0 0 auto;'>{{capitalise (localize 'TALESOFTHEOLDWEST.Item.General.isFanning')}}</label>
+			<input class='isFanning' type='checkbox' id='isFanning' name='isFanning' style='flex: 0 0 auto;' />
+			<label style='color: black; flex: 0 0 auto;'>{{capitalise (localize 'TALESOFTHEOLDWEST.Item.General.NoTargets')}}</label>
+			<input class='statnum' type='number' id='numberOfTargets' name='numberOfTargets' value='1' data-dtype='Number' type='number' style='flex: 0 0 auto;' />
 		</div>
 	{{/if}}
 	<div class='form-group' style='padding: 1em 1em'>
