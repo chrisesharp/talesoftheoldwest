@@ -1,5 +1,5 @@
 import { rollAttrib } from "../helpers/diceroll.mjs";
-import * as argpUtils from "../helpers/utils.mjs";
+import * as Utils from "../helpers/utils.mjs";
 import TOTOWActiveEffect from "../documents/active-effect.mjs";
 
 /** Maps a critical injury roll total to the modifiers it applies. */
@@ -63,7 +63,7 @@ const CRIT_MODIFIERS = {
  */
 async function processConditionals(rollType, dataset, rollData, actor) {
   const config = CONFIG.TALESOFTHEOLDWEST;
-  const { conditionalMods, talentMods } = await argpUtils.prepModOutput(rollType, rollData, dataset);
+  const { conditionalMods, talentMods } = await Utils.prepModOutput(rollType, rollData, dataset);
   if (conditionalMods?.length || talentMods?.length) {
     const content = await foundry.applications.handlebars.renderTemplate(
       "systems/talesoftheoldwest/templates/dialog/conditional-modifiers.html",
@@ -98,6 +98,48 @@ async function processConditionals(rollType, dataset, rollData, actor) {
   }
 
   return rollAttrib(dataset, rollData, actor);
+}
+
+/**
+ * Resolve the tens and units dice for a single crit pass, applying all modifiers from ctx.
+ * @param {object} response  - FormData from the crit dialog.
+ * @param {object|null} ctx  - The critContext for the selected attack message, or null.
+ * @returns {Promise<number>} The two-digit result (e.g. 34).
+ */
+async function _doCritPass(response, ctx) {
+  // Tens die
+  let tens;
+  if (ctx?.tens.fixed !== null && ctx?.tens.fixed !== undefined) {
+    tens = ctx.tens.fixed; // called shot — fixed, always
+  } else if (response.manualTens !== '' && response.manualTens !== undefined && response.manualTens !== null) {
+    tens = Number(response.manualTens);
+  } else {
+    const t1 = await new Roll('1d6').evaluate();
+    let t = t1.total;
+    if (response.rerollTens && !(ctx?.tens.fixed)) {
+      const t2 = await new Roll('1d6').evaluate();
+      t = Math.min(t, t2.total);
+    }
+    tens = t;
+  }
+
+  // Units die
+  let units;
+  if (response.manualUnits !== '' && response.manualUnits !== undefined && response.manualUnits !== null) {
+    units = Number(response.manualUnits);
+  } else {
+    const u1 = await new Roll('1d6').evaluate();
+    let u = u1.total;
+    if (response.rerollUnits) {
+      const u2 = await new Roll('1d6').evaluate();
+      u = Math.min(u, u2.total);
+    }
+    // Apply critunits bonus from the selected attack (always applied, not ticked)
+    const bonus = (ctx?.units ?? []).reduce((s, e) => s + e.value, 0);
+    u = Math.min(6, u + bonus);
+    units = u;
+  }
+  return tens * 10 + units;
 }
 
 /**
@@ -143,7 +185,7 @@ export class totowActor extends Actor {
     // at roll time. This mirrors what _prepareItems does on the sheet.
     const itemMods = [];
     for (const i of this.items) {
-      argpUtils.findMods(i, itemMods);
+      Utils.findMods(i, itemMods);
     }
     spanner.itemMods = Object.groupBy(itemMods, ({ name }) => name);
 
@@ -254,48 +296,128 @@ export class totowActor extends Actor {
     return existing;
   }
 
-  async rollCrit(actor, type, dataset, manCrit) {
-    if (type !== "pc") {
-      return;
-    }
-    const critTable = game.tables.getName(game.i18n.localize("TALESOFTHEOLDWEST.CriticalInjuries")) || game.tables.getName("Critical Injuries");
-    if (critTable == null) {
-      ui.notifications.warn(game.i18n.localize("TALESOFTHEOLDWEST.NoCharCrit"));
+  async rollCrit(actor, type, dataset, preSelectedMessageId = null) {
+    const isAnimal = actor.type === 'animal';
+    const critTable = this.getCritTable(isAnimal);
+    if (!critTable) {
+      ui.notifications.warn(game.i18n.localize('TALESOFTHEOLDWEST.NoCharCrit'));
       return;
     }
 
-    let diceRoll;
-    if (!manCrit) {
-      diceRoll = await critTable.draw({ displayChat: false });
+    // Scan chat for recent attack messages with critContext and build dialog entries
+    const attacks = Utils.getCritAttacks(actor);
+
+    // Determine pre-selected attack
+    const preSelected = preSelectedMessageId
+      || attacks.find(a => a.targeted)?.messageId
+      || attacks[0]?.messageId
+      || null;
+
+    // Build defender crit modifier context
+    const defender = Utils.prepCritMods(actor);
+
+    // Render dialog content
+    const content = await foundry.applications.handlebars.renderTemplate(
+      'systems/talesoftheoldwest/templates/dialog/crit-roll-modifiers.hbs',
+      { attacks, defender, preSelectedId: preSelected }
+    );
+
+    const response = await foundry.applications.api.DialogV2.wait({
+      window: { title: game.i18n.localize('TALESOFTHEOLDWEST.dialog.CritRoll') },
+      content,
+      rejectClose: false,
+      buttons: [
+        {
+          label: game.i18n.localize('TALESOFTHEOLDWEST.dialog.roll'),
+          callback: (event, button) => new foundry.applications.ux.FormDataExtended(button.form).object,
+        },
+        {
+          label: game.i18n.localize('TALESOFTHEOLDWEST.dialog.cancel'),
+          action: 'cancel',
+        },
+      ],
+    });
+
+    if (!totowActor.#isValidCritResponse(response)) return;
+
+    // Find the selected attack's ctx
+    const selectedCtx = attacks.find(a => a.messageId === response.attackId)?.ctx ?? null;
+
+    // Run crit pass(es)
+    const value1 = await _doCritPass(response, selectedCtx);
+    let fanningValues = null;
+    let finalValue = value1;
+
+    const manualBothFilled = (response.manualTens !== '' && response.manualTens !== undefined && response.manualTens !== null)
+      && (response.manualUnits !== '' && response.manualUnits !== undefined && response.manualUnits !== null);
+
+    if (response.fanning && !manualBothFilled) {
+      const value2 = await _doCritPass(response, selectedCtx);
+      finalValue = Math.min(value1, value2);
+      fanningValues = { first: value1, second: value2 };
+    }
+
+    // Build a Roll object from the final numeric value for critTable.draw()
+    const roll = await new Roll(String(finalValue)).evaluate();
+    const diceRoll = await critTable.draw({ roll, displayChat: false });
+
+    let htmlData;
+    if (isAnimal) {
+      // Animal table entries store the effect in `description` as plain prose with a header prefix.
+      // Strip "<strong>CRITICAL EFFECT - ANIMALS</strong><br>" and use the remaining text as the effect.
+      const rawDesc = diceRoll.results[0].description ?? '';
+      const effect = rawDesc.replace(/^<strong>CRITICAL EFFECT\s*-\s*ANIMALS<\/strong><br\s*\/?>/i, '').trim();
+      htmlData = {
+        actorname: actor.name,
+        img: diceRoll.results[0].img,
+        rollTotal: finalValue,
+        effect,
+        fanningValues,
+      };
     } else {
-      const roll = await new Roll(manCrit).evaluate();
-      diceRoll = await critTable.draw({ roll: roll, displayChat: false });
+      htmlData = await this.determineCritResults(diceRoll, null, fanningValues);
     }
 
-    const htmlData = await this.determineCritResults(diceRoll, manCrit);
+    // Determine template path with fallback
+    const templatePath = `systems/talesoftheoldwest/templates/chat/crit-roll-${actor.type}.hbs`;
+    const fallbackPath = 'systems/talesoftheoldwest/templates/chat/crit-roll-pc.hbs';
+    let templateToUse = templatePath;
+    try {
+      await foundry.applications.handlebars.renderTemplate(templatePath, {});
+    } catch {
+      console.warn(`totow | No crit template for type "${actor.type}", falling back to pc template.`);
+      templateToUse = fallbackPath;
+    }
 
-    // Now push the correct chat message
-    const html = await foundry.applications.handlebars.renderTemplate(`systems/talesoftheoldwest/templates/chat/crit-roll-${actor.type}.hbs`, htmlData);
-    let chatData = {
+    const html = await foundry.applications.handlebars.renderTemplate(templateToUse, htmlData);
+    const chatData = {
       user: game.user.id,
-      speaker: {
-        actor: actor.id,
-      },
+      speaker: { actor: actor.id },
       content: html,
       other: game.users.contents.filter((u) => u.isGM).map((u) => u.id),
       sound: CONFIG.sounds.dice,
     };
 
-    // Apply the Active Effect
-    if (actor.system.critInj.length === 1) {
-      await this.toggleStatusEffect("criticalinj");
+    // Apply the Active Effect for PC/NPC (not animals) — use actor.items directly
+    // because actor.system.critInj is only populated on the sheet context, not the raw document.
+    if (!isAnimal && actor.items.filter(i => i.type === 'crit').length === 1) {
+      await this.toggleStatusEffect('criticalinj');
     }
 
-    ChatMessage.applyMode(chatData, game.settings.get("core", "rollMode"));
+    ChatMessage.applyMode(chatData, game.settings.get('core', 'rollMode'));
     return ChatMessage.create(chatData);
   }
 
-  async determineCritResults(diceRoll, manCrit) {
+  getCritTable(isAnimal) {
+    const tableKey = isAnimal
+      ? game.i18n.localize('TALESOFTHEOLDWEST.CriticalInjuriesAnimal')
+      : game.i18n.localize('TALESOFTHEOLDWEST.CriticalInjuries');
+    const critTable = game.tables.getName(tableKey)
+      ?? (isAnimal ? game.tables.getName('CRITICAL EFFECT - ANIMALS') : game.tables.getName('Critical Injuries'));
+    return critTable;
+  }
+
+  async determineCritResults(diceRoll, manCrit, fanningValues = null) {
     const resultImage = diceRoll.results[0].img;
     const extractField = (label) => {
       const pattern = new RegExp(String.raw`<strong>${label}</strong>:\s*([\s\S]*?)(?=(?:<p><strong>|<\/p>|$))`, "i");
@@ -309,24 +431,11 @@ export class totowActor extends Actor {
     const rawHealingTime = extractField("Healing Time") || "-";
     const immediateEffect = extractField("Immediate Effect") || "None";
     const rawLongTerm = extractField("Long-Term Effect") || extractField("Long Term Effect") || "None";
-    let healingTime;
 
-    // Process Fatal
     const { isFatal, fatal, longTermEffect } = await this.determineFatal(rawFatal, rawLongTerm);
 
     // Process Healing Time
-    if (rawHealingTime && rawHealingTime !== "-" && !/instant/i.test(rawFatal)) {
-      const healDiceMatch = new RegExp(/\[\[(\d+d\d+)\]\]\s*(.*)/i).exec(rawHealingTime);
-      if (healDiceMatch) {
-        const rollHeal = healDiceMatch[1];
-        const newHealTime = healDiceMatch[2] || "";
-        healingTime = (await new Roll(`${rollHeal}`).evaluate()).result + " " + newHealTime;
-      } else {
-        healingTime = rawHealingTime;
-      }
-    } else {
-      healingTime = game.i18n.localize("TALESOFTHEOLDWEST.ItemModifierSelect.none");
-    }
+    const healingTime = await this.determineHealingTime(rawHealingTime, rawFatal, healingTime);
 
     // Setup Modifiers
     let update = {};
@@ -359,10 +468,11 @@ export class totowActor extends Actor {
       "system.longtermeffect": longTermEffect,
     };
 
-    const theItem = await this.createEmbeddedDocuments("Item", [rollData]);
-
-    if (critMods) {
-      await theItem[0].update(update);
+    if (this.type !== 'animal') {
+      const theItem = await this.createEmbeddedDocuments("Item", [rollData]);
+      if (critMods) {
+        await theItem[0].update(update);
+      }
     }
 
     return {
@@ -375,7 +485,24 @@ export class totowActor extends Actor {
       imediateeffect: immediateEffect,
       longtermeffect: longTermEffect,
       manCrit,
+      fanningValues,
     };
+  }
+
+  async determineHealingTime(rawHealingTime, rawFatal, healingTime) {
+    if (rawHealingTime && rawHealingTime !== "-" && !/instant/i.test(rawFatal)) {
+      const healDiceMatch = new RegExp(/\[\[(\d+d\d+)\]\]\s*(.*)/i).exec(rawHealingTime);
+      if (healDiceMatch) {
+        const rollHeal = healDiceMatch[1];
+        const newHealTime = healDiceMatch[2] || "";
+        healingTime = (await new Roll(`${rollHeal}`).evaluate()).result + " " + newHealTime;
+      } else {
+        healingTime = rawHealingTime;
+      }
+    } else {
+      healingTime = game.i18n.localize("TALESOFTHEOLDWEST.ItemModifierSelect.none");
+    }
+    return healingTime;
   }
 
   async determineFatal(rawFatal, longTermEffect) {
@@ -419,36 +546,6 @@ export class totowActor extends Actor {
       }
     }
     return { isFatal, fatal, longTermEffect };
-  }
-
-  async rollCritMan(actor, type, dataset) {
-    const content = await foundry.applications.handlebars.renderTemplate(
-      "systems/talesoftheoldwest/templates/dialog/roll-char-manual-crit-dialog.html",
-      actor,
-      type,
-      dataset,
-    );
-    const response = await foundry.applications.api.DialogV2.wait({
-      window: { title: "TALESOFTHEOLDWEST.dialog.RollManCrit" },
-      content,
-      rejectClose: false,
-      buttons: [
-        {
-          label: "TALESOFTHEOLDWEST.dialog.roll",
-          callback: (event, button) => new foundry.applications.ux.FormDataExtended(button.form).object,
-        },
-        {
-          label: "TALESOFTHEOLDWEST.dialog.cancel",
-          action: "cancel",
-        },
-      ],
-    });
-    if (!response || response === "cancel") return "cancelled";
-    if (!response.manCrit.match(/^[1-6]?[1-6]$/gm)) {
-      ui.notifications.warn(game.i18n.localize("TALESOFTHEOLDWEST.dialog.RollManCharCrit"));
-      return;
-    }
-    await actor.rollCrit(actor, type, dataset, response.manCrit);
   }
 
   async diceRoll(actor, event, target) {
@@ -520,6 +617,14 @@ export class totowActor extends Actor {
   }
 
   async _sendToChat(actor, event, target, result) {
+    // Build critContext before rendering so the template receives it on first render.
+    // messageId is not yet known; it is patched in after ChatMessage.create().
+    const weapon = actor.items.get(result.result.modifiers?.itemId) ?? null;
+    const ctx = Utils.buildCritContext(result.result, result.result.itemData, weapon);
+    if (ctx) {
+      result.result.critContext = ctx;
+    }
+
     const html = await foundry.applications.handlebars.renderTemplate("systems/talesoftheoldwest/templates/chat/roll.hbs", result.result);
     let chatData = {
       user: game.user.id,
@@ -542,6 +647,12 @@ export class totowActor extends Actor {
     await msg.setFlag("talesoftheoldwest", "modifiers", result.result.modifiers.mod);
     await msg.setFlag("talesoftheoldwest", "results", result);
     await msg.setFlag("talesoftheoldwest", "isType", actor.type);
+
+    if (ctx) {
+      ctx.messageId = msg.id;
+      result.result.critContext = ctx;
+      await msg.setFlag("talesoftheoldwest", "critContext", ctx);
+    }
 
     return result;
   }
@@ -697,5 +808,21 @@ export class totowActor extends Actor {
       c.set(o.id, game.actors.get(o.id));
     }
     return c;
+  }
+  static #isValidCritResponse(response) {
+    if (!response || response === 'cancel') return false;
+    const fields = [
+      { value: response.manualTens,  key: 'TALESOFTHEOLDWEST.dialog.CritManualTensInvalid' },
+      { value: response.manualUnits, key: 'TALESOFTHEOLDWEST.dialog.CritManualUnitsInvalid' },
+    ];
+    for (const { value, key } of fields) {
+      if (value == null || value === '') continue;
+      const v = Number(value);
+      if (!Number.isInteger(v) || v < 1 || v > 6) {
+        ui.notifications.warn(game.i18n.localize(key));
+        return false;
+      }
+    }
+    return true;
   }
 }

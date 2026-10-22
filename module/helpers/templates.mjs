@@ -10,6 +10,14 @@ export const preloadHandlebarsTemplates = async function () {
 		'systems/talesoftheoldwest/templates/actor/parts/actor-talent.hbs',
 		'systems/talesoftheoldwest/templates/actor/parts/actor-gear.hbs',
 		'systems/talesoftheoldwest/templates/actor/parts/actor-items-inline.hbs',
+		'systems/talesoftheoldwest/templates/actor/parts/actor-gear-list.hbs',
+		'systems/talesoftheoldwest/templates/actor/parts/actor-crit-conditions.hbs',
+		'systems/talesoftheoldwest/templates/actor/parts/actor-attributes.hbs',
+		'systems/talesoftheoldwest/templates/actor/parts/actor-skills-pc.hbs',
+		'systems/talesoftheoldwest/templates/actor/parts/actor-skills-npc.hbs',
+		'systems/talesoftheoldwest/templates/actor/parts/actor-skills-animal.hbs',
+		'systems/talesoftheoldwest/templates/actor/parts/actor-animal-horse.hbs',
+		'systems/talesoftheoldwest/templates/actor/parts/actor-animal-generic.hbs',
 		'systems/talesoftheoldwest/templates/actor/parts/actor-effects.hbs',
 		'systems/talesoftheoldwest/templates/actor/parts/quality-options.hbs',
 		'systems/talesoftheoldwest/templates/actor/parts/horse-quality-options.hbs',
@@ -22,8 +30,12 @@ export const preloadHandlebarsTemplates = async function () {
 		'systems/talesoftheoldwest/templates/actor/parts/towncharter-amenities.hbs',
 		// Item partials
 		'systems/talesoftheoldwest/templates/item/parts/item-effects.hbs',
+		// Chat templates
+		'systems/talesoftheoldwest/templates/chat/crit-roll-npc.hbs',
+		'systems/talesoftheoldwest/templates/chat/crit-roll-animal.hbs',
 		// Dialog partials
 		'systems/talesoftheoldwest/templates/dialog/parts/conditional-modifiers.hbs',
 		'systems/talesoftheoldwest/templates/dialog/parts/talent-modifiers.hbs',
+		'systems/talesoftheoldwest/templates/dialog/crit-roll-modifiers.hbs',
 	]);
 };

@@ -376,3 +376,116 @@ export function calculateMods(items, attrMod, sklMod, state) {
 		}
 	}
 }
+
+/**
+ * Collect the defender's crit-specific modifiers from their itemMods.
+ * Returns { canRerollTens, canRerollUnits } booleans.
+ * @param {Actor} actor
+ * @returns {{ canRerollTens: boolean, canRerollUnits: boolean }}
+ */
+export function prepCritMods(actor) {
+	const mods = actor.system.itemMods ?? {};
+	let canRerollTens  = false;
+	let canRerollUnits = false;
+	for (const modList of Object.values(mods)) {
+		for (const mod of modList) {
+			if (mod.name === 'critRerollTens'  && mod.basicisActive)  canRerollTens  = true;
+			if (mod.name === 'critRerollUnits' && mod.advisActive)    canRerollUnits = true;
+		}
+	}
+	return { canRerollTens, canRerollUnits };
+}
+
+/**
+ * Scan the chat log for recent messages that carry a `critContext` flag and build
+ * display entries for the crit roll dialog.
+ * Returns them newest-first, up to `limit` results, after scanning at most `scanMax` messages.
+ * @param {Actor} actor               The defending actor, used to flag attacks that targeted it.
+ * @param {number} [limit=20]
+ * @param {number} [scanMax=100]
+ * @returns {{ messageId: string, label: string, targeted: boolean, ctx: object }[]}
+ */
+export function getCritAttacks(actor, limit = 20, scanMax = 100) {
+	const messages = [...game.messages.contents].reverse(); // newest first
+	const results  = [];
+	let scanned    = 0;
+	for (const message of messages) {
+		if (scanned++ >= scanMax) break;
+		if (!message.visible) continue;
+		const ctx = message.getFlag('talesoftheoldwest', 'critContext');
+		if (!ctx) continue;
+		const attacker     = game.actors.get(ctx.attackerActorId);
+		const attackerName = ctx.attackerName ?? attacker?.name ?? 'Unknown';
+		const weaponName   = ctx.weaponName   ?? attacker?.items.get(ctx.weaponId)?.name ?? 'Unknown';
+		results.push({
+			messageId: message.id,
+			label: `${attackerName} — ${weaponName}`,
+			targeted: (ctx.targetActorIds ?? []).includes(actor.id),
+			ctx
+		});
+		if (results.length >= limit) break;
+	}
+	return results;
+}
+
+/**
+ * Normalise a roll-state value to the named `{ roll, result }` shape.
+ * Legacy chat-message flags stored this as a `[roll, result]` array.
+ * @param {Array|object} raw   Legacy array or named-shape roll state.
+ * @returns {{roll: object, result: object}}
+ */
+export function normaliseRollState(raw) {
+	return Array.isArray(raw) ? { roll: raw[0], result: raw[1] } : raw;
+}
+
+/**
+ * Build the critContext flag for a weapon attack chat card, or return null if the
+ * roll is not crit-eligible.
+ * @param {object} rd           The evaluateTOTWRoll result.
+ * @param {object} itemData     The itemData object (from dataset, via evaluateTOTWRoll).
+ * @param {Item|null} weapon    The weapon item, used to read featureModifiers.
+ * @returns {object|null}
+ */
+export function buildCritContext(rd, itemData, weapon) {
+	if (!itemData || !itemData.crit || itemData.crit === 0) return null;
+	// Eligibility: extra successes >= crit rating (first success = hit, each extra counts)
+	if ((rd.totalSuccess - 1) < itemData.crit) return null;
+
+	// Snapshot attacker targets
+	const targetActorIds = [...(game.user.targets ?? [])].map((t) => t.actor?.id).filter(Boolean);
+
+	// Read critunits modifiers from weapon featureModifiers
+	const units = [];
+	if (weapon) {
+		for (const feature of Object.values(weapon.system.featureModifiers ?? {})) {
+			for (const mod of Object.values(feature.itemModifiers ?? {})) {
+				if (mod.state === 'Active' && mod.name === 'critunits') {
+					units.push({ label: feature.name, value: Number(mod.value) || 0 });
+				}
+			}
+		}
+	}
+
+	// rd.modifiers is a spread of dataset (a DOMStringMap), so booleans are stored as strings.
+	// An unchecked checkbox becomes the string "false", so we must compare explicitly.
+	const rawFanning = rd.modifiers?.isFanning;
+	const isFanning = rawFanning === true || rawFanning === 'true';
+	const critTensFixed = isFanning ? null : (rd.modifiers?.critTensFixed ?? null);
+
+	// Snapshot attacker and weapon names for display in the crit dialog
+	const attacker = game.actors.get(rd.myActor);
+	const attackerName = attacker?.name ?? '';
+	const weaponName   = weapon?.name ?? '';
+
+	return {
+		attackerActorId: rd.myActor,
+		attackerName,
+		weaponId: rd.modifiers?.itemId ?? null,
+		weaponName,
+		messageId: null,          // filled in by _sendToChat after the message is created
+		targetActorIds,
+		tens: { fixed: critTensFixed !== null ? Number(critTensFixed) : null },
+		fanning: isFanning,
+		units,
+	};
+}

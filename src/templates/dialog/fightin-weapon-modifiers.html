@@ -11,6 +11,12 @@
 		<label class="resource-label" style="color: black">{{capitalise (localize "TALESOFTHEOLDWEST.General.calledStrike")}}</label>
 		<input type="checkbox" id="calledstrike" name="calledstrike" value="-3" />
 	</div>
+	<div class="form-group tens-fixed-group" id="tensfixedgroup" style="padding: 1em 1em 0em 1em; display: none;">
+		<label class="resource-label" style="color: black">{{localize 'TALESOFTHEOLDWEST.dialog.CritTargetArea'}}</label>
+		<select id="critTensFixed" name="critTensFixed">
+			{{selectOptions config.crit_location_list valueAttr='tens' labelAttr='label' localize=true blank='TALESOFTHEOLDWEST.dialog.CritTargetAreaBlank'}}
+		</select>
+	</div>
 
 	<div class="form-group" style="padding: 1em 1em 0em 1em">
 		<label class="resource-label" style="color: black">{{localize 'TALESOFTHEOLDWEST.DiceMod'}}</label>

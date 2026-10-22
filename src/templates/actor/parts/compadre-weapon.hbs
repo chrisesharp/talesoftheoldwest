@@ -40,7 +40,7 @@
 						<div class='lColB3'>{{item.system.conditionNames}}</div>
 						<div class='lColB6'>{{item.system.attackbonus}}</div>
 						<div class='lColB7'>{{item.system.damage}}</div>
-						<div class='lColB8'>{{item.system.crit}}</div>
+						<div class='lColB8'>{{critDisplay item.system.crit}}</div>
 						<div class='lColB9'>{{localize (totowConcat (totowConcat 'TALESOFTHEOLDWEST.Ranges.' item.system.range) '.long')}}</div>
 
 						{{#if (ne item.system.subtype 'fightin')}}

@@ -1,4 +1,5 @@
 import { TOTWWhichTroubleDialog, TOTWBuyOffDialog, TOTWManualTroubleDialog, updateChatMessage } from './chatmodifier.mjs';
+import { normaliseRollState } from './utils.mjs';
 
 /**
  * @typedef {Object} TOTWRollState
@@ -26,7 +27,7 @@ export async function totowDiceButtons(message, html, msgContent) {
 	const pcType = message.getFlag('talesoftheoldwest', 'isType');
 	const raw = message.getFlag('talesoftheoldwest', 'results');
 	if (!buttonArea || pcType !== 'pc' || !raw) return;
-	const rd = Array.isArray(raw) ? raw[1] : raw.result;
+	const rd = normaliseRollState(raw).result;
 	if (rd.faithpoints >= 1) {
 		if (canBuyOff(rd)) {
 			const button = document.createElement('button');
@@ -93,6 +94,33 @@ function alreadyPushed(rd) {
 	return rd.canPush === 'pushed' && rd.totalTrouble !== 'rolledTrouble';
 }
 
+
+function handleRollCritical(message) {
+	const ctx = message.getFlag('talesoftheoldwest', 'critContext');
+	if (!ctx) return;
+
+	// Resolve the defender actor (priority order from design plan)
+	let defenderActor = null;
+	if (ctx.targetActorIds?.length === 1) {
+		const candidate = game.actors.get(ctx.targetActorIds[0]);
+		if (candidate && (game.user.isGM || candidate.isOwner)) {
+			defenderActor = candidate;
+		}
+	}
+	if (!defenderActor && game.user.isGM) {
+		const controlled = canvas.tokens?.controlled ?? [];
+		if (controlled.length === 1) defenderActor = controlled[0].actor;
+	}
+	if (!defenderActor) defenderActor = game.user.character;
+	if (!defenderActor) {
+		ui.notifications.warn(game.i18n.localize('TALESOFTHEOLDWEST.dialog.SelectDefender'));
+		return;
+	}
+
+	defenderActor.rollCrit(defenderActor, defenderActor.type, {}, message.id);
+}
+
+
 let _chatListenersInitialized = false;
 
 export function totowDiceListeners() {
@@ -110,17 +138,22 @@ export function totowDiceListeners() {
 		const message = game.messages?.get(messageId);
 		if (!message) return;
 
+		ev.preventDefault();
+		ev.stopPropagation();
+
+		// roll-critical is handled before the `results` flag check
+		if (rollButton === 'roll-critical') {
+			handleRollCritical(message);
+			return;
+		}
+
 		const raw = message.getFlag('talesoftheoldwest', 'results');
 		if (!raw) return;
-		const rollState = Array.isArray(raw)
-			? { roll: raw[0], result: raw[1] }
-			: raw;
+		const rollState = normaliseRollState(raw);
 		if (!rollState.result) return;
 
 		switch (rollButton) {
 			case 'push': {
-				ev.preventDefault();
-				ev.stopPropagation();
 				if (!rollState.result.canPush) {
 					let errorObj = { error: 'totow.ErrorsAlreadyPushed' };
 					return ui.notifications.warn(new Error(game.i18n.localize(errorObj.error)));
@@ -129,14 +162,10 @@ export function totowDiceListeners() {
 				}
 			}
 			case 'buy-off': {
-				ev.preventDefault();
-				ev.stopPropagation();
 				new TOTWBuyOffDialog(message, rollState).render({ force: true });
 				break;
 			}
 			case 'roll-trouble': {
-				ev.preventDefault();
-				ev.stopPropagation();
 				if (ev.shiftKey) {
 					new TOTWManualTroubleDialog(message, rollState).render({ force: true });
 				} else {
@@ -149,10 +178,7 @@ export function totowDiceListeners() {
 }
 
 export async function pushRoll(chatMessage, origRollData) {
-	// Normalise legacy array-shaped flag to named shape
-	const rollState = Array.isArray(origRollData)
-		? { roll: origRollData[0], result: origRollData[1] }
-		: origRollData;
+	const rollState = normaliseRollState(origRollData);
 	const rd = rollState.result;
 
 	const formula = rd.troubleRest + `dt` + '+' + rd.rest + `ds`;
@@ -312,8 +338,6 @@ export async function evaluateTOTWRoll(dataset, roll, formula, itemData) {
 		});
 	}
 
-	// This is where the sucess and troupble mods from weapons and talents needs to go.
-
 	const numberOfDice = troubleSucc + trouble + troubleRest + normalSucc + rest;
 	const totalRolled = numberOfDice <= 0;
 	if (troubleRest + rest + troubleBlank === 0) {
@@ -321,10 +345,6 @@ export async function evaluateTOTWRoll(dataset, roll, formula, itemData) {
 	} else if (totalSuccess === numberOfDice || trouble === numberOfDice) {
 			canPush = 'fullHouse';
 		}
-
-	// Attribute = dataset.label;  Do not have stunts
-	// Ability = dataset.label;
-	// weapon = dataset.ability;
 
 	// Strip out special characters and spaces, convert to lowercase and capitalise the first letter of the String.
 	if (canPush != 'pushed') {

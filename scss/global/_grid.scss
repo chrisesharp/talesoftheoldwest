@@ -115,24 +115,6 @@
   grid-area: Split2;
 }
 
-.three-body-split {
-  display: grid;
-  padding-left: 10px;
-  grid-template-areas: "TSplit1 TSplit2 TSplit3";
-  grid-template-columns: 250px 317px 317px;
-  margin-top: 6px;
-  border-top: solid black;
-}
-.TSplit1 {
-  grid-area: TSplit1;
-}
-.TSplit2 {
-  grid-area: TSplit2;
-}
-.TSplit2 {
-  grid-area: TSplit2;
-}
-
 .grid-weapon-items {
   display: grid;
   grid-template-areas:
@@ -960,54 +942,6 @@
 .L7C2 {
   grid-area: L7C2;
   // text-align: center;
-}
-
-.conditions-split {
-  display: grid;
-  grid-template-areas:
-    "CSplit11 CSplit12"
-    "CSplit21 CSplit22"
-    "CSplit31 CSplit32"
-    "CSplit41 CSplit42"
-    "CSplit51 CSplit52";
-  grid-template-columns: 150px 50px;
-  margin-top: 6px;
-  row-gap: 2px;
-}
-.CSplit11 {
-  grid-area: CSplit11;
-  text-align: right;
-}
-.CSplit12 {
-  grid-area: CSplit12;
-}
-.CSplit21 {
-  grid-area: CSplit21;
-  text-align: right;
-}
-.CSplit22 {
-  grid-area: CSplit22;
-}
-.CSplit31 {
-  grid-area: CSplit31;
-  text-align: right;
-}
-.CSplit32 {
-  grid-area: CSplit32;
-}
-.CSplit41 {
-  grid-area: CSplit41;
-  text-align: right;
-}
-.CSplit42 {
-  grid-area: CSplit42;
-}
-.CSplit51 {
-  grid-area: CSplit51;
-  text-align: right;
-}
-.CSplit52 {
-  grid-area: CSplit52;
 }
 
 .sheet-compadres-header {

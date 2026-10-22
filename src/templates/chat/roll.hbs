@@ -26,16 +26,50 @@
 				<h4 style='font-size: x-large; font-weight: bold'>{{toUpperCase (localize 'TALESOFTHEOLDWEST.General.success')}}</h4>
 				{{#if (eq rollType 'weapon')}}
 					<h4 style='font-size: large; font-weight: bold'>{{capitalise (localize 'TALESOFTHEOLDWEST.General.damage')}} ({{itemData.damage}})</h4>
-					<h4 style='font-size: large; font-weight: bold'>{{toUpperCase (localize 'TALESOFTHEOLDWEST.General.crit')}} ({{itemData.crit}})</h4>
-
+					<h4 style='font-size: large; font-weight: bold'>{{toUpperCase (localize 'TALESOFTHEOLDWEST.General.crit')}} ({{critDisplay itemData.crit}})</h4>
+					{{#if critContext}}
+					<div class='crit-block'>
+						{{#if critContext.tens.fixed}}
+							<p>{{localize 'TALESOFTHEOLDWEST.dialog.CritTensFixed'}} {{critContext.tens.fixed}}</p>
+						{{/if}}
+						{{#if critContext.fanning}}
+							<p>{{localize 'TALESOFTHEOLDWEST.dialog.CritFanning'}}</p>
+						{{/if}}
+						{{#each critContext.units as |u|}}
+							<p>{{u.label}} +{{u.value}}</p>
+						{{/each}}
+						<button class='roll-critical chat-buttons'
+						        data-roll-button='roll-critical'
+						        data-message-id='{{messageNo}}'>
+							{{localize 'TALESOFTHEOLDWEST.dialog.RollCrit'}}
+						</button>
+					</div>
+					{{/if}}
 				{{/if}}
 			{{/if}}
 			{{#if criticalSuccess}}
 				<h4 style='font-size: x-large; font-weight: bold'>{{toUpperCase (localize 'TALESOFTHEOLDWEST.General.critsuccess')}}</h4>
 				{{#if (eq rollType 'weapon')}}
 					<h4 style='font-size: large; font-weight: bold'>{{capitalise (localize 'TALESOFTHEOLDWEST.General.damage')}} ({{itemData.damage}})</h4>
-					<h4 style='font-size: large; font-weight: bold'>{{capitalise (localize 'TALESOFTHEOLDWEST.General.crit')}} ({{itemData.crit}})</h4>
-
+					<h4 style='font-size: large; font-weight: bold'>{{capitalise (localize 'TALESOFTHEOLDWEST.General.crit')}} ({{critDisplay itemData.crit}})</h4>
+					{{#if critContext}}
+					<div class='crit-block'>
+						{{#if critContext.tens.fixed}}
+							<p>{{localize 'TALESOFTHEOLDWEST.dialog.CritTensFixed'}} {{critContext.tens.fixed}}</p>
+						{{/if}}
+						{{#if critContext.fanning}}
+							<p>{{localize 'TALESOFTHEOLDWEST.dialog.CritFanning'}}</p>
+						{{/if}}
+						{{#each critContext.units as |u|}}
+							<p>{{u.label}} +{{u.value}}</p>
+						{{/each}}
+						<button class='roll-critical chat-buttons'
+						        data-roll-button='roll-critical'
+						        data-message-id='{{messageNo}}'>
+							{{localize 'TALESOFTHEOLDWEST.dialog.RollCrit'}}
+						</button>
+					</div>
+					{{/if}}
 				{{/if}}
 			{{/if}}
 			{{#if failure}}
