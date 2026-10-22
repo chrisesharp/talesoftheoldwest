@@ -18,6 +18,49 @@ function _weaponFeatureMod(item, ability) {
 }
 
 /**
+ * Show/hide the Tens-number input in a weapon dialog.
+ * Ranged: shown when the selected Called Shot has `fixesTens` and Fanning is not ticked;
+ * ticking Fanning resets Called Shots to Normal and disables the dropdown.
+ * Melee: shown when the Called Strike checkbox is ticked.
+ * DialogV2 content is injected via innerHTML, so inline <script> would not run; this is
+ * attached through the DialogV2 `render` callback instead.
+ * @param {foundry.applications.api.DialogV2} dialog
+ * @param {object} config  CONFIG.TALESOFTHEOLDWEST reference.
+ */
+function _wireTensInput(dialog, config) {
+	const el = dialog.element;
+	const group = el.querySelector('#tensfixedgroup');
+	if (!group) return;
+	const input = group.querySelector('#critTensFixed');
+	const shots = el.querySelector('#calledShots');
+	const fanning = el.querySelector('#isFanning');
+	const strike = el.querySelector('#calledstrike');
+
+	const update = () => {
+		let show;
+		if (shots) {
+			const entry = Object.values(config.called_shots).find((cs) => cs.value === shots.value);
+			show = !!entry?.fixesTens && !fanning?.checked;
+		} else {
+			show = !!strike?.checked;
+		}
+		group.style.display = show ? '' : 'none';
+		if (!show) input.value = '';
+	};
+
+	shots?.addEventListener('change', update);
+	strike?.addEventListener('change', update);
+	fanning?.addEventListener('change', () => {
+		if (shots) {
+			if (fanning.checked) shots.value = config.called_shots.normalshot.value;
+			shots.disabled = fanning.checked;
+		}
+		update();
+	});
+	update();
+}
+
+/**
  * Render a weapon modifier dialog and return the FormData response object,
  * or the string 'cancelled' if the user dismissed the dialog.
  * @param {string} templatePath  Path to the Handlebars template.
@@ -33,6 +76,7 @@ async function _renderWeaponDialog(templatePath, titleKey, dataset, config, cond
 		position: { width: 500 },
 		content,
 		rejectClose: false,
+		render: (event, dialog) => _wireTensInput(dialog, config),
 		buttons: [
 			{
 				label: 'TALESOFTHEOLDWEST.dialog.roll',
@@ -66,6 +110,17 @@ async function _fightin(dataset, rollData, item) {
 		talentMods,
 	);
 	if (response === 'cancelled') return 'cancelled';
+
+	if (response.calledstrike) {
+		const val = Number(response.critTensFixed);
+		if (!Number.isInteger(val) || val < 1 || val > 6) {
+			ui.notifications.warn(game.i18n.localize('TALESOFTHEOLDWEST.dialog.CritTargetAreaRequired'));
+			return 'cancelled';
+		}
+		dataset.critTensFixed = val;
+	} else {
+		dataset.critTensFixed = null;
+	}
 
 	dataset.successMod = 0;
 	dataset.troubleMod = 0;
@@ -105,10 +160,24 @@ async function _shootin(dataset, rollData, item) {
 	);
 	if (response === 'cancelled') return 'cancelled';
 
+	// The Called Shots <select> is disabled while Fanning, and disabled fields are omitted from the form data.
+	const calledShotsValue = response.calledShots ?? config.called_shots.normalshot.value;
+	const calledShotEntry = Object.values(config.called_shots).find((cs) => cs.value === calledShotsValue);
+	if (calledShotEntry?.fixesTens && !response.isFanning) {
+		const val = Number(response.critTensFixed);
+		if (!Number.isInteger(val) || val < 1 || val > 6) {
+			ui.notifications.warn(game.i18n.localize('TALESOFTHEOLDWEST.dialog.CritTargetAreaRequired'));
+			return 'cancelled';
+		}
+		dataset.critTensFixed = val;
+	} else {
+		dataset.critTensFixed = null;
+	}
+
 	dataset.successMod        = 0;
 	dataset.troubleMod        = 0;
 	dataset.shootrangeMod     = Number(response.rangeChoice);
-	dataset.shootcalledShotsMod = Number(response.calledShots);
+	dataset.shootcalledShotsMod = Number(calledShotsValue);
 	dataset.shootcoverMod     = Number(response.coverChoice);
 	dataset.shootsizeMod      = Number(response.sizeChoice);
 	dataset.shootvisibilityMod = Number(response.visibilityChoice);
@@ -173,9 +242,6 @@ export class totowItem extends Item {
 		if (dataset.rollType !== 'weapon') return;
 
 		const qualityMod = _weaponFeatureMod(item, dataset.subtype);
-		// TODO  if item knife or tomahawk check if it's being thrown or used in melee.
-		//  tested an it can be spoofed by:
-		// set dataset.subtype to 'fightin' and dataset.itemammo to 1
 
 		switch (dataset.subtype) {
 			case 'shootin':

@@ -1,0 +1,21 @@
+<div class='chatBG'>
+	<h4 style='font-size: large; font-weight: bold'>
+		{{localize 'TALESOFTHEOLDWEST.Criticals.rolled'}}
+		{{localize 'TALESOFTHEOLDWEST.Criticals.criticalInjuryfor'}}:
+		<br />
+		{{actorname}}
+	</h4>
+</div>
+<div class='chatBG critchat flexrow'>
+	<img src='{{img}}' style='flex: 0 0 32px; width: 32px; height: 32px; margin-right: 8px; object-fit: cover' />
+	<div style='margin: 0; padding: 0; line-height: 16px'>
+		{{#if fanningValues}}
+		<strong style='text-transform: uppercase'>{{localize 'TALESOFTHEOLDWEST.Criticals.fanningRolls'}}:</strong>
+		<span style='color: #0400ff; font-size: unset; font-weight: normal'>{{fanningValues.first}} {{localize 'TALESOFTHEOLDWEST.General.and'}} {{fanningValues.second}}</span>
+		<br /><br />
+		{{/if}}
+		<strong style='text-transform: uppercase'>{{localize 'TALESOFTHEOLDWEST.Criticals.rolled'}} #{{rollTotal}}:</strong>
+		<br />
+		<span style='color: #0400ff; font-size: unset; font-weight: normal'>{{{keepMarkup effect}}}</span>
+	</div>
+</div>

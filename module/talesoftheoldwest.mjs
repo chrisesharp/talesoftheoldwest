@@ -20,6 +20,7 @@ import { initializeHandlebars } from "./helpers/handlebars.js";
 import { enrichTextEditors } from "./helpers/enricher.js";
 import { TOTOWMacros } from "./helpers/macro.js";
 import { TOTWBuyOffDialog, TOTWWhichTroubleDialog, TOTWManualTroubleDialog } from "./helpers/chatmodifier.mjs";
+import { runMigrationIfNeeded } from "./helpers/migration.mjs";
 
 const collections = foundry.documents.collections;
 
@@ -187,6 +188,7 @@ Hooks.once("ready", async () => {
     game.settings.set("core", "combatTrackerConfig", { turnMarker: { src: "systems/talesoftheoldwest/assets/icons/snake.webp" } });
   }
   totowDiceListeners();
+  await runMigrationIfNeeded();
 });
 
 // V13 spinner

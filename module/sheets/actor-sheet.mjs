@@ -32,7 +32,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       toggleEffect: this._toggleEffect,
       roll: { handler: this._onRoll, buttons: [0, 2] },
       toggleCondition: this._toggleStatus,
-      rollCrit: { handler: this._rollCrit, buttons: [0, 2] },
+      rollCrit: { handler: this._rollCrit, buttons: [0] },
       changeFaith: { handler: this._changeFaith, buttons: [0, 2] },
       changeDamage: { handler: this._changeDamage, buttons: [0, 2] },
       changeAspect: { handler: this._changeaspect, buttons: [0, 2] },
@@ -763,16 +763,11 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
   }
 
   static async _rollCrit(event, target) {
-    event.preventDefault(); // Don't open context menu
-    event.stopPropagation(); // Don't trigger other events
-    if (event.detail > 1) return; // Ignore repeated clicks
-
-    const dataset = target.dataset;
-    if (event.button === 2) {
-      this.actor.rollCritMan(this.actor, this.actor.type, dataset);
-    } else {
-      this.actor.rollCrit(this.actor, this.actor.type, dataset);
-    }
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.detail > 1) return;
+    if (event.button !== 0) return; // only left-click
+    this.actor.rollCrit(this.actor, this.actor.type, target.dataset);
   }
 
   static async _changeFaith(event, target) {

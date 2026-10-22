@@ -58,6 +58,10 @@ function registerHandlebarsHelpers() {
 		return v1 + v2;
 	});
 
+	Handlebars.registerHelper('critDisplay', (value) =>
+		Number(value) === 0 ? game.i18n.localize('TALESOFTHEOLDWEST.General.notApplicable') : String(value)
+	);
+
 	Handlebars.registerHelper('totowConcat', function () {
 		let outStr = '';
 		for (const arg in arguments) {

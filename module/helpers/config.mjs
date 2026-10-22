@@ -141,8 +141,8 @@ TALESOFTHEOLDWEST.called_shots = {
   normalshot: { id: "normalshot", label: "TALESOFTHEOLDWEST.Called.normalshot", value: "0" },
   aimedshot: { id: "aimedshot", label: "TALESOFTHEOLDWEST.Called.aimedshot", value: "2" },
   quickshot: { id: "quickshot", label: "TALESOFTHEOLDWEST.Called.quickshot", value: "-2" },
-  calledshot: { id: "calledshot", label: "TALESOFTHEOLDWEST.Called.calledshot", value: "-3" },
-  aimingacalledshot: { id: "aimingacalledshot", label: "TALESOFTHEOLDWEST.Called.aimingcalledshot", value: "1" },
+  calledshot: { id: "calledshot", label: "TALESOFTHEOLDWEST.Called.calledshot", value: "-3", fixesTens: true },
+  aimingacalledshot: { id: "aimingacalledshot", label: "TALESOFTHEOLDWEST.Called.aimingcalledshot", value: "1", fixesTens: true },
 };
 TALESOFTHEOLDWEST.target_cover = {
   none: { id: "none", label: "TALESOFTHEOLDWEST.Cover.none", value: "0" },
@@ -242,6 +242,8 @@ TALESOFTHEOLDWEST.item_modifier_list = {
   ridingBonus: { id: "riding-bonus", label: "TALESOFTHEOLDWEST.General.riding-bonus", group: "TALESOFTHEOLDWEST.General.other" },
   trouble: { id: "roll-trouble", label: "TALESOFTHEOLDWEST.General.trouble", group: "TALESOFTHEOLDWEST.General.other" },
   success: { id: "roll-success", label: "TALESOFTHEOLDWEST.General.success", group: "TALESOFTHEOLDWEST.General.other" },
+  critRerollTens: { id: "talent-critRerollTens", label: "TALESOFTHEOLDWEST.ModifierName.critRerollTens", group: "TALESOFTHEOLDWEST.General.other" },
+  critRerollUnits: { id: "talent-critRerollUnits", label: "TALESOFTHEOLDWEST.ModifierName.critRerollUnits", group: "TALESOFTHEOLDWEST.General.other" },
 };
 TALESOFTHEOLDWEST.weapon_modifier_list = {
   grit: { id: "attribute-grit", label: "TALESOFTHEOLDWEST.Attributes.grit.name", group: "TALESOFTHEOLDWEST.General.capAttributes" },
@@ -270,15 +272,17 @@ TALESOFTHEOLDWEST.weapon_modifier_list = {
   drawbonus: { id: "weapon-drawbonus", label: "TALESOFTHEOLDWEST.Item.General.bonusDraw", group: "TALESOFTHEOLDWEST.General.weaponStats" },
   trouble: { id: "roll-trouble", label: "TALESOFTHEOLDWEST.General.trouble", group: "TALESOFTHEOLDWEST.General.other" },
   success: { id: "roll-success", label: "TALESOFTHEOLDWEST.General.success", group: "TALESOFTHEOLDWEST.General.other" },
+  critunits: { id: "weapon-critunits", label: "TALESOFTHEOLDWEST.ModifierName.critunits", group: "TALESOFTHEOLDWEST.General.weaponStats" },
 };
 
+// `tens` is the Tens-die value of the Critical Injuries d66 table that corresponds to each body location.
 TALESOFTHEOLDWEST.crit_location_list = {
-  lowerleg: { id: "lowerleg", label: "TALESOFTHEOLDWEST.CritLocation.lowerleg" },
-  upperleg: { id: "upperleg", label: "TALESOFTHEOLDWEST.CritLocation.upperleg" },
-  arm: { id: "arm", label: "TALESOFTHEOLDWEST.CritLocation.arm" },
-  gut: { id: "gut", label: "TALESOFTHEOLDWEST.CritLocation.gut" },
-  chest: { id: "chest", label: "TALESOFTHEOLDWEST.CritLocation.chest" },
-  head: { id: "head", label: "TALESOFTHEOLDWEST.CritLocation.head" },
+  lowerleg: { id: "lowerleg", label: "TALESOFTHEOLDWEST.CritLocation.lowerleg", tens: 1 },
+  upperleg: { id: "upperleg", label: "TALESOFTHEOLDWEST.CritLocation.upperleg", tens: 2 },
+  arm: { id: "arm", label: "TALESOFTHEOLDWEST.CritLocation.arm", tens: 3 },
+  gut: { id: "gut", label: "TALESOFTHEOLDWEST.CritLocation.gut", tens: 4 },
+  chest: { id: "chest", label: "TALESOFTHEOLDWEST.CritLocation.chest", tens: 5 },
+  head: { id: "head", label: "TALESOFTHEOLDWEST.CritLocation.head", tens: 6 },
 };
 
 TALESOFTHEOLDWEST.item_modifier_state = {

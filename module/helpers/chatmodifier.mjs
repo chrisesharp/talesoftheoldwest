@@ -1,3 +1,5 @@
+import { buildCritContext, normaliseRollState } from './utils.mjs';
+
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 export class TOTWBuyOffDialog extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -32,7 +34,7 @@ export class TOTWBuyOffDialog extends HandlebarsApplicationMixin(ApplicationV2) 
 	/** @override */
 	async _prepareContext(options) {
 		const messageResultsFlag = this.chatMessage.getFlag('talesoftheoldwest', 'results');
-		const rd = Array.isArray(messageResultsFlag) ? messageResultsFlag[1] : messageResultsFlag.result;
+		const rd = normaliseRollState(messageResultsFlag).result;
 		const myActor = game.actors.get(rd.myActor);
 		const trouble = rd.trouble;
 		const faith = myActor.system.general.faithpoints.value;
@@ -122,9 +124,7 @@ export class TOTWManualTroubleDialog extends TOTWWhichTroubleDialog {
 }
 
 async function buyOff(chatMessage, origRollData, troubleMod) {
-	const rollState = Array.isArray(origRollData)
-		? { roll: origRollData[0], result: origRollData[1] }
-		: origRollData;
+	const rollState = normaliseRollState(origRollData);
 	const rd = rollState.result;
 
 	// deduct faith points from actor
@@ -144,9 +144,7 @@ async function rollTrouble(results, tableChoice, chatMessage, formData) {
 	let displayText = '';
 	let rollAgainst = '';
 	const troubleTable = Number(tableChoice);
-	const rollState = Array.isArray(results)
-		? { roll: results[0], result: results[1] }
-		: results;
+	const rollState = normaliseRollState(results);
 	const rd = rollState.result;
 	let trouble = 0;
 	if (Number(rd.trouble) > 4) {
@@ -233,10 +231,21 @@ async function checkTables(type, trouble) {
 }
 
 export async function updateChatMessage(chatMessage, result, newRoleData) {
-	const rollState = Array.isArray(newRoleData)
-		? { roll: newRoleData[0], result: newRoleData[1] }
-		: newRoleData;
+	const rollState = normaliseRollState(newRoleData);
 	const rd = rollState.result;
+
+	const actor = rd.myActor ? game.actors.get(rd.myActor) : null;
+	const weapon = actor?.items.get(rd.modifiers?.itemId) ?? null;
+	const ctx = buildCritContext(rd, rd.itemData, weapon);
+	if (ctx) {
+		ctx.messageId = chatMessage.id;
+		rd.critContext = ctx;
+		await chatMessage.setFlag('talesoftheoldwest', 'critContext', ctx);
+	} else {
+		rd.critContext = null;
+		await chatMessage.unsetFlag('talesoftheoldwest', 'critContext');
+	}
+
 	const html = await foundry.applications.handlebars.renderTemplate(
 		'systems/talesoftheoldwest/templates/chat/roll.hbs',
 		rd,
