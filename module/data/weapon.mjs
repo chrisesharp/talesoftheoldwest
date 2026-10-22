@@ -30,10 +30,4 @@ export default class totowWeapon extends totowItemBase {
 		return schema;
 	}
 
-	static migrateData(source) {
-		if (source.ammoMax === undefined) {
-			source.ammoMax = source.ammo ?? 0;
-		}
-		return super.migrateData(source);
-	}
 }
