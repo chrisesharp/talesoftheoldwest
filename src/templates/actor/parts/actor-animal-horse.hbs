@@ -1,0 +1,21 @@
+<div class="sheet-animal-abilities  animal-stats">
+	<div class="aresilience heading">
+		<label class="resource-label rollable" for="system.abilities.resilience.value" data-tooltip='{{localize "TALESOFTHEOLDWEST.General.rightclicktomodify"}}' data-roll-type="ability" data-action="roll" data-value="{{system.abilities.resilience.value}}" data-label="{{system.abilities.resilience.label}}" data-stunts="{{system.abilities.resilience.label}}" data-mod="{{system.abilities.resilience.mod}}" data-attr="{{system.abilities.resilience.attr}}" data-speaker='{{actor.id}}'>{{system.abilities.resilience.upper}}</label>
+	</div>
+	<div class="aresilience2" style="text-align: center">
+		<input class="statnum" type='number' name="system.abilities.resilience.value" value="{{system.abilities.resilience.value}}" data-dtype='Number' />
+	</div>
+	<div class="afightin heading">
+		<label class="resource-label rollable" for="system.abilities.fightin.value" data-tooltip='{{localize "TALESOFTHEOLDWEST.General.rightclicktomodify"}}' data-roll-type="ability" data-action="roll" data-value="{{system.abilities.fightin.value}}" data-label="{{system.abilities.fightin.label}}" data-stunts="{{system.abilities.fightin.label}}" data-mod="{{system.abilities.fightin.mod}}" data-attr="{{system.abilities.fightin.attr}}" data-speaker='{{actor.id}}'>{{system.abilities.fightin.upper}}</label>
+	</div>
+	<div class="afightin2" style="text-align: center">
+		<input class="statnum" type='number' name="system.abilities.fightin.value" value="{{system.abilities.fightin.value}}" data-dtype='Number' />
+	</div>
+</div>
+<div class="horse-quality-split horse-quality-split-height">
+	<div class="HQSplit11">{{>"systems/talesoftheoldwest/templates/actor/parts/horse-quality-options.hbs"}}</div>
+	<div class="HQSplit12">
+		<div class='heading' style="padding-top: 3px;">{{toUpperCase (localize 'TALESOFTHEOLDWEST.General.saddlebag')}}</div>
+		{{>"systems/talesoftheoldwest/templates/actor/parts/horse-items-inline.hbs"}}
+	</div>
+</div>

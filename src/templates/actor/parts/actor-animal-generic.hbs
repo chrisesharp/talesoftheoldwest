@@ -1,0 +1,32 @@
+<div class="sheet-animal-abilities  animal-stats">
+	<div class="aresilience" style="font-size: large; text-align: right">
+		<label class="resource-label rollable" for="system.abilities.fightin.value" data-tooltip='{{localize "TALESOFTHEOLDWEST.General.rightclicktomodify"}}' data-roll-type="ability" data-action="roll" data-value="{{system.abilities.fightin.value}}" data-label="{{system.abilities.fightin.label}}" data-stunts="{{system.abilities.fightin.label}}" data-mod="{{system.abilities.fightin.mod}}" data-attr="{{system.abilities.fightin.attr}}" data-speaker='{{actor.id}}'>{{system.abilities.fightin.upper}}</label>
+	</div>
+	<div class="aresilience2" style="text-align: center">
+		<input class="statnum" type='number' name="system.abilities.fightin.value" value="{{system.abilities.fightin.value}}" data-dtype='Number' />
+	</div>
+	<div class="amove" style="font-size: large; text-align: right">
+		<label class="resource-label rollable" for="system.abilities.move.value" data-tooltip='{{localize "TALESOFTHEOLDWEST.General.rightclicktomodify"}}' data-roll-type="ability" data-action="roll" data-value="{{system.abilities.move.value}}" data-label="{{system.abilities.move.label}}" data-stunts="{{system.abilities.move.label}}" data-mod="{{system.abilities.move.mod}}" data-attr="{{system.abilities.move.attr}}" data-speaker='{{actor.id}}'>{{system.abilities.move.upper}}</label>
+	</div>
+	<div class="amove2" style="text-align: center">
+		<input class="statnum" type='number' name="system.abilities.move.value" value="{{system.abilities.move.value}}" data-dtype='Number' />
+	</div>
+	<div class="afightin" style="font-size: large; text-align: right">
+		<label class="resource-label rollable" for="system.abilities.hawkeye.value" data-tooltip='{{localize "TALESOFTHEOLDWEST.General.rightclicktomodify"}}' data-roll-type="ability" data-action="roll" data-value="{{system.abilities.hawkeye.value}}" data-label="{{system.abilities.hawkeye.label}}" data-stunts="{{system.abilities.hawkeye.label}}" data-mod="{{system.abilities.hawkeye.mod}}" data-attr="{{system.abilities.hawkeye.attr}}" data-speaker='{{actor.id}}'>{{system.abilities.hawkeye.upper}}</label>
+	</div>
+	<div class="afightin2" style="text-align: center">
+		<input class="statnum" type='number' name="system.abilities.hawkeye.value" value="{{system.abilities.hawkeye.value}}" data-dtype='Number' />
+	</div>
+</div>
+<div style="justify-self: anchor-center">
+	<label for="system.general.attacks" class="heading">{{toUpperCase (localize 'TALESOFTHEOLDWEST.General.attacks')}}</label>
+</div>
+<div class="div-border" style="height: 200px; width: 850px; justify-self: anchor-center; margin-bottom:50px">
+	{{#if editable}}
+	<prose-mirror name="system.general.attacks" style="height: -webkit-fill-available;" data-document-u-u-i-d="{{actor.uuid}}" value="{{system.general.attacks}}" toggled="true">
+		{{{enrichedAttacks}}}
+	</prose-mirror>
+	{{else}}
+	{{{enrichedAttacks}}}
+	{{/if}}
+</div>
