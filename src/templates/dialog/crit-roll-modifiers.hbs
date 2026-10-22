@@ -50,13 +50,16 @@
     </div>
     {{/if}}
 
-    {{!-- Fanning checkbox — disabled when tens.fixed is set --}}
+    {{!-- Fanning checkbox — disabled when tens.fixed is set.
+         Name is unique per attack: a shared name makes FormDataExtended return an array
+         (always truthy) when more than one attack is listed. --}}
     <div class="form-group" style="padding: 0.25em 0 0.5em 0; display: flex; align-items: center; gap: 8px;">
       <label class="resource-label" style="color: black; flex: 0 0 auto;">
         {{localize "TALESOFTHEOLDWEST.dialog.CritFanning"}}
       </label>
       <input type="checkbox"
-             name="fanning"
+             name="fanning-{{this.messageId}}"
+             data-fanning
              {{#if this.ctx.fanning}}checked{{/if}}
              {{#if this.ctx.tens.fixed}}disabled{{/if}} />
     </div>
@@ -86,14 +89,29 @@
   </div>
   {{/if}}
 
-  {{!-- Manual override fields --}}
-  <div class="form-group" style="padding: 0.5em 1em 0 1em">
-    <label style="color: black">{{localize "TALESOFTHEOLDWEST.dialog.CritManualTens"}}</label>
-    <input type="number" name="manualTens" id="manualTens" min="1" max="6" style="width: 50px" />
-  </div>
-  <div class="form-group" style="padding: 0.5em 1em 0.5em 1em">
-    <label style="color: black">{{localize "TALESOFTHEOLDWEST.dialog.CritManualUnits"}}</label>
-    <input type="number" name="manualUnits" id="manualUnits" min="1" max="6" style="width: 50px" />
+  {{!-- Manual override fields (blank = roll normally) --}}
+  <div class="form-group" style="padding: 0.5em 1em 0.5em 1em; display: flex; align-items: center; gap: 8px;">
+    <label style="color: black; flex: 1 1 auto;">{{localize "TALESOFTHEOLDWEST.dialog.CritManualOverrides"}}</label>
+    <label for="manualTens" style="color: black; flex: 0 0 auto;">{{localize "TALESOFTHEOLDWEST.dialog.CritTens"}}</label>
+    <select name="manualTens" id="manualTens" style="width: 4em; flex: 0 0 auto;">
+      <option value="" selected></option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+    </select>
+    <label for="manualUnits" style="color: black; flex: 0 0 auto;">{{localize "TALESOFTHEOLDWEST.dialog.CritUnits"}}</label>
+    <select name="manualUnits" id="manualUnits" style="width: 4em; flex: 0 0 auto;">
+      <option value="" selected></option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+    </select>
   </div>
 
 </section>
@@ -129,7 +147,7 @@
         block.style.display = '';
         block.querySelectorAll('input').forEach(function (inp) {
           // Fanning stays disabled when tens.fixed is set — honour original disabled state.
-          if (inp.name === 'fanning' && attackData[selectedId] && attackData[selectedId].tensFixed !== null) {
+          if (inp.hasAttribute('data-fanning') && attackData[selectedId] && attackData[selectedId].tensFixed !== null) {
             inp.disabled = true;
           } else {
             inp.disabled = false;

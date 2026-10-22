@@ -123,10 +123,12 @@ async function _doCritPass(response, ctx) {
     tens = t;
   }
 
-  // Units die
+  // Units die — bonus always applied regardless of source
+  const unitBonus = (ctx?.units ?? []).reduce((s, e) => s + e.value, 0);
+
   let units;
   if (response.manualUnits !== '' && response.manualUnits !== undefined && response.manualUnits !== null) {
-    units = Number(response.manualUnits);
+    units = Math.min(6, Number(response.manualUnits) + unitBonus);
   } else {
     const u1 = await new Roll('1d6').evaluate();
     let u = u1.total;
@@ -134,11 +136,9 @@ async function _doCritPass(response, ctx) {
       const u2 = await new Roll('1d6').evaluate();
       u = Math.min(u, u2.total);
     }
-    // Apply critunits bonus from the selected attack (always applied, not ticked)
-    const bonus = (ctx?.units ?? []).reduce((s, e) => s + e.value, 0);
-    u = Math.min(6, u + bonus);
-    units = u;
+    units = Math.min(6, u + unitBonus);
   }
+
   return tens * 10 + units;
 }
 
@@ -351,7 +351,9 @@ export class totowActor extends Actor {
     const manualBothFilled = (response.manualTens !== '' && response.manualTens !== undefined && response.manualTens !== null)
       && (response.manualUnits !== '' && response.manualUnits !== undefined && response.manualUnits !== null);
 
-    if (response.fanning && !manualBothFilled) {
+    // Fanning checkboxes are named per attack (fanning-<messageId>); disabled ones are absent.
+    const fanning = response.attackId ? response[`fanning-${response.attackId}`] === true : false;
+    if (fanning && !manualBothFilled) {
       const value2 = await _doCritPass(response, selectedCtx);
       finalValue = Math.min(value1, value2);
       fanningValues = { first: value1, second: value2 };
@@ -435,7 +437,7 @@ export class totowActor extends Actor {
     const { isFatal, fatal, longTermEffect } = await this.determineFatal(rawFatal, rawLongTerm);
 
     // Process Healing Time
-    const healingTime = await this.determineHealingTime(rawHealingTime, rawFatal, healingTime);
+    const healingTime = await this.determineHealingTime(rawHealingTime, rawFatal);
 
     // Setup Modifiers
     let update = {};
@@ -489,7 +491,8 @@ export class totowActor extends Actor {
     };
   }
 
-  async determineHealingTime(rawHealingTime, rawFatal, healingTime) {
+  async determineHealingTime(rawHealingTime, rawFatal) {
+    let healingTime;
     if (rawHealingTime && rawHealingTime !== "-" && !/instant/i.test(rawFatal)) {
       const healDiceMatch = new RegExp(/\[\[(\d+d\d+)\]\]\s*(.*)/i).exec(rawHealingTime);
       if (healDiceMatch) {
@@ -617,8 +620,7 @@ export class totowActor extends Actor {
   }
 
   async _sendToChat(actor, event, target, result) {
-    // Build critContext before rendering so the template receives it on first render.
-    // messageId is not yet known; it is patched in after ChatMessage.create().
+    // Build critContext so the template can show the crit block.
     const weapon = actor.items.get(result.result.modifiers?.itemId) ?? null;
     const ctx = Utils.buildCritContext(result.result, result.result.itemData, weapon);
     if (ctx) {
@@ -643,14 +645,13 @@ export class totowActor extends Actor {
       chatData.whisper = [game.user];
     }
     const msg = await ChatMessage.create(chatData);
+
     result.result.messageNo = msg.id;
+    if (ctx) ctx.messageId = msg.id;
     await msg.setFlag("talesoftheoldwest", "modifiers", result.result.modifiers.mod);
     await msg.setFlag("talesoftheoldwest", "results", result);
     await msg.setFlag("talesoftheoldwest", "isType", actor.type);
-
     if (ctx) {
-      ctx.messageId = msg.id;
-      result.result.critContext = ctx;
       await msg.setFlag("talesoftheoldwest", "critContext", ctx);
     }
 

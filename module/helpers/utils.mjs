@@ -447,23 +447,20 @@ export function normaliseRollState(raw) {
  * @returns {object|null}
  */
 export function buildCritContext(rd, itemData, weapon) {
-	if (!itemData || !itemData.crit || itemData.crit === 0) return null;
+	if (!itemData?.crit) return null;
 	// Eligibility: extra successes >= crit rating (first success = hit, each extra counts)
 	if ((rd.totalSuccess - 1) < itemData.crit) return null;
 
 	// Snapshot attacker targets
 	const targetActorIds = [...(game.user.targets ?? [])].map((t) => t.actor?.id).filter(Boolean);
 
-	// Read critunits modifiers from weapon featureModifiers
+	// Read critunits bonus from weapon featureModifiers.
+	// Prefer an explicit 'critunits' Active modifier (present on migrated weapons).
+	// Fall back to detecting Piercing by feature name for unmigrated / freshly-dropped
+	// features whose source item never carried a critunits modifier.
 	const units = [];
 	if (weapon) {
-		for (const feature of Object.values(weapon.system.featureModifiers ?? {})) {
-			for (const mod of Object.values(feature.itemModifiers ?? {})) {
-				if (mod.state === 'Active' && mod.name === 'critunits') {
-					units.push({ label: feature.name, value: Number(mod.value) || 0 });
-				}
-			}
-		}
+		determineCritMods(weapon, units);
 	}
 
 	// rd.modifiers is a spread of dataset (a DOMStringMap), so booleans are stored as strings.
@@ -489,3 +486,21 @@ export function buildCritContext(rd, itemData, weapon) {
 		units,
 	};
 }
+
+function determineCritMods(weapon, units) {
+	for (const feature of Object.values(weapon.system.featureModifiers ?? {})) {
+		let bonus = 0;
+		for (const mod of Object.values(feature.itemModifiers ?? {})) {
+			if (mod.state === 'Active' && mod.name === 'critunits') {
+				bonus += Number(mod.value) || 0;
+			}
+		}
+		if (bonus > 0) {
+			units.push({ label: feature.name, value: bonus });
+		} else if (feature.name === 'Piercing') {
+			// Unmigrated Piercing quality — always grants +1 to the Units die.
+			units.push({ label: feature.name, value: 1 });
+		}
+	}
+}
+

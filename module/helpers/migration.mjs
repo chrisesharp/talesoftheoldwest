@@ -1,7 +1,5 @@
 import { logger } from './logger.mjs';
 
-const PIERCING_IDS = new Set(['P2YHIFEDTDoemyfX', 'SRgN7rY8PBjlZI7M']);
-
 const CRIT_UNITS_MODIFIER = {
   "0": {
     description: "",
@@ -108,8 +106,7 @@ async function _migratePiercing(item) {
   const update = {};
 
   for (const [key, feature] of Object.entries(featureMods)) {
-    const isPiercing = PIERCING_IDS.has(feature.id) ||
-      (feature.name === 'Piercing' && feature.feature === 'quality');
+    const isPiercing = feature.name === 'Piercing' && feature.feature === 'quality';
 
     if (!isPiercing) continue;
 
@@ -167,10 +164,10 @@ async function migrateAmmoMax() {
 
   // 1. World items: capacity is the item's current ammo.
   const worldWeapons = game.items.contents.filter((i) => i.type === 'weapon');
-  for (const item of worldWeapons) {
-    await item.update({ 'system.ammoMax': Number(item.system.ammo) || 0 }, options);
-    stats.world++;
-  }
+  await Promise.all(
+    worldWeapons.map((item) => item.update({ 'system.ammoMax': Number(item.system.ammo) || 0 }, options))
+  );
+  stats.world += worldWeapons.length;
 
   // 2. Embedded weapons.
   for (const actor of _collectActors()) {

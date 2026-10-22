@@ -752,14 +752,11 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     if (event.detail > 1) return; // Ignore repeated clicks
     const containerEl = target.closest(".remuda, .compadre, .compardre");
     const actor = containerEl?.dataset.compid ? (game.actors.get(containerEl.dataset.compid) ?? this.actor) : this.actor;
-    if (target.dataset.rollType === "attribute" || target.dataset.rollType === "ability") {
-      if (event.button === 0) {
-        actor.diceRoll(actor, event, target);
-      } else {
-        actor.modRoll(actor, event, target);
-      }
+    const isModifiable = ["attribute", "ability"].includes(target.dataset.rollType);
+    if (isModifiable && event.button !== 0) {
+      await actor.modRoll(actor, event, target);
     } else {
-      actor.diceRoll(actor, event, target);
+      await actor.diceRoll(actor, event, target);
     }
   }
 
@@ -768,7 +765,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     event.stopPropagation();
     if (event.detail > 1) return;
     if (event.button !== 0) return; // only left-click
-    this.actor.rollCrit(this.actor, this.actor.type, target.dataset);
+    await this.actor.rollCrit(this.actor, this.actor.type, target.dataset);
   }
 
   static async _changeFaith(event, target) {

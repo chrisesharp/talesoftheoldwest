@@ -95,7 +95,7 @@ function alreadyPushed(rd) {
 }
 
 
-function handleRollCritical(message) {
+async function handleRollCritical(message) {
 	const ctx = message.getFlag('talesoftheoldwest', 'critContext');
 	if (!ctx) return;
 
@@ -117,7 +117,7 @@ function handleRollCritical(message) {
 		return;
 	}
 
-	defenderActor.rollCrit(defenderActor, defenderActor.type, {}, message.id);
+	await defenderActor.rollCrit(defenderActor, defenderActor.type, {}, message.id);
 }
 
 
@@ -132,8 +132,14 @@ export function totowDiceListeners() {
 		if (!button) return;
 
 		const rollButton = button.dataset.rollButton;
-		const messageId = button.dataset.messageId;
-		if (!rollButton || !messageId) return;
+		if (!rollButton) return;
+
+		// Resolve the message ID: prefer the button's own data-message-id (other buttons
+		// still carry it), but fall back to the enclosing <li class="chat-message"> which
+		// Foundry always stamps with data-message-id.
+		const messageId = button.dataset.messageId
+			|| button.closest('[data-message-id]')?.dataset.messageId;
+		if (!messageId) return;
 
 		const message = game.messages?.get(messageId);
 		if (!message) return;
@@ -143,7 +149,7 @@ export function totowDiceListeners() {
 
 		// roll-critical is handled before the `results` flag check
 		if (rollButton === 'roll-critical') {
-			handleRollCritical(message);
+			await handleRollCritical(message);
 			return;
 		}
 

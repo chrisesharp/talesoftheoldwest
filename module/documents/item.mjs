@@ -145,7 +145,7 @@ async function _shootin(dataset, rollData, item) {
 			`<div class="chatBG ${actor.id}"><span class="warnblink" style="font-weight:bold;font-size:larger">` +
 			game.i18n.localize('TALESOFTHEOLDWEST.General.noAmmo') +
 			'</span></div>';
-		actor.createChatMessage(chatMessage, actor.id);
+		await actor.createChatMessage(chatMessage, actor.id);
 		return 'cancelled';
 	}
 	const { conditionalMods, talentMods } = await argpUtils.prepModOutput('Items', rollData, dataset);
@@ -217,9 +217,9 @@ export class totowItem extends Item {
 		if (this.type !== 'weapon') return;
 		if (Number(game.settings.get('talesoftheoldwest', 'systemMigrationVersion')) < 2) return;
 		const max = Number(foundry.utils.getProperty(changes, 'system.ammoMax') ?? this.system.ammoMax);
-		if (!isFinite(max) || max <= 0) return;
+		if (!Number.isFinite(max) || max <= 0) return;
 		const ammo = Number(foundry.utils.getProperty(changes, 'system.ammo') ?? this.system.ammo);
-		if (!isFinite(ammo)) return;
+		if (!Number.isFinite(ammo)) return;
 		if (ammo > max) foundry.utils.setProperty(changes, 'system.ammo', max);
 	}
 
@@ -301,11 +301,12 @@ export class totowItem extends Item {
 	async reload() {
 		if (this.type !== 'weapon') return false;
 		const { ammo, ammoMax } = this.system;
-		if (!(ammoMax > 0)) {
+		const max = Number(ammoMax);
+		if (!Number.isFinite(max) || max <= 0) {
 			ui.notifications.warn(game.i18n.localize('TALESOFTHEOLDWEST.General.noAmmoMax'));
 			return false;
 		}
-		await this.update({ 'system.ammo': ammoMax });
+		await this.update({ 'system.ammo': max });
 		const actor = this.actor ?? (this.parent instanceof Actor ? this.parent : null);
 		if (actor) {
 			const actorName = Handlebars.Utils.escapeExpression(actor.name);
@@ -314,7 +315,7 @@ export class totowItem extends Item {
 				actor: actorName,
 				weapon: weaponName,
 				from: ammo,
-				to: ammoMax,
+				to: max,
 			});
 			const chatMessage = `<div class="chatBG ${actor.id}"><span style="font-weight:bold">${message}</span></div>`;
 			await actor.createChatMessage(chatMessage, actor.id);
