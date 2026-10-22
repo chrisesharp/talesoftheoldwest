@@ -1,7 +1,5 @@
 import { logger } from './logger.mjs';
 
-const CRIT_MIGRATION_VERSION = 1;
-
 const PIERCING_IDS = new Set(['P2YHIFEDTDoemyfX', 'SRgN7rY8PBjlZI7M']);
 
 const CRIT_UNITS_MODIFIER = {
@@ -18,39 +16,67 @@ const PIERCING_DESCRIPTION =
   "The weapon is renowned for being deadly in the hands of an expert. " +
   "Grants +1 to the Units die on critical injury rolls.";
 
+/** Ordered list of world migrations. Each step stores its version once it completes. */
+const MIGRATIONS = [
+  { version: 1, run: migrateCrits },
+  { version: 2, run: migrateAmmoMax },
+];
+
+/** Maximum number of `Actor.<id>.Item.<id>` hops followed when resolving an ammo reference. */
+const MAX_SOURCE_DEPTH = 3;
+
 /**
- * Run the world migration if it has not yet been applied.
+ * Run any world migrations that have not yet been applied.
  * Must be called after the 'ready' hook, GM only.
  */
 export async function runMigrationIfNeeded() {
   if (!game.user.isGM || game.users.activeGM?.isSelf === false) return;
 
-  const stored = Number(game.settings.get('talesoftheoldwest', 'systemMigrationVersion') ?? 0);
-  if (stored >= CRIT_MIGRATION_VERSION) return;
+  for (const { version, run } of MIGRATIONS) {
+    const stored = Number(game.settings.get('talesoftheoldwest', 'systemMigrationVersion') ?? 0);
+    if (stored >= version) continue;
 
-  logger.info(`Running crit migration to version ${CRIT_MIGRATION_VERSION}…`);
-
-  let weaponCount;
-  let talentCount;
-
-  // Collect all items to check
-  const itemSources = [
-    ...game.items.contents,
-  ];
-
-  // World actor items
-  for (const actor of game.actors.contents) {
-    itemSources.push(...actor.items.contents);
+    logger.info(`Running migration to version ${version}…`);
+    try {
+      await run();
+    } catch (err) {
+      logger.error(`Migration to version ${version} failed`, err);
+      return;
+    }
+    await game.settings.set('talesoftheoldwest', 'systemMigrationVersion', String(version));
   }
+}
 
-  // Unlinked token actor items (per scene)
+/**
+ * Actors that can own items: world actors plus the synthetic actors of unlinked tokens.
+ * @returns {Actor[]}
+ */
+function _collectActors() {
+  const actors = [...game.actors.contents];
   for (const scene of game.scenes.contents) {
     for (const token of scene.tokens.contents) {
-      if (!token.actorLink && token.actor) {
-        itemSources.push(...token.actor.items.contents);
-      }
+      if (!token.actorLink && token.actor) actors.push(token.actor);
     }
   }
+  return actors;
+}
+
+/**
+ * World items plus the items of every actor from {@link _collectActors}.
+ * @returns {Item[]}
+ */
+function _collectAllItems() {
+  const items = [...game.items.contents];
+  for (const actor of _collectActors()) items.push(...actor.items.contents);
+  return items;
+}
+
+/* ------------------------------------------- */
+/*  Version 1: critical injury                  */
+/* ------------------------------------------- */
+
+async function migrateCrits() {
+  const itemSources = _collectAllItems();
 
   const weaponResults = await Promise.all(
     itemSources.filter(item => item.type === 'weapon').map(_migratePiercing)
@@ -59,13 +85,10 @@ export async function runMigrationIfNeeded() {
     itemSources.filter(item => item.type === 'talent').map(_migrateLucky)
   );
 
-  weaponCount = weaponResults.filter(Boolean).length;
-  talentCount = talentResults.filter(Boolean).length;
+  const weaponCount = weaponResults.filter(Boolean).length;
+  const talentCount = talentResults.filter(Boolean).length;
 
-  await game.settings.set('talesoftheoldwest', 'systemMigrationVersion', String(CRIT_MIGRATION_VERSION));
-
-  const anyChanged = weaponCount > 0 || talentCount > 0;
-  if (anyChanged) {
+  if (weaponCount > 0 || talentCount > 0) {
     const msg = game.i18n.format('TALESOFTHEOLDWEST.Migration.critUpdated', {
       count: weaponCount,
       talentCount,
@@ -124,4 +147,158 @@ async function _migrateLucky(item) {
     }
   });
   return true;
+}
+
+/* ------------------------------------------- */
+/*  Version 2: maximum ammo                     */
+/* ------------------------------------------- */
+
+/**
+ * Seed `system.ammoMax` on all weapons. World Items are processed first so they act as
+ * the reference for embedded (actor-owned) weapons, which take their capacity from the
+ * current `ammo` of the Item they were dropped from rather than their own (possibly
+ * depleted) `ammo`.
+ */
+async function migrateAmmoMax() {
+  const options = { diff: false, totowSkipAmmoClamp: true };
+  const stats = { world: 0, source: 0, name: 0, fallback: 0, overMax: 0, fightin: 0 };
+  const unresolved = [];
+  const overMax = [];
+
+  // 1. World items: capacity is the item's current ammo.
+  const worldWeapons = game.items.contents.filter((i) => i.type === 'weapon');
+  for (const item of worldWeapons) {
+    await item.update({ 'system.ammoMax': Number(item.system.ammo) || 0 }, options);
+    stats.world++;
+  }
+
+  // 2. Embedded weapons.
+  for (const actor of _collectActors()) {
+    for (const item of actor.items.contents.filter((i) => i.type === 'weapon')) {
+      const ammo = Number(item.system.ammo) || 0;
+
+      if (item.system.subtype === 'fightin') {
+        await item.update({ 'system.ammoMax': ammo }, options);
+        stats.fightin++;
+        continue;
+      }
+
+      let ammoMax = await _resolveSourceAmmo(item);
+      if (ammoMax !== null) {
+        stats.source++;
+      } else {
+        ammoMax = _resolveByName(item, worldWeapons);
+        if (ammoMax !== null) {
+          stats.name++;
+        } else {
+          ammoMax = ammo;
+          stats.fallback++;
+          unresolved.push({ actor: actor.name, weapon: item.name, ammo });
+        }
+      }
+
+      if (ammo > ammoMax) {
+        // D8: keep the actor's ammo, only record it for the GM.
+        stats.overMax++;
+        overMax.push({ actor: actor.name, weapon: item.name, ammo, ammoMax });
+      }
+
+      await item.update({ 'system.ammoMax': ammoMax }, options);
+    }
+  }
+
+  const embeddedCount = stats.source + stats.name + stats.fallback + stats.fightin;
+  if (stats.world === 0 && embeddedCount === 0) {
+    logger.info(game.i18n.localize('TALESOFTHEOLDWEST.Migration.ammoMaxNoop'));
+    return;
+  }
+
+  const msg = game.i18n.format('TALESOFTHEOLDWEST.Migration.ammoMaxUpdated', {
+    worldCount: stats.world,
+    embeddedCount,
+  });
+  ui.notifications.info(msg);
+  logger.info(msg, stats);
+
+  if (unresolved.length || overMax.length) await _postAmmoMaxReview(msg, unresolved, overMax);
+}
+
+/**
+ * Resolve the reference ammo capacity from an embedded weapon's recorded source.
+ * Follows `Actor.<id>.Item.<id>` copies up to MAX_SOURCE_DEPTH hops; the intermediate
+ * copy's own ammo is never used.
+ * @param {Item} item
+ * @returns {Promise<number|null>} null when no reference could be found
+ */
+async function _resolveSourceAmmo(item) {
+  const seen = new Set([item.uuid]);
+  let current = item;
+
+  for (let depth = 0; depth <= MAX_SOURCE_DEPTH; depth++) {
+    const source = current._stats?.compendiumSource ?? current.flags?.core?.sourceId;
+    if (!source || seen.has(source)) return null;
+    seen.add(source);
+
+    const worldMatch = /^Item\.([^.]+)$/.exec(source);
+    if (worldMatch) {
+      const ref = game.items.get(worldMatch[1]);
+      return ref?.type === 'weapon' ? (Number(ref.system.ammo) || 0) : null;
+    }
+
+    const actorMatch = /^Actor\.([^.]+)\.Item\.([^.]+)$/.exec(source);
+    if (actorMatch) {
+      const next = game.actors.get(actorMatch[1])?.items.get(actorMatch[2]);
+      if (!next) return null;
+      current = next;
+      continue;
+    }
+
+    let doc = null;
+    try {
+      doc = await fromUuid(source);
+    } catch {
+      return null;
+    }
+    if (doc?.type !== 'weapon') return null;
+    return Number(doc.system.ammoMax ?? doc.system.ammo) || 0;
+  }
+  return null;
+}
+
+/**
+ * Match an embedded weapon to a single world weapon with the same name and subtype.
+ * @param {Item} item
+ * @param {Item[]} worldWeapons
+ * @returns {number|null} null when there are zero or multiple matches
+ */
+function _resolveByName(item, worldWeapons) {
+  const matches = worldWeapons.filter(
+    (w) => w.name === item.name && w.system.subtype === item.system.subtype
+  );
+  return matches.length === 1 ? (Number(matches[0].system.ammo) || 0) : null;
+}
+
+/**
+ * Post a GM-only chat card listing weapons that need manual review.
+ */
+async function _postAmmoMaxReview(summary, unresolved, overMax) {
+  const esc = (v) => Handlebars.Utils.escapeExpression(v);
+  const lines = [
+    ...unresolved.map((r) => game.i18n.format('TALESOFTHEOLDWEST.Migration.ammoMaxUnresolved', {
+      actor: esc(r.actor), weapon: esc(r.weapon), ammo: r.ammo,
+    })),
+    ...overMax.map((r) => game.i18n.format('TALESOFTHEOLDWEST.Migration.ammoMaxOverMax', {
+      actor: esc(r.actor), weapon: esc(r.weapon), ammo: r.ammo, ammoMax: r.ammoMax,
+    })),
+  ];
+
+  const content =
+    `<div class="chatBG"><h3>${game.i18n.localize('TALESOFTHEOLDWEST.Migration.ammoMaxReviewTitle')}</h3>` +
+    `<p>${esc(summary)}</p>` +
+    `<ul>${lines.map((l) => `<li>${l}</li>`).join('')}</ul></div>`;
+
+  await ChatMessage.create({
+    content,
+    whisper: ChatMessage.getWhisperRecipients('GM'),
+  });
 }

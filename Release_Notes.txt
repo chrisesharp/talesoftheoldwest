@@ -1,3 +1,10 @@
+Version 14.3.0
+* Weapons now have a maximum ammo ("ammo max") field, editable on the weapon item sheet.
+* Added a Reload button next to the ammo field on PC, NPC and compadre weapon lists. It sets ammo to the weapon's ammo max and posts a chat message. Reload requires ammo max to be greater than 0.
+* Ammo is now limited to ammo max whenever a weapon is updated. An ammo max of 0 means no maximum is set and ammo is not limited.
+* World migration: on the first GM login, every weapon gets an ammo max. Weapons on actors take their ammo max from the world item they were dropped from (or a unique weapon of the same name and type). Where no source can be found, the weapon's current ammo is used. Weapons that need a manual check (no source found, or ammo higher than the source's) are listed in a GM-only chat message. Please back up your world before upgrading.
+
+
 Version 1.0.3
 Corrected issue on the Town Charter Actor calculating the Natural Resources
 

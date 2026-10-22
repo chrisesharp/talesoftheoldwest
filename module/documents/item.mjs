@@ -208,6 +208,36 @@ async function _shootin(dataset, rollData, item) {
  */
 export class totowItem extends Item {
 	/**
+	 * Clamp system.ammo to system.ammoMax when ammoMax > 0.
+	 * Skipped when options.totowSkipAmmoClamp is set (used by migration) or
+	 * when the world migration version is below 2 (migration not yet run).
+	 * @param {object} changes
+	 */
+	_clampAmmo(changes) {
+		if (this.type !== 'weapon') return;
+		if (Number(game.settings.get('talesoftheoldwest', 'systemMigrationVersion')) < 2) return;
+		const max = Number(foundry.utils.getProperty(changes, 'system.ammoMax') ?? this.system.ammoMax);
+		if (!isFinite(max) || max <= 0) return;
+		const ammo = Number(foundry.utils.getProperty(changes, 'system.ammo') ?? this.system.ammo);
+		if (!isFinite(ammo)) return;
+		if (ammo > max) foundry.utils.setProperty(changes, 'system.ammo', max);
+	}
+
+	/** @override */
+	async _preCreate(data, options, user) {
+		const allowed = await super._preCreate(data, options, user);
+		if (allowed === false) return false;
+		if (!options.totowSkipAmmoClamp) this._clampAmmo(data);
+	}
+
+	/** @override */
+	async _preUpdate(changes, options, user) {
+		const allowed = await super._preUpdate(changes, options, user);
+		if (allowed === false) return false;
+		if (!options.totowSkipAmmoClamp) this._clampAmmo(changes);
+	}
+
+	/**
 	 * Augment the basic Item data model with additional dynamic data.
 	 */
 	prepareData() {
@@ -260,5 +290,35 @@ export class totowItem extends Item {
 			default:
 				break;
 		}
+	}
+
+	/**
+		* Reload this weapon to its maximum capacity (ammoMax).
+		* If ammoMax is not set (> 0), a warning is shown and ammo is untouched.
+		* If the weapon is embedded on an actor, posts a chat notification.
+		* @returns {Promise<boolean>} Whether the reload succeeded.
+		*/
+	async reload() {
+		if (this.type !== 'weapon') return false;
+		const { ammo, ammoMax } = this.system;
+		if (!(ammoMax > 0)) {
+			ui.notifications.warn(game.i18n.localize('TALESOFTHEOLDWEST.General.noAmmoMax'));
+			return false;
+		}
+		await this.update({ 'system.ammo': ammoMax });
+		const actor = this.actor ?? (this.parent instanceof Actor ? this.parent : null);
+		if (actor) {
+			const actorName = Handlebars.Utils.escapeExpression(actor.name);
+			const weaponName = Handlebars.Utils.escapeExpression(this.name);
+			const message = game.i18n.format('TALESOFTHEOLDWEST.General.reloaded', {
+				actor: actorName,
+				weapon: weaponName,
+				from: ammo,
+				to: ammoMax,
+			});
+			const chatMessage = `<div class="chatBG ${actor.id}"><span style="font-weight:bold">${message}</span></div>`;
+			await actor.createChatMessage(chatMessage, actor.id);
+		}
+		return true;
 	}
 }

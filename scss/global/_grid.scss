@@ -124,7 +124,7 @@
   row-gap: 2px;
 
   //                      l1   l2    l3   l4   l5   l6   l7   l8  l9    l10  l11
-  grid-template-columns: 40px 140px 128px 70px 70px 70px 70px 70px 70px 70px 75px;
+  grid-template-columns: 40px 140px 128px 70px 70px 70px 70px 70px 70px 120px 75px;
   align-items: center;
   font-size: medium;
 }
@@ -215,6 +215,10 @@
 .lColB10 {
   grid-area: lColB10;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
 }
 .lColB11 {
   grid-area: lColB11;

@@ -2,7 +2,7 @@
 	<label class='Ow2'>{{toUpperCase (localize 'TALESOFTHEOLDWEST.General.weapons')}}</label></div>
 <div>
 	<ol class='items-list' id='actorWeaponList'>
-		<li class='item grid-weapon-items items-header' style='width: 880px'>
+		<li class='item grid-weapon-items items-header' style='width: 930px'>
 			<div class='item-name lCol2'>{{toUpperCase (localize 'TALESOFTHEOLDWEST.General.name')}}</div>
 			<div class='item-name lCol3'>{{toUpperCase (localize 'TALESOFTHEOLDWEST.General.qualityConditions')}}</div>
 			<div class='item-name lCol4'>{{toUpperCase (localize 'TALESOFTHEOLDWEST.Item.General.action')}}</div>
@@ -46,16 +46,20 @@
 						{{#if (ne item.system.subtype 'fightin')}}
 							<div class='lColB5'>{{item.system.bonusdraw}}</div>
 							<div class='lColB4'>{{localize (totowConcat 'TALESOFTHEOLDWEST.Actions.' item.system.action)}}</div>
-							<input
-								style=' text-align: center; justify-self: center;'
-								type='number'
-								class='inline-edit lColB10 statnum'
-								data-mod='system.ammo'
-								name='item.system.ammo'
-								value='{{item.system.ammo}}'
-								data-dtype='Number'
-								type='number'
-							/>
+							<div class='lColB10'>
+								<input
+									style='text-align: center; width: 36px;'
+									type='number'
+									class='inline-edit statnum'
+									data-mod='system.ammo'
+									name='item.system.ammo'
+									value='{{item.system.ammo}}'
+									data-dtype='Number'
+								/>
+								<span>/</span>
+								<span>{{item.system.ammoMax}}</span>
+								<a class='item-control' data-action='reloadWeapon' data-tooltip='{{localize "TALESOFTHEOLDWEST.General.reload"}}'><i class='fas fa-rotate'></i></a>
+							</div>
 						{{/if}}
 					</li>
 				{{/if}}

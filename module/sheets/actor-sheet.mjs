@@ -38,6 +38,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       changeAspect: { handler: this._changeaspect, buttons: [0, 2] },
       changeSP: { handler: this._changeSP, buttons: [0, 2] },
       storeItem: { handler: this._storeItem, buttons: [0, 2] },
+      reloadWeapon: { handler: this._reloadWeapon, buttons: [0] },
       remudaMount: { handler: this._onRemudaMount, buttons: [0, 2] },
       remudaView: { handler: this._onRemudaView, buttons: [0, 2] },
       remudaRemove: { handler: this._onRemudaRemove, buttons: [0, 2] },
@@ -881,6 +882,23 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
       // left click
       return await item.update({ "system.stored": false });
     }
+  }
+
+  static async _reloadWeapon(event, target) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.detail > 1) return;
+    const li = target.closest(".item");
+    const actorId = li?.dataset?.actorId;
+    const actor = actorId ? (game.actors.get(actorId) ?? this.actor) : this.actor;
+    if (!actor) return;
+    if (!actor.isOwner) {
+      ui.notifications.warn(game.i18n.localize("DOCUMENT.NotOwner") || "You do not have permission to edit this character.");
+      return;
+    }
+    const item = actor.items.get(li?.dataset?.itemId);
+    if (!item) return;
+    return await item.reload();
   }
 
   /** Helper Functions */

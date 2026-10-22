@@ -14,6 +14,7 @@ export default class totowWeapon extends totowItemBase {
 		schema.crit = new fields.NumberField({ ...requiredInteger, initial: 0 });
 		schema.range = new fields.StringField({ required: true, blank: true, initial: 'armslength' });
 		schema.ammo = new fields.NumberField({ ...requiredInteger, initial: 0 });
+		schema.ammoMax = new fields.NumberField({ ...requiredInteger, initial: 0, min: 0 });
 		schema.featureModifiers = new fields.ArrayField(
 			new fields.SchemaField({
 				id: new fields.StringField({ required: true, blank: false }),
@@ -27,5 +28,12 @@ export default class totowWeapon extends totowItemBase {
 			})
 		);
 		return schema;
+	}
+
+	static migrateData(source) {
+		if (source.ammoMax === undefined) {
+			source.ammoMax = source.ammo ?? 0;
+		}
+		return super.migrateData(source);
 	}
 }

@@ -189,6 +189,9 @@
 			"talents": "Talents",
 			"weapons": "Weapons",
 			"noAmmo": "You Need To Reload Pardner!",
+			"reload": "Reload",
+			"reloaded": "{actor} reloads {weapon} ({from} → {to})",
+			"noAmmoMax": "Set a maximum ammo on this weapon before reloading.",
 			"calledShots": "type of shot",
 			"targetCover": "target cover",
 			"targetSize": "target size",
@@ -250,7 +253,12 @@
 		},
 		"Migration": {
 			"critUpdated": "World data updated: {count} weapon(s) and {talentCount} talent(s) were migrated to the new critical injury system. Please back up your world.",
-			"critNoop": "Critical injury migration: nothing to update."
+			"critNoop": "Critical injury migration: nothing to update.",
+			"ammoMaxUpdated": "World data updated: {worldCount} world weapon(s) and {embeddedCount} embedded weapon(s) were migrated to the maximum ammo system. Please back up your world.",
+			"ammoMaxNoop": "Maximum ammo migration: nothing to update.",
+			"ammoMaxReviewTitle": "Maximum Ammo Migration Review",
+			"ammoMaxUnresolved": "{actor} – {weapon} (no source or match found; ammoMax set to current ammo: {ammo})",
+			"ammoMaxOverMax": "{actor} – {weapon} (ammo {ammo} exceeds source ammoMax {ammoMax}; ammoMax set, ammo left unchanged)"
 		},
 		"Item": {
 			"Effect": {
@@ -279,6 +287,7 @@
 				"attack": "att",
 				"range": "range",
 				"ammo": "ammo",
+				"ammoMax": "ammo max",
 				"roll-modifiers": "Roll Modifiers",
 				"addModifiers": "add modifiers",
 				"rollModifiersValue": "roll modifiers value",
