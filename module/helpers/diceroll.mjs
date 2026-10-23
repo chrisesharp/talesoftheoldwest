@@ -38,16 +38,6 @@ export async function totowDiceButtons(message, html, msgContent) {
 			button.innerHTML = game.i18n.localize('TALESOFTHEOLDWEST.dialog.Buy-OffTrouble');
 			buttonArea.appendChild(button);
 		}
-		if (canRollTrouble(rd)) {
-			const button = document.createElement('button');
-			button.classList.add('dice-formula', 'dice-roll', 'chat-buttons', 'roll-trouble');
-			button.dataset.messageId = messageId;
-			button.dataset.rollType = rd.rollType;
-			button.dataset.rollButton = 'roll-trouble';
-			button.dataset.tooltip = game.i18n.localize('TALESOFTHEOLDWEST.dialog.Tooltip-ManualRoll');
-			button.innerHTML = game.i18n.localize('TALESOFTHEOLDWEST.General.rollTrouble');
-			buttonArea.appendChild(button);
-		}
 		if (canPush(rd)) {
 			const button = document.createElement('button');
 			button.classList.add('dice-formula', 'dice-roll', 'chat-buttons', 'dice-push');
@@ -75,6 +65,18 @@ export async function totowDiceButtons(message, html, msgContent) {
 		span.dataset.rollButton = 'no-faith';
 		span.innerHTML = game.i18n.localize('TALESOFTHEOLDWEST.General.lackFaith');
 		buttonArea.appendChild(span);
+	}
+
+	// Rolling trouble costs no faith (the push already did), so it is not gated on faithpoints.
+	if (canRollTrouble(rd)) {
+		const button = document.createElement('button');
+		button.classList.add('dice-formula', 'dice-roll', 'chat-buttons', 'roll-trouble');
+		button.dataset.messageId = messageId;
+		button.dataset.rollType = rd.rollType;
+		button.dataset.rollButton = 'roll-trouble';
+		button.dataset.tooltip = game.i18n.localize('TALESOFTHEOLDWEST.dialog.Tooltip-ManualRoll');
+		button.innerHTML = game.i18n.localize('TALESOFTHEOLDWEST.General.rollTrouble');
+		buttonArea.appendChild(button);
 	}
 }
 
