@@ -101,6 +101,49 @@ async function processConditionals(rollType, dataset, rollData, actor) {
 }
 
 /**
+ * Attach the attack dropdown behaviour of the crit roll dialog.
+ * Inline <script> in DialogV2 content is stripped by cleanHTML, so this is attached through
+ * the DialogV2 `render` callback instead. The template renders the initial state for the
+ * pre-selected attack; this only reacts to later dropdown changes. Synchronous by design.
+ * @param {foundry.applications.api.DialogV2} dialog
+ */
+function _wireCritAttackSelect(dialog) {
+  const el = dialog.element;
+  const dropdown = el.querySelector('#attackId');
+  if (!dropdown) return;
+  const rerollTens = el.querySelector('#rerollTens'); // may be absent
+  const rerollTensNote = el.querySelector('#rerollTensNote'); // may be absent
+  const manualTens = el.querySelector('#manualTens');
+
+  const update = () => {
+    const selectedId = dropdown.value;
+    let fixed = null;
+    for (const block of el.querySelectorAll('[data-attack-block]')) {
+      fixed = applyAttackBlockState(selectedId, block, fixed);
+    }
+    if (rerollTens) {
+      rerollTens.disabled = fixed !== null;
+      if (fixed !== null) rerollTens.checked = false;
+    }
+    if (rerollTensNote) rerollTensNote.style.display = fixed !== null ? '' : 'none';
+    if (manualTens) {
+      manualTens.value = fixed !== null ? String(fixed) : '';
+      manualTens.disabled = fixed !== null;
+    }
+  };
+
+  dropdown.addEventListener('change', update);
+}
+
+function applyAttackBlockState(selectedId, block, fixed) {
+  const isSelected = !!selectedId && block.dataset.attackBlock === selectedId;
+  block.style.display = isSelected ? '' : 'none';
+  block.querySelectorAll('input').forEach(inp => { inp.disabled = !isSelected; });
+  if (isSelected && block.dataset.tensFixed) fixed = Number(block.dataset.tensFixed);
+  return fixed;
+  }
+
+/**
  * Resolve the tens and units dice for a single crit pass, applying all modifiers from ctx.
  * @param {object} response  - FormData from the crit dialog.
  * @param {object|null} ctx  - The critContext for the selected attack message, or null.
@@ -313,19 +356,25 @@ export class totowActor extends Actor {
       || attacks[0]?.messageId
       || null;
 
+    // Initial state for the template (the dropdown is handled by _wireCritAttackSelect)
+    const selected = attacks.find(a => a.messageId === preSelected) ?? null;
+    const selectedTensFixed = selected?.ctx?.tens?.fixed ?? null;
+    const dialogAttacks = attacks.map(a => ({ ...a, isSelected: a.messageId === preSelected }));
+
     // Build defender crit modifier context
     const defender = Utils.prepCritMods(actor);
 
     // Render dialog content
     const content = await foundry.applications.handlebars.renderTemplate(
       'systems/talesoftheoldwest/templates/dialog/crit-roll-modifiers.hbs',
-      { attacks, defender, preSelectedId: preSelected }
+      { attacks: dialogAttacks, defender, preSelectedId: preSelected, selectedTensFixed }
     );
 
     const response = await foundry.applications.api.DialogV2.wait({
       window: { title: game.i18n.localize('TALESOFTHEOLDWEST.dialog.CritRoll') },
       content,
       rejectClose: false,
+      render: (event, dialog) => _wireCritAttackSelect(dialog),
       buttons: [
         {
           label: game.i18n.localize('TALESOFTHEOLDWEST.dialog.roll'),

@@ -1,9 +1,10 @@
 {{!--
   Crit Roll Modifiers dialog — Phase 6
   Context shape:
-    attacks       — array of { messageId, label, targeted, ctx } newest-first; may be empty
-    defender      — { canRerollTens, canRerollUnits }
-    preSelectedId — messageId to pre-select, or null/"" for "None"
+    attacks           — array of { messageId, label, targeted, ctx, isSelected } newest-first; may be empty
+    defender          — { canRerollTens, canRerollUnits }
+    preSelectedId     — messageId to pre-select, or null/"" for "None"
+    selectedTensFixed — number|null: fixed tens of the pre-selected attack (called shot)
 --}}
 <section style="max-height: 70vh; overflow-y: auto;">
 
@@ -22,9 +23,9 @@
     </select>
   </div>
 
-  {{!-- One hidden block per attack --}}
+  {{!-- One block per attack; only the pre-selected one is visible (dropdown handled by _wireCritAttackSelect) --}}
   {{#each attacks}}
-  <div data-attack-block="{{this.messageId}}" style="display: none; padding: 0 1em;">
+  <div data-attack-block="{{this.messageId}}"{{#if this.ctx.tens.fixed}} data-tens-fixed="{{this.ctx.tens.fixed}}"{{/if}} style="{{#unless this.isSelected}}display: none; {{/unless}}padding: 0 1em;">
 
     {{!-- Tens die info --}}
     <div class="form-group" style="padding: 0.5em 0 0 0">
@@ -50,9 +51,10 @@
     </div>
     {{/if}}
 
-    {{!-- Fanning checkbox — disabled when tens.fixed is set.
+    {{!-- Fanning checkbox — only shown for a fanned attack (pre-ticked).
          Name is unique per attack: a shared name makes FormDataExtended return an array
          (always truthy) when more than one attack is listed. --}}
+    {{#if this.ctx.fanning}}
     <div class="form-group" style="padding: 0.25em 0 0.5em 0; display: flex; align-items: center; gap: 8px;">
       <label class="resource-label" style="color: black; flex: 0 0 auto;">
         {{localize "TALESOFTHEOLDWEST.dialog.CritFanning"}}
@@ -60,21 +62,23 @@
       <input type="checkbox"
              name="fanning-{{this.messageId}}"
              data-fanning
-             {{#if this.ctx.fanning}}checked{{/if}}
-             {{#if this.ctx.tens.fixed}}disabled{{/if}} />
+             checked
+             {{#unless this.isSelected}}disabled{{/unless}} />
     </div>
+    {{/if}}
 
   </div>
   {{/each}}
 
-  {{!-- Lucky reroll tickboxes (outside hidden blocks; JS updates disabled state) --}}
+  {{!-- Lucky reroll tickboxes (outside attack blocks; the template sets the initial state
+       and _wireCritAttackSelect updates it when the dropdown changes) --}}
   {{#if defender.canRerollTens}}
   <div class="form-group" id="rerollTensGroup" style="padding: 0.5em 1em 0 1em; display: flex; align-items: center; gap: 8px;">
     <label class="resource-label" style="color: black; flex: 0 0 auto;">
       {{localize "TALESOFTHEOLDWEST.dialog.CritLuckyTens"}}
     </label>
-    <input type="checkbox" name="rerollTens" id="rerollTens" />
-    <span id="rerollTensNote" style="color: #888; font-size: 0.85em; display: none;">
+    <input type="checkbox" name="rerollTens" id="rerollTens" {{disabled selectedTensFixed}} />
+    <span id="rerollTensNote" style="color: #888; font-size: 0.85em;{{#unless selectedTensFixed}} display: none;{{/unless}}">
       {{localize "TALESOFTHEOLDWEST.dialog.CritLuckyTensBlocked"}}
     </span>
   </div>
@@ -93,14 +97,14 @@
   <div class="form-group" style="padding: 0.5em 1em 0.5em 1em; display: flex; align-items: center; gap: 8px;">
     <label style="color: black; flex: 1 1 auto;">{{localize "TALESOFTHEOLDWEST.dialog.CritManualOverrides"}}</label>
     <label for="manualTens" style="color: black; flex: 0 0 auto;">{{localize "TALESOFTHEOLDWEST.dialog.CritTens"}}</label>
-    <select name="manualTens" id="manualTens" style="width: 4em; flex: 0 0 auto;">
-      <option value="" selected></option>
-      <option value="1">1</option>
-      <option value="2">2</option>
-      <option value="3">3</option>
-      <option value="4">4</option>
-      <option value="5">5</option>
-      <option value="6">6</option>
+    <select name="manualTens" id="manualTens" style="width: 4em; flex: 0 0 auto;" {{disabled selectedTensFixed}}>
+      <option value=""{{#unless selectedTensFixed}} selected{{/unless}}></option>
+      <option value="1"{{#if (eq selectedTensFixed 1)}} selected{{/if}}>1</option>
+      <option value="2"{{#if (eq selectedTensFixed 2)}} selected{{/if}}>2</option>
+      <option value="3"{{#if (eq selectedTensFixed 3)}} selected{{/if}}>3</option>
+      <option value="4"{{#if (eq selectedTensFixed 4)}} selected{{/if}}>4</option>
+      <option value="5"{{#if (eq selectedTensFixed 5)}} selected{{/if}}>5</option>
+      <option value="6"{{#if (eq selectedTensFixed 6)}} selected{{/if}}>6</option>
     </select>
     <label for="manualUnits" style="color: black; flex: 0 0 auto;">{{localize "TALESOFTHEOLDWEST.dialog.CritUnits"}}</label>
     <select name="manualUnits" id="manualUnits" style="width: 4em; flex: 0 0 auto;">
@@ -115,80 +119,3 @@
   </div>
 
 </section>
-
-<script>
-(function () {
-  // Build a lookup of messageId → ctx from data embedded in the DOM.
-  // We reconstruct it from the attack-block data attributes and hidden fields.
-  const attackData = {};
-  document.querySelectorAll('[data-attack-block]').forEach(function (el) {
-    const id = el.dataset.attackBlock;
-    const tensFixedEl  = el.querySelector('[data-tens-fixed]');
-    const tensFixed    = tensFixedEl ? Number(tensFixedEl.dataset.tensFixed) || null : null;
-    attackData[id] = { tensFixed };
-  });
-
-  // Embed the ctx data as JSON in hidden elements so JS can read it without Handlebars globals.
-  {{#each attacks}}
-  attackData["{{this.messageId}}"] = { tensFixed: {{#if this.ctx.tens.fixed}}{{this.ctx.tens.fixed}}{{else}}null{{/if}} };
-  {{/each}}
-
-  function applyAttackSelection(selectedId) {
-    // Hide all attack blocks and disable their checkboxes (prevents ghost form data).
-    document.querySelectorAll('[data-attack-block]').forEach(function (el) {
-      el.style.display = 'none';
-      el.querySelectorAll('input').forEach(function (inp) { inp.disabled = true; });
-    });
-
-    // Show the selected block and re-enable its inputs.
-    if (selectedId) {
-      var block = document.querySelector('[data-attack-block="' + selectedId + '"]');
-      if (block) {
-        block.style.display = '';
-        block.querySelectorAll('input').forEach(function (inp) {
-          // Fanning stays disabled when tens.fixed is set — honour original disabled state.
-          if (inp.hasAttribute('data-fanning') && attackData[selectedId] && attackData[selectedId].tensFixed !== null) {
-            inp.disabled = true;
-          } else {
-            inp.disabled = false;
-          }
-        });
-      }
-    }
-
-    // Update Lucky Tens disabled state.
-    var rerollTens = document.getElementById('rerollTens');
-    var rerollTensNote = document.getElementById('rerollTensNote');
-    if (rerollTens) {
-      var tensFixed = selectedId && attackData[selectedId] ? attackData[selectedId].tensFixed : null;
-      var blocked   = tensFixed !== null && tensFixed !== undefined;
-      rerollTens.disabled = blocked;
-      if (rerollTensNote) rerollTensNote.style.display = blocked ? '' : 'none';
-      if (blocked) rerollTens.checked = false;
-    }
-
-    // Pre-fill manualTens when a fixed tens is present.
-    var manualTens = document.getElementById('manualTens');
-    if (manualTens) {
-      var ctx = selectedId && attackData[selectedId] ? attackData[selectedId] : null;
-      if (ctx && ctx.tensFixed !== null && ctx.tensFixed !== undefined) {
-        manualTens.value    = ctx.tensFixed;
-        manualTens.disabled = true;
-      } else {
-        manualTens.value    = '';
-        manualTens.disabled = false;
-      }
-    }
-  }
-
-  // Wire dropdown.
-  var dropdown = document.getElementById('attackId');
-  if (dropdown) {
-    dropdown.addEventListener('change', function () {
-      applyAttackSelection(this.value);
-    });
-    // Apply on load for whatever is pre-selected.
-    applyAttackSelection(dropdown.value);
-  }
-}());
-</script>
