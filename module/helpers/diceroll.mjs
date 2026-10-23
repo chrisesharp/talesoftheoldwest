@@ -83,7 +83,7 @@ function canBuyOff(rd) {
 }
 
 function canRollTrouble(rd) {
-	return rd.trouble > 0 && rd.totalTrouble !== 'rolledTrouble';
+	return rd.canPush === 'pushed' &&  rd.trouble > 0 && rd.totalTrouble !== 'rolledTrouble';
 }
 
 function canPush(rd) {
