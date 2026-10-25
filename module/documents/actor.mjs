@@ -846,33 +846,4 @@ export class totowActor extends Actor {
       actor: game.actors.get(entry.id),
     };
   }
-
-  /**
-   * Gets a collection of crewed actors.
-   * @returns {Collection<string, Actor>} [id, actor]
-   */
-  getCrew() {
-    if (this.type !== "pc") return undefined;
-    const c = new foundry.utils.Collection();
-    for (const o of this.system.compadres.details) {
-      c.set(o.id, game.actors.get(o.id));
-    }
-    return c;
-  }
-  static #isValidCritResponse(response) {
-    if (!response || response === 'cancel') return false;
-    const fields = [
-      { value: response.manualTens,  key: 'TALESOFTHEOLDWEST.dialog.CritManualTensInvalid' },
-      { value: response.manualUnits, key: 'TALESOFTHEOLDWEST.dialog.CritManualUnitsInvalid' },
-    ];
-    for (const { value, key } of fields) {
-      if (value == null || value === '') continue;
-      const v = Number(value);
-      if (!Number.isInteger(v) || v < 1 || v > 6) {
-        ui.notifications.warn(game.i18n.localize(key));
-        return false;
-      }
-    }
-    return true;
-  }
 }
