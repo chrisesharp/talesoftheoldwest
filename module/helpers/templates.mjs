@@ -12,6 +12,7 @@ export const preloadHandlebarsTemplates = async function () {
 		'systems/talesoftheoldwest/templates/actor/parts/actor-items-inline.hbs',
 		'systems/talesoftheoldwest/templates/actor/parts/actor-gear-list.hbs',
 		'systems/talesoftheoldwest/templates/actor/parts/actor-crit-conditions.hbs',
+		'systems/talesoftheoldwest/templates/actor/parts/actor-abilities.hbs',
 		'systems/talesoftheoldwest/templates/actor/parts/actor-attributes.hbs',
 		'systems/talesoftheoldwest/templates/actor/parts/actor-skills-pc.hbs',
 		'systems/talesoftheoldwest/templates/actor/parts/actor-skills-npc.hbs',

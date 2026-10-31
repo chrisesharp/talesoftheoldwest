@@ -1,0 +1,10 @@
+<div class="sheet-main-abilities">
+	{{#each system.abilities as |ability key|}}
+	<div class="abilities-name {{key}}">
+		<label class="resource-label rollable" for="system.abilities.{{key}}.value" data-tooltip='{{localize "TALESOFTHEOLDWEST.General.rightclicktomodify"}}' data-roll-type="ability" data-action="roll" data-value="{{ability.value}}" data-label="{{ability.label}}" data-stunts="{{ability.label}}" data-mod="{{ability.mod}}" data-key="{{key}}" data-attr="{{ability.attr}}" data-speaker='{{actor.id}}'>{{ability.upper}}</label>
+	</div>
+	<div class="{{key}}2" style="text-align: center">
+		<input class="statnum" type='number' name="system.abilities.{{key}}.value" value="{{ability.value}}" data-dtype='Number' />
+	</div>
+	{{/each}}
+</div>

@@ -1,7 +1,3 @@
-<div class="heading" style="padding-left: 20px">
-	{{toUpperCase (localize 'TALESOFTHEOLDWEST.General.attributes')}} {{toUpperCase (localize 'TALESOFTHEOLDWEST.General.and')}} {{toUpperCase (localize
-	'TALESOFTHEOLDWEST.General.abilities')}}
-</div>
 <div class="sheet-main-attributes">
 	<div class="A1 main-attributes">
 		<label for="system.attributes.grit" class="resource-label rollable align-left" data-tooltip='{{localize "TALESOFTHEOLDWEST.General.rightclicktomodify"}}' data-roll-type="attribute" data-action="roll" data-label='{{localize "TALESOFTHEOLDWEST.Attributes.grit.name"}}' data-mod="{{system.attributes.grit.mod}}" data-key="grit" data-speaker='{{actor.id}}'>{{toUpperCase (localize 'TALESOFTHEOLDWEST.Attributes.grit.name')}}</label>
@@ -75,14 +71,4 @@
 		<a class="far fa-dot-circle"></a>
 		{{/times}} {{#times system.damage.doubts.max}}<a class="far fa-circle"></a>{{/times}}
 	</div>
-</div>
-<div class="sheet-main-abilities">
-	{{#each system.abilities as |ability key|}}
-	<div class="abilities-name {{key}}">
-		<label class="resource-label rollable" for="system.abilities.{{key}}.value" data-tooltip='{{localize "TALESOFTHEOLDWEST.General.rightclicktomodify"}}' data-roll-type="ability" data-action="roll" data-value="{{ability.value}}" data-label="{{ability.label}}" data-stunts="{{ability.label}}" data-mod="{{ability.mod}}" data-key="{{key}}" data-attr="{{ability.attr}}" data-speaker='{{actor.id}}'>{{ability.upper}}</label>
-	</div>
-	<div class="{{key}}2" style="text-align: center">
-		<input class="statnum" type='number' name="system.abilities.{{key}}.value" value="{{ability.value}}" data-dtype='Number' />
-	</div>
-	{{/each}}
 </div>
