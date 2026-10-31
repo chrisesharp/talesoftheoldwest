@@ -5,6 +5,7 @@ export { default as totowCharacter } from './pc.mjs';
 export { default as totowNPC } from './npc.mjs';
 export { default as totowANIMAL } from './animal.mjs';
 export { default as totowTownCharter } from './towncharter.mjs';
+export { default as totowWagonTrain } from './wagon-train.mjs';
 
 // Export Items
 export { default as totowItemBase } from './item-base.mjs';

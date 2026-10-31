@@ -3,7 +3,8 @@
 		"SheetLabels": {
 			"Actor": "totow Actor Sheet",
 			"Item": "totow Item Sheet",
-			"TownCharter": "totow Town Charter Sheet"
+			"TownCharter": "totow Town Charter Sheet",
+			"WagonTrain": "totow Wagon Train Sheet"
 		},
 		"Actor": {
 			"Tabs": {
@@ -13,6 +14,7 @@
 				"Effects": "Effects",
 				"Compadres": "Compadres",
 				"Remuda": "Remuda",
+				"WagonTrain": "Wagon Train",
 				"TownCharter": "Town Charter",
 				"Amenities": "Amenities"
 			}
@@ -699,6 +701,26 @@
 			"rank4": "Rank 4",
 			"rank5": "Rank 5"
 		},
+		"WagonTrain": {
+			"trailLeads": "Trail Leads",
+			"trailboss": "Trail Boss",
+			"quartermaster": "quartermaster",
+			"scouts": "Scouts",
+			"wrangler": "Wrangler",
+			"cowboys": "Cowboys",
+			"agent": "Agent",
+			"supplies": "Supplies",
+			"money": "Money",
+			"cattle": "Cattle",
+			"food": "Food",
+			"water": "Water",
+			"medicine": "Medicine",
+			"ammunition": "Ammunition",
+			"morale": "Morale",
+			"dropActor": "Drop Actor",
+			"current": "Current",
+			"initial": "Initial"
+		},
 		"OPTIONAL_CONFIG_MENULABEL": "Configure Tales of the Old West Settings"
 	},
 	"TYPES": {
@@ -706,7 +728,8 @@
 			"npc": "NPC",
 			"pc": "PC",
 			"animal": "Animal",
-			"towncharter": "Town Charter"
+			"towncharter": "Town Charter",
+			"wagontrain": "Wagon Train"
 		},
 		"Item": {
 			"item": "Item",

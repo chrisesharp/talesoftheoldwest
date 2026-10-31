@@ -4,6 +4,7 @@ import { totowItem } from "./documents/item.mjs";
 
 // Import sheet classes.
 import { totowActorSheet } from "./sheets/actor-sheet.mjs";
+import { totowWagonTrainSheet } from "./sheets/wagon-train-sheet.mjs";
 import { totowItemSheet } from "./sheets/item-sheet.mjs";
 
 // Import helper/utility classes and constants.
@@ -40,6 +41,7 @@ globalThis.talesoftheoldwest = {
   },
   applications: {
     totowActorSheet,
+    totowWagonTrainSheet,
     totowItemSheet,
     ModuleImport,
     TOTOWSystemImportFormWrapper,
@@ -84,6 +86,7 @@ Hooks.once("init", function () {
     npc: models.totowNPC,
     animal: models.totowANIMAL,
     towncharter: models.totowTownCharter,
+    wagontrain: models.totowWagonTrain,
   };
   CONFIG.Item.documentClass = totowItem;
   CONFIG.Item.dataModels = {
@@ -103,6 +106,11 @@ Hooks.once("init", function () {
   collections.Actors.registerSheet("totow", totowActorSheet, {
     makeDefault: true,
     label: "TALESOFTHEOLDWEST.SheetLabels.Actor",
+  });
+  collections.Actors.registerSheet("totow", totowWagonTrainSheet, {
+    types: ["wagontrain"],
+    makeDefault: true,
+    label: "TALESOFTHEOLDWEST.SheetLabels.WagonTrain",
   });
 
   collections.Items.unregisterSheet("core", foundry.appv1.sheets.ItemSheet);

@@ -20,7 +20,8 @@
       "pc": { "htmlFields": ["biography", "horseNotes"] },
       "npc": { "htmlFields": ["biography"] },
       "animal": { "htmlFields": ["biography", "attacks"] },
-      "towncharter": { "htmlFields": ["biography"] }
+      "towncharter": { "htmlFields": ["biography"] },
+      "wagontrain": { "htmlFields": ["biography"] }
     },
     "Item": {
       "item": { "htmlFields": ["description"] },
