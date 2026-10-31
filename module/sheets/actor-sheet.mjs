@@ -635,7 +635,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     const attr = target.dataset.edit;
     const current = foundry.utils.getProperty(this.document, attr);
     const { img } = this.document.constructor.getDefaultArtwork?.(this.document.toObject()) ?? {};
-    const fp = new FilePicker({
+    const fp = new foundry.applications.apps.FilePicker({
       current,
       type: "image",
       redirectToRoot: img ? [img] : [],
@@ -768,37 +768,25 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
     await this.actor.rollCrit(this.actor, this.actor.type, target.dataset);
   }
 
-  static async _changeFaith(event, target) {
+  async _changeValue(event, resource) {
     event.preventDefault(); // Don't open context menu
     event.stopPropagation(); // Don't trigger other events
     if (event.detail > 1) return; // Ignore repeated clicks
     const delta = (event.button === 2) ? -1 : 1;
-    const faithpoints = Math.min(10, Math.max(0, this.actor.system.general.faithpoints.value + delta));
-    return await this.actor.update({ ["system.general.faithpoints.value"]: faithpoints });
+    const res = foundry.utils.getProperty(this.actor, resource);
+    // 'max' is derived as (limit - value), so value + max is the upper limit.
+    const value = Math.min(res.value + res.max, Math.max(0, res.value + delta));
+    return await this.actor.update({ [`${resource}.value`]: value });
+  }
+
+  static async _changeFaith(event, target) {
+    return this._changeValue(event, "system.general.faithpoints");
   }
 
   static async _changeSP(event, target) {
-    event.preventDefault(); // Don't open context menu
-    event.stopPropagation(); // Don't trigger other events
-    if (event.detail > 1) return; // Ignore repeated clicks
     // Use the raw DB key 'settlementponts' (typo in persisted data) for reads and writes.
     // The correctly-spelled alias 'settlementpoints' is available via the getter on towncharter.mjs.
-    let sp = this.actor.system.general.settlementponts;
-    if (event.button === 2) {
-      // left click
-      if (sp.value > 0) {
-        if (sp.value === 0) {
-          return;
-        }
-        return await this.actor.update({ ["system.general.settlementponts.value"]: sp.value - 1 });
-      }
-    } else {
-      // right click
-      if (sp.value >= 10) {
-        return;
-      }
-      return await this.actor.update({ ["system.general.settlementponts.value"]: sp.value + 1 });
-    }
+    return this._changeValue(event, "system.general.settlementponts");
   }
 
   static async _changeDamage(event, target) {
@@ -843,26 +831,7 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
   }
 
   static async _changeaspect(event, target) {
-    event.preventDefault(); // Don't open context menu
-    event.stopPropagation(); // Don't trigger other events
-    if (event.detail > 1) return; // Ignore repeated clicks
-    let targetAspect = target.dataset.aspect;
-    let aspect = this.actor.system.aspects[targetAspect];
-    if (event.button === 2) {
-      // left click
-      if (aspect.value > 0) {
-        if (aspect.value === 0) {
-          return;
-        }
-        return await this.actor.update({ [`system.aspects.${targetAspect}.value`]: aspect.value - 1 });
-      }
-    } else {
-      // right click
-      if (aspect.value >= 30) {
-        return;
-      }
-      return await this.actor.update({ [`system.aspects.${targetAspect}.value`]: aspect.value + 1 });
-    }
+    return this._changeValue(event, `system.aspects.${target.dataset.aspect}`);
   }
 
   static async _storeItem(event, target) {
@@ -1072,14 +1041,13 @@ export class totowActorSheet extends api.HandlebarsApplicationMixin(sheets.Actor
    */
   async _onDropActor(event, data) {
     if (!this.actor.isOwner) return false;
-    let fred = await fromUuid(data.uuid);
-    const actor = game.actors.get(fred.id);
+    const actor = await fromUuid(data.uuid);
 
     if (actor.type === "npc") {
-      if (data.type === "Actor") await this._dropCompadres(actor.id);
+      if (data.type === "Actor") return await this._dropCompadres(actor.id);
     }
     if (actor.type === "animal" && actor.system.general.subtype === "horse") {
-      if (data.type === "Actor") await this._dropRemuda(actor.id);
+      if (data.type === "Actor") return await this._dropRemuda(actor.id);
     }
   }
 
